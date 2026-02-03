@@ -826,12 +826,13 @@ function statsCommand() {
   console.log(chalk6.green("  \u2713"), "Config file support");
   console.log(chalk6.green("  \u2713"), "JSON/Markdown/Terminal output");
   console.log("");
-  console.log(chalk6.bold("  Available Commands (13):"));
+  console.log(chalk6.bold("  Available Commands (14):"));
   console.log("");
   console.log(chalk6.cyan("  solguard audit <path>"), "       Audit a program");
   console.log(chalk6.cyan("  solguard fetch <id>"), "         Fetch and audit on-chain");
   console.log(chalk6.cyan("  solguard github <repo>"), "      Audit GitHub repo/PR");
   console.log(chalk6.cyan("  solguard compare <a> <b>"), "    Compare two versions");
+  console.log(chalk6.cyan("  solguard list"), "               List all patterns");
   console.log(chalk6.cyan("  solguard check <path>"), "       Quick pass/fail check");
   console.log(chalk6.cyan("  solguard ci <path>"), "          CI mode with SARIF");
   console.log(chalk6.cyan("  solguard watch <path>"), "       Watch and auto-audit");
@@ -2002,7 +2003,16 @@ if (!isJsonOutput) {
 \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255D
 `));
 }
-program.name("solguard").description("AI-powered smart contract auditor for Solana").version("0.1.0");
+program.name("solguard").description("AI-powered smart contract auditor for Solana").version("0.1.0", "-v, --version", "Output version number").option("-V, --verbose-version", "Show detailed version info").on("option:verbose-version", () => {
+  console.log(`SolGuard v0.1.0`);
+  console.log(`  Patterns: 15`);
+  console.log(`  Commands: 14`);
+  console.log(`  Built: 2026-02-02`);
+  console.log(`  Node: ${process.version}`);
+  console.log(`  Platform: ${process.platform}`);
+  console.log(`  https://github.com/oh-ashen-one/solguard`);
+  process.exit(0);
+});
 program.command("audit").description("Audit an Anchor program for vulnerabilities").argument("<path>", "Path to program directory or IDL file").option("-o, --output <format>", "Output format: terminal, json, markdown", "terminal").option("--no-ai", "Skip AI explanations").option("-v, --verbose", "Show detailed output").action(auditCommand);
 program.command("parse").description("Parse an Anchor IDL file").argument("<idl>", "Path to IDL JSON file").action(async (idlPath) => {
   const { parseIdl: parseIdl2 } = await import("./idl-YYKIXDKT.js");

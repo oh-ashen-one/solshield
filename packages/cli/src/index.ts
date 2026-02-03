@@ -31,7 +31,18 @@ if (!isJsonOutput) {
 program
   .name('solguard')
   .description('AI-powered smart contract auditor for Solana')
-  .version('0.1.0');
+  .version('0.1.0', '-v, --version', 'Output version number')
+  .option('-V, --verbose-version', 'Show detailed version info')
+  .on('option:verbose-version', () => {
+    console.log(`SolGuard v0.1.0`);
+    console.log(`  Patterns: 15`);
+    console.log(`  Commands: 14`);
+    console.log(`  Built: 2026-02-02`);
+    console.log(`  Node: ${process.version}`);
+    console.log(`  Platform: ${process.platform}`);
+    console.log(`  https://github.com/oh-ashen-one/solguard`);
+    process.exit(0);
+  });
 
 program
   .command('audit')
