@@ -66,6 +66,16 @@ import { checkComputeBudget } from './compute-budget.js';
 import { checkPrivilegeEscalation } from './privilege-escalation.js';
 import { checkSandwichAttack } from './sandwich-attack.js';
 import { checkSupplyManipulation } from './supply-manipulation.js';
+import { checkAccountBorrowing } from './account-borrowing.js';
+import { checkRemainingAccounts } from './remaining-accounts.js';
+import { checkConstraintValidation } from './constraint-validation.js';
+import { checkRentDrain } from './rent-drain.js';
+import { checkPdaCollision } from './pda-collision.js';
+import { checkMetaplexSecurity } from './metaplex-security.js';
+import { checkAtaSecurity } from './ata-security.js';
+import { checkSystemProgramAbuse } from './system-program-abuse.js';
+import { checkWrappedSol } from './wrapped-sol.js';
+import { checkAccountRevival } from './account-revival.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -471,6 +481,66 @@ const patterns: Pattern[] = [
     name: 'Supply Manipulation',
     severity: 'high',
     run: checkSupplyManipulation,
+  },
+  {
+    id: 'SOL066',
+    name: 'Account Data Borrowing Vulnerability',
+    severity: 'high',
+    run: checkAccountBorrowing,
+  },
+  {
+    id: 'SOL067',
+    name: 'Remaining Accounts Security',
+    severity: 'critical',
+    run: checkRemainingAccounts,
+  },
+  {
+    id: 'SOL068',
+    name: 'Anchor Constraint Validation',
+    severity: 'high',
+    run: checkConstraintValidation,
+  },
+  {
+    id: 'SOL069',
+    name: 'Rent Drain Attack',
+    severity: 'high',
+    run: checkRentDrain,
+  },
+  {
+    id: 'SOL070',
+    name: 'PDA Seed Collision',
+    severity: 'high',
+    run: checkPdaCollision,
+  },
+  {
+    id: 'SOL071',
+    name: 'Metaplex/NFT Metadata Security',
+    severity: 'high',
+    run: checkMetaplexSecurity,
+  },
+  {
+    id: 'SOL072',
+    name: 'Associated Token Account Security',
+    severity: 'high',
+    run: checkAtaSecurity,
+  },
+  {
+    id: 'SOL073',
+    name: 'System Program Abuse',
+    severity: 'critical',
+    run: checkSystemProgramAbuse,
+  },
+  {
+    id: 'SOL074',
+    name: 'Wrapped SOL Security',
+    severity: 'high',
+    run: checkWrappedSol,
+  },
+  {
+    id: 'SOL075',
+    name: 'Account Revival Attack',
+    severity: 'critical',
+    run: checkAccountRevival,
   },
 ];
 
