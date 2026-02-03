@@ -106,6 +106,11 @@ import { checkInstructionData } from './instruction-data.js';
 import { checkAnchorCpiSafety } from './anchor-cpi-safety.js';
 import { checkAuthorityScope } from './authority-scope.js';
 import { checkErrorPropagation } from './error-propagation.js';
+import { checkAccountKeyDerivation } from './account-key-derivation.js';
+import { checkTokenBurnSafety } from './token-burn-safety.js';
+import { checkAssociatedProgram } from './associated-program.js';
+import { checkSignerSeedsValidation } from './signer-seeds-validation.js';
+import { checkAccountReallocation } from './account-reallocation.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -751,6 +756,36 @@ const patterns: Pattern[] = [
     name: 'Error Propagation',
     severity: 'medium',
     run: checkErrorPropagation,
+  },
+  {
+    id: 'SOL106',
+    name: 'Account Key Derivation',
+    severity: 'high',
+    run: checkAccountKeyDerivation,
+  },
+  {
+    id: 'SOL107',
+    name: 'Token Burn Safety',
+    severity: 'critical',
+    run: checkTokenBurnSafety,
+  },
+  {
+    id: 'SOL108',
+    name: 'Associated Program Security',
+    severity: 'high',
+    run: checkAssociatedProgram,
+  },
+  {
+    id: 'SOL109',
+    name: 'Signer Seeds Validation',
+    severity: 'high',
+    run: checkSignerSeedsValidation,
+  },
+  {
+    id: 'SOL110',
+    name: 'Account Reallocation',
+    severity: 'high',
+    run: checkAccountReallocation,
   },
 ];
 
