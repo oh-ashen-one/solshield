@@ -139,6 +139,29 @@ solguard score . --output json
 | D+/D/D- | 30-54 | Significant issues |
 | F | 0-29 | Critical vulnerabilities |
 
+### `badge` — Generate README badges
+
+```bash
+# Generate shields.io badge markdown
+solguard badge ./path/to/program
+
+# Different badge styles
+solguard badge . --style flat-square
+solguard badge . --style for-the-badge
+
+# Save to file
+solguard badge . --output BADGES.md
+
+# JSON output (for CI/automation)
+solguard badge . --format json
+```
+
+**Example Output:**
+```markdown
+[![SolGuard](https://img.shields.io/badge/SolGuard-secure-brightgreen?style=flat)](https://github.com/oh-ashen-one/solguard)
+[![Security Grade](https://img.shields.io/badge/Security%20Grade-A+-brightgreen?style=flat)](https://github.com/oh-ashen-one/solguard)
+```
+
 ---
 
 ## Output Formats

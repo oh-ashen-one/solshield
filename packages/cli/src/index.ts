@@ -14,6 +14,7 @@ import { generateExampleConfig } from './config.js';
 import { compareCommand } from './commands/compare.js';
 import { listCommand } from './commands/list.js';
 import { scoreCommand } from './commands/score.js';
+import { badgeCommand } from './commands/badge.js';
 
 const program = new Command();
 
@@ -37,7 +38,7 @@ program
   .on('option:verbose-version', () => {
     console.log(`SolGuard v0.1.0`);
     console.log(`  Patterns: 130`);
-    console.log(`  Commands: 15`);
+    console.log(`  Commands: 16`);
     console.log(`  Built: 2026-02-02`);
     console.log(`  Node: ${process.version}`);
     console.log(`  Platform: ${process.platform}`);
@@ -106,6 +107,15 @@ program
   .argument('<path>', 'Path to program directory or Rust file')
   .option('-o, --output <format>', 'Output format: terminal, json', 'terminal')
   .action(scoreCommand);
+
+program
+  .command('badge')
+  .description('Generate shields.io security badge for README')
+  .argument('<path>', 'Path to program directory or Rust file')
+  .option('-o, --output <file>', 'Save badge markdown to file')
+  .option('-f, --format <format>', 'Output format: terminal, json', 'terminal')
+  .option('-s, --style <style>', 'Badge style: flat, flat-square, plastic, for-the-badge', 'flat')
+  .action(badgeCommand);
 
 program
   .command('github')
