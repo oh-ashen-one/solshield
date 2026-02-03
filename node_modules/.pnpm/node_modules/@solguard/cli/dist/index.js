@@ -602,20 +602,20 @@ async function certificateCommand(path, options) {
     try {
       const { parseRustFiles: parseRustFiles2 } = await import("./rust-LZBLPUB7.js");
       const { runPatterns: runPatterns2 } = await import("./patterns-7NVPT5DP.js");
-      const { existsSync: existsSync5, statSync: statSync4, readdirSync: readdirSync4 } = await import("fs");
-      if (!existsSync5(path)) {
+      const { existsSync: existsSync6, statSync: statSync5, readdirSync: readdirSync5 } = await import("fs");
+      if (!existsSync6(path)) {
         throw new Error(`Path not found: ${path}`);
       }
-      const isDirectory = statSync4(path).isDirectory();
+      const isDirectory = statSync5(path).isDirectory();
       let rustFiles = [];
       if (isDirectory) {
-        const findRustFiles3 = (dir) => {
+        const findRustFiles4 = (dir) => {
           const files = [];
-          const entries = readdirSync4(dir, { withFileTypes: true });
+          const entries = readdirSync5(dir, { withFileTypes: true });
           for (const entry of entries) {
             const fullPath = join3(dir, entry.name);
             if (entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "target") {
-              files.push(...findRustFiles3(fullPath));
+              files.push(...findRustFiles4(fullPath));
             } else if (entry.name.endsWith(".rs")) {
               files.push(fullPath);
             }
@@ -624,12 +624,12 @@ async function certificateCommand(path, options) {
         };
         const srcDir = join3(path, "src");
         const programsDir = join3(path, "programs");
-        if (existsSync5(programsDir)) {
-          rustFiles = findRustFiles3(programsDir);
-        } else if (existsSync5(srcDir)) {
-          rustFiles = findRustFiles3(srcDir);
+        if (existsSync6(programsDir)) {
+          rustFiles = findRustFiles4(programsDir);
+        } else if (existsSync6(srcDir)) {
+          rustFiles = findRustFiles4(srcDir);
         } else {
-          rustFiles = findRustFiles3(path);
+          rustFiles = findRustFiles4(path);
         }
       } else if (path.endsWith(".rs")) {
         rustFiles = [path];
@@ -1529,6 +1529,95 @@ function saveHtmlReport(data, outputPath) {
   writeFileSync4(outputPath, html);
 }
 
+// src/commands/check.ts
+import { existsSync as existsSync5, readdirSync as readdirSync4, statSync as statSync4 } from "fs";
+import { join as join7 } from "path";
+async function checkCommand(path, options = {}) {
+  const failOn = options.failOn || "critical";
+  const quiet = options.quiet || false;
+  if (!existsSync5(path)) {
+    if (!quiet) console.error(`Path not found: ${path}`);
+    process.exit(2);
+  }
+  const rustFiles = findRustFiles3(path);
+  if (rustFiles.length === 0) {
+    if (!quiet) console.log("No Rust files found");
+    process.exit(0);
+  }
+  const parsed = await parseRustFiles(rustFiles);
+  let criticalCount = 0;
+  let highCount = 0;
+  let mediumCount = 0;
+  let lowCount = 0;
+  if (parsed && parsed.files) {
+    for (const file of parsed.files) {
+      const findings = await runPatterns({
+        path: file.path,
+        rust: {
+          files: [file],
+          functions: parsed.functions.filter((f) => f.file === file.path),
+          structs: parsed.structs.filter((s) => s.file === file.path),
+          implBlocks: parsed.implBlocks.filter((i) => i.file === file.path),
+          content: file.content
+        },
+        idl: null
+      });
+      for (const f of findings) {
+        if (f.severity === "critical") criticalCount++;
+        else if (f.severity === "high") highCount++;
+        else if (f.severity === "medium") mediumCount++;
+        else if (f.severity === "low") lowCount++;
+      }
+    }
+  }
+  let failed = false;
+  switch (failOn) {
+    case "any":
+      failed = criticalCount + highCount + mediumCount + lowCount > 0;
+      break;
+    case "low":
+      failed = criticalCount + highCount + mediumCount + lowCount > 0;
+      break;
+    case "medium":
+      failed = criticalCount + highCount + mediumCount > 0;
+      break;
+    case "high":
+      failed = criticalCount + highCount > 0;
+      break;
+    case "critical":
+    default:
+      failed = criticalCount > 0;
+      break;
+  }
+  if (!quiet) {
+    const total = criticalCount + highCount + mediumCount + lowCount;
+    if (failed) {
+      console.log(`FAIL: ${total} issue(s) found (${criticalCount} critical, ${highCount} high)`);
+    } else {
+      console.log(`PASS: ${total} issue(s), none at ${failOn} level or above`);
+    }
+  }
+  process.exit(failed ? 1 : 0);
+}
+function findRustFiles3(path) {
+  if (statSync4(path).isFile()) {
+    return path.endsWith(".rs") ? [path] : [];
+  }
+  const files = [];
+  function scan(dir) {
+    for (const entry of readdirSync4(dir, { withFileTypes: true })) {
+      const full = join7(dir, entry.name);
+      if (entry.isDirectory() && !["node_modules", "target", ".git"].includes(entry.name)) {
+        scan(full);
+      } else if (entry.name.endsWith(".rs")) {
+        files.push(full);
+      }
+    }
+  }
+  scan(path);
+  return files;
+}
+
 // src/index.ts
 var program = new Command();
 var args = process.argv.slice(2);
@@ -1572,23 +1661,24 @@ program.command("github").description("Audit a Solana program directly from GitH
   }
 });
 program.command("ci").description("Run audit in CI mode (GitHub Actions, etc.)").argument("<path>", "Path to program directory").option("--fail-on <level>", "Fail on severity level: critical, high, medium, low, any", "critical").option("--sarif <file>", "Output SARIF report for GitHub Code Scanning").option("--summary <file>", "Write markdown summary to file").action(ciCommand);
+program.command("check").description("Quick pass/fail check for scripts and pre-commit hooks").argument("<path>", "Path to program directory or Rust file").option("--fail-on <level>", "Fail on severity: critical, high, medium, low, any", "critical").option("-q, --quiet", "Suppress output, only use exit code").action(checkCommand);
 program.command("report").description("Generate HTML audit report").argument("<path>", "Path to program directory").option("-o, --output <file>", "Output HTML file", "solguard-report.html").option("-n, --name <name>", "Program name for report").action(async (path, options) => {
-  const { existsSync: existsSync5, readdirSync: readdirSync4, statSync: statSync4, readFileSync: readFileSync2 } = await import("fs");
-  const { join: join7, basename } = await import("path");
+  const { existsSync: existsSync6, readdirSync: readdirSync5, statSync: statSync5, readFileSync: readFileSync2 } = await import("fs");
+  const { join: join8, basename } = await import("path");
   const { parseRustFiles: parseRustFiles2 } = await import("./rust-LZBLPUB7.js");
   const { parseIdl: parseIdl2 } = await import("./idl-YYKIXDKT.js");
   const { runPatterns: runPatterns2 } = await import("./patterns-7NVPT5DP.js");
-  if (!existsSync5(path)) {
+  if (!existsSync6(path)) {
     console.error(chalk7.red(`Path not found: ${path}`));
     process.exit(1);
   }
   const startTime = Date.now();
   const programName = options.name || basename(path);
-  function findRustFiles3(dir) {
+  function findRustFiles4(dir) {
     const files = [];
     const scan = (d) => {
-      for (const entry of readdirSync4(d, { withFileTypes: true })) {
-        const full = join7(d, entry.name);
+      for (const entry of readdirSync5(d, { withFileTypes: true })) {
+        const full = join8(d, entry.name);
         if (entry.isDirectory() && !["node_modules", "target", ".git"].includes(entry.name)) {
           scan(full);
         } else if (entry.name.endsWith(".rs")) {
@@ -1599,7 +1689,7 @@ program.command("report").description("Generate HTML audit report").argument("<p
     scan(dir);
     return files;
   }
-  const rustFiles = statSync4(path).isDirectory() ? findRustFiles3(path) : [path];
+  const rustFiles = statSync5(path).isDirectory() ? findRustFiles4(path) : [path];
   if (rustFiles.length === 0) {
     console.error(chalk7.red("No Rust files found"));
     process.exit(1);

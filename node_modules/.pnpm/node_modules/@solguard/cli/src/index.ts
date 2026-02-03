@@ -9,6 +9,7 @@ import { statsCommand } from './commands/stats.js';
 import { auditGithub, formatGithubAuditResult } from './commands/github.js';
 import { ciCommand } from './commands/ci.js';
 import { generateHtmlReport, saveHtmlReport } from './commands/report.js';
+import { checkCommand } from './commands/check.js';
 
 const program = new Command();
 
@@ -122,6 +123,14 @@ program
   .option('--sarif <file>', 'Output SARIF report for GitHub Code Scanning')
   .option('--summary <file>', 'Write markdown summary to file')
   .action(ciCommand);
+
+program
+  .command('check')
+  .description('Quick pass/fail check for scripts and pre-commit hooks')
+  .argument('<path>', 'Path to program directory or Rust file')
+  .option('--fail-on <level>', 'Fail on severity: critical, high, medium, low, any', 'critical')
+  .option('-q, --quiet', 'Suppress output, only use exit code')
+  .action(checkCommand);
 
 program
   .command('report')
