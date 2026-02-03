@@ -1,55 +1,151 @@
-use anchor_lang::prelude::*;
+//! Vulnerable Token Vault - Example for SolGuard Testing
+//! 
+//! This program contains INTENTIONAL vulnerabilities for testing.
+//! DO NOT use in production!
+//! 
+//! Vulnerabilities present:
+//! - SOL001: Missing owner check
+//! - SOL002: Missing signer check  
+//! - SOL003: Integer overflow
+//! - SOL005: Authority bypass
+//! - SOL006: Missing init check
+//! - SOL010: Account closing vulnerability
+//! - SOL013: Duplicate mutable accounts
+//! - SOL015: Type cosplay
 
-declare_id!("VuLnErAbLe111111111111111111111111111111111");
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+
+declare_id!("VuLn1111111111111111111111111111111111111");
 
 #[program]
 pub mod vulnerable_vault {
     use super::*;
 
-    // VULNERABILITY: No signer check - anyone can initialize
-    pub fn initialize(ctx: Context<Initialize>, vault_bump: u8) -> Result<()> {
+    /// Initialize vault - VULNERABLE: no init check
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        // SOL006: Missing is_initialized check - can be re-initialized!
         let vault = &mut ctx.accounts.vault;
         vault.authority = ctx.accounts.authority.key();
-        vault.bump = vault_bump;
-        vault.balance = 0;
+        vault.token_account = ctx.accounts.token_account.key();
+        vault.total_deposited = 0;
         Ok(())
     }
 
-    // VULNERABILITY: Authority is AccountInfo, not Signer
+    /// Deposit tokens - VULNERABLE: overflow + missing checks
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
         
-        // VULNERABILITY: Unchecked arithmetic - could overflow
-        vault.balance = vault.balance + amount;
+        // SOL003: Integer overflow - no checked_add!
+        vault.total_deposited = vault.total_deposited + amount;
+        
+        // Transfer tokens
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.user_token.to_account_info(),
+            to: ctx.accounts.vault_token.to_account_info(),
+            authority: ctx.accounts.user.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        token::transfer(cpi_ctx, amount)?;
         
         Ok(())
     }
 
-    // VULNERABILITY: Missing owner check on vault account
+    /// Withdraw tokens - VULNERABLE: missing signer check
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
         
-        // No check that authority.key() == vault.authority!
+        // SOL002: Missing signer check on authority!
+        // Anyone can call this if they know the authority pubkey
         
-        // VULNERABILITY: Unchecked arithmetic - could underflow
-        vault.balance = vault.balance - amount;
+        // SOL003: Integer overflow on subtraction
+        vault.total_deposited = vault.total_deposited - amount;
+        
+        // Transfer out
+        let seeds = &[
+            b"vault",
+            vault.authority.as_ref(),
+            &[ctx.bumps.vault],
+        ];
+        let signer = &[&seeds[..]];
+        
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.vault_token.to_account_info(),
+            to: ctx.accounts.user_token.to_account_info(),
+            authority: ctx.accounts.vault.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            cpi_accounts,
+            signer,
+        );
+        token::transfer(cpi_ctx, amount)?;
         
         Ok(())
     }
 
-    // VULNERABILITY: PDA without bump verification
-    pub fn transfer_between_vaults(ctx: Context<Transfer>, amount: u64) -> Result<()> {
-        let from_vault = &mut ctx.accounts.from_vault;
-        let to_vault = &mut ctx.accounts.to_vault;
+    /// Emergency withdraw - VULNERABLE: authority bypass
+    pub fn emergency_withdraw(ctx: Context<EmergencyWithdraw>) -> Result<()> {
+        // SOL005: No authority check at all!
+        // Anyone can drain the vault
         
-        // Deriving PDA without storing/checking bump
-        let (expected_pda, _bump) = Pubkey::find_program_address(
-            &[b"vault", ctx.accounts.authority.key().as_ref()],
-            ctx.program_id,
+        let vault = &ctx.accounts.vault;
+        let amount = ctx.accounts.vault_token.amount;
+        
+        let seeds = &[
+            b"vault", 
+            vault.authority.as_ref(),
+            &[ctx.bumps.vault],
+        ];
+        let signer = &[&seeds[..]];
+        
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.vault_token.to_account_info(),
+            to: ctx.accounts.destination.to_account_info(),
+            authority: ctx.accounts.vault.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            cpi_accounts,
+            signer,
         );
+        token::transfer(cpi_ctx, amount)?;
         
-        from_vault.balance = from_vault.balance - amount;
-        to_vault.balance = to_vault.balance + amount;
+        Ok(())
+    }
+
+    /// Close vault - VULNERABLE: account revival
+    pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
+        // SOL010: Vulnerable to account revival attack
+        // Data not zeroed before closing, lamports returned before data cleared
+        
+        let vault = &ctx.accounts.vault;
+        let dest = &ctx.accounts.destination;
+        
+        // Transfer lamports
+        **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? = 0;
+        **dest.to_account_info().try_borrow_mut_lamports()? += 
+            ctx.accounts.vault.to_account_info().lamports();
+        
+        // Data NOT zeroed - can be revived!
+        
+        Ok(())
+    }
+
+    /// Transfer between accounts - VULNERABLE: duplicate mutable
+    pub fn internal_transfer(
+        ctx: Context<InternalTransfer>,
+        amount: u64,
+    ) -> Result<()> {
+        // SOL013: from and to could be the same account!
+        // No constraint ensuring they're different
+        
+        let from = &mut ctx.accounts.from_account;
+        let to = &mut ctx.accounts.to_account;
+        
+        from.balance = from.balance - amount;
+        to.balance = to.balance + amount;
         
         Ok(())
     }
@@ -59,19 +155,18 @@ pub mod vulnerable_vault {
 pub struct Initialize<'info> {
     #[account(
         init,
-        payer = payer,
+        payer = authority,
         space = 8 + Vault::INIT_SPACE,
         seeds = [b"vault", authority.key().as_ref()],
         bump
     )]
     pub vault: Account<'info, Vault>,
     
-    // VULNERABILITY: Should be Signer<'info>
-    /// CHECK: This should be a signer
-    pub authority: AccountInfo<'info>,
+    pub token_account: Account<'info, TokenAccount>,
     
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub authority: Signer<'info>,
+    
     pub system_program: Program<'info, System>,
 }
 
@@ -80,38 +175,95 @@ pub struct Deposit<'info> {
     #[account(mut)]
     pub vault: Account<'info, Vault>,
     
-    // VULNERABILITY: Authority should be Signer, not AccountInfo
-    /// CHECK: Missing signer check
-    pub authority: AccountInfo<'info>,
+    #[account(mut)]
+    pub user_token: Account<'info, TokenAccount>,
+    
+    #[account(mut)]
+    pub vault_token: Account<'info, TokenAccount>,
+    
+    pub user: Signer<'info>,
+    
+    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
-    // VULNERABILITY: No owner constraint, no authority check
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"vault", vault.authority.as_ref()],
+        bump
+    )]
     pub vault: Account<'info, Vault>,
     
-    // VULNERABILITY: Not a Signer
-    /// CHECK: Should verify this matches vault.authority AND is a signer
+    #[account(mut)]
+    pub vault_token: Account<'info, TokenAccount>,
+    
+    #[account(mut)]
+    pub user_token: Account<'info, TokenAccount>,
+    
+    // SOL002: Should be Signer<'info>!
+    /// CHECK: Intentionally vulnerable - not a signer
     pub authority: AccountInfo<'info>,
+    
+    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
-pub struct Transfer<'info> {
-    #[account(mut)]
-    pub from_vault: Account<'info, Vault>,
+pub struct EmergencyWithdraw<'info> {
+    #[account(
+        seeds = [b"vault", vault.authority.as_ref()],
+        bump
+    )]
+    pub vault: Account<'info, Vault>,
     
     #[account(mut)]
-    pub to_vault: Account<'info, Vault>,
+    pub vault_token: Account<'info, TokenAccount>,
     
-    /// CHECK: No validation
-    pub authority: AccountInfo<'info>,
+    #[account(mut)]
+    pub destination: Account<'info, TokenAccount>,
+    
+    // SOL005: No authority check!
+    /// CHECK: Anyone can call this
+    pub caller: AccountInfo<'info>,
+    
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct CloseVault<'info> {
+    #[account(mut)]
+    pub vault: Account<'info, Vault>,
+    
+    /// CHECK: Destination for rent
+    #[account(mut)]
+    pub destination: AccountInfo<'info>,
+    
+    pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct InternalTransfer<'info> {
+    // SOL013: No constraint that from != to!
+    #[account(mut)]
+    pub from_account: Account<'info, UserBalance>,
+    
+    #[account(mut)]
+    pub to_account: Account<'info, UserBalance>,
+    
+    pub authority: Signer<'info>,
 }
 
 #[account]
 #[derive(InitSpace)]
 pub struct Vault {
     pub authority: Pubkey,
+    pub token_account: Pubkey,
+    pub total_deposited: u64,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct UserBalance {
+    pub owner: Pubkey,
     pub balance: u64,
-    pub bump: u8,
 }
