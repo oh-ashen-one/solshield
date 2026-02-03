@@ -1,0 +1,61 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "SolGuard: Audit Current File",
+      "type": "shell",
+      "command": "solguard",
+      "args": ["audit", "${file}"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "SolGuard: Audit Workspace",
+      "type": "shell",
+      "command": "solguard",
+      "args": ["audit", "${workspaceFolder}"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "SolGuard: Watch Mode",
+      "type": "shell",
+      "command": "solguard",
+      "args": ["watch", "${workspaceFolder}"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "SolGuard: List Patterns",
+      "type": "shell",
+      "command": "solguard",
+      "args": ["list"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "SolGuard: Show Stats",
+      "type": "shell",
+      "command": "solguard",
+      "args": ["stats"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}

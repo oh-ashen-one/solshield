@@ -333,10 +333,12 @@ require!(audit_passed, ErrorCode::NotAudited);
 
 ## 📚 Learn More
 
+- [**INTEGRATIONS.md**](INTEGRATIONS.md) — GitHub Actions, pre-commit hooks, VS Code
 - [**BENCHMARKS.md**](BENCHMARKS.md) — Performance data (< 1 second audits)
 - [**COMPARISON.md**](COMPARISON.md) — How we compare to alternatives
 - [**REAL-WORLD.md**](REAL-WORLD.md) — $495M+ in preventable exploits
 - [**DEPLOYMENT.md**](DEPLOYMENT.md) — On-chain program deployment guide
+- [**BADGE.md**](BADGE.md) — Add audit badges to your README
 - [**DEMO.md**](DEMO.md) — Quick demo guide for judges
 
 ## 🐉 Built By
