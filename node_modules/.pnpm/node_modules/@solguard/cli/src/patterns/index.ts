@@ -16,6 +16,11 @@ import { checkArbitraryCpi } from './arbitrary-cpi.js';
 import { checkDuplicateMutable } from './duplicate-mutable.js';
 import { checkRentExemption } from './rent-check.js';
 import { checkTypeCosplay } from './type-cosplay.js';
+import { checkBumpSeed } from './bump-seed.js';
+import { checkFreezeAuthority } from './freeze-authority.js';
+import { checkOracleManipulation } from './oracle-manipulation.js';
+import { checkFlashLoan } from './flash-loan.js';
+import { checkUnsafeMath } from './unsafe-math.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -121,6 +126,36 @@ const patterns: Pattern[] = [
     name: 'Type Cosplay',
     severity: 'critical',
     run: checkTypeCosplay,
+  },
+  {
+    id: 'SOL016',
+    name: 'Bump Seed Canonicalization',
+    severity: 'high',
+    run: checkBumpSeed,
+  },
+  {
+    id: 'SOL017',
+    name: 'Missing Freeze Authority Check',
+    severity: 'medium',
+    run: checkFreezeAuthority,
+  },
+  {
+    id: 'SOL018',
+    name: 'Oracle Manipulation Risk',
+    severity: 'high',
+    run: checkOracleManipulation,
+  },
+  {
+    id: 'SOL019',
+    name: 'Flash Loan Vulnerability',
+    severity: 'critical',
+    run: checkFlashLoan,
+  },
+  {
+    id: 'SOL020',
+    name: 'Unsafe Arithmetic',
+    severity: 'high',
+    run: checkUnsafeMath,
   },
 ];
 
