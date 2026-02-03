@@ -1,94 +1,112 @@
 # Contributing to SolGuard
 
-Thank you for your interest in contributing to SolGuard! This project was built by AI agents for the Solana Agent Hackathon, but we welcome contributions from both humans and agents.
+Thank you for your interest in contributing to SolGuard! 🛡️
+
+## Quick Start
+
+```bash
+# Clone the repo
+git clone https://github.com/oh-ashen-one/solguard
+cd solguard
+
+# Install dependencies
+pnpm install
+
+# Build CLI
+cd packages/cli
+pnpm build
+
+# Run tests
+pnpm test
+```
 
 ## Project Structure
 
 ```
 solguard/
 ├── packages/
-│   ├── cli/        # Command-line auditor
-│   ├── web/        # Next.js web interface
-│   └── program/    # Anchor on-chain registry
-└── examples/       # Test programs
+│   ├── cli/          # TypeScript CLI
+│   ├── web/          # Next.js frontend
+│   └── program/      # Anchor on-chain program
+├── examples/         # Example contracts
+├── schemas/          # JSON schemas
+└── docs/             # Documentation
 ```
 
-## Development Setup
+## Adding a New Pattern
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/oh-ashen-one/solguard.git
-   cd solguard
-   ```
+1. Create a new file in `packages/cli/src/patterns/`:
 
-2. **Install dependencies**
-   ```bash
-   # CLI
-   cd packages/cli
-   pnpm install
-   pnpm build
+```typescript
+// packages/cli/src/patterns/my-pattern.ts
+import type { Finding } from '../commands/audit.js';
+import type { PatternInput } from './index.js';
 
-   # Web
-   cd ../web
-   pnpm install
-   pnpm dev
-   ```
+export function checkMyPattern(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  
+  if (!input.rust?.content) return findings;
+  
+  // Your detection logic here
+  
+  return findings;
+}
+```
 
-3. **Run tests**
-   ```bash
-   cd packages/cli
-   pnpm test
-   ```
+2. Register in `packages/cli/src/patterns/index.ts`:
 
-## Adding New Vulnerability Patterns
+```typescript
+import { checkMyPattern } from './my-pattern.js';
 
-Patterns are located in `packages/cli/src/patterns/`. To add a new pattern:
+// Add to patterns array:
+{
+  id: 'SOL016',
+  name: 'My Pattern Name',
+  severity: 'high',
+  run: checkMyPattern,
+},
+```
 
-1. Create a new file `packages/cli/src/patterns/your-pattern.ts`
-2. Implement the pattern function:
-   ```typescript
-   import type { Finding } from '../commands/audit.js';
-   import type { PatternInput } from './index.js';
+3. Add tests in `packages/cli/src/test/patterns.test.ts`
 
-   export function checkYourPattern(input: PatternInput): Finding[] {
-     const findings: Finding[] = [];
-     // Your detection logic here
-     return findings;
-   }
-   ```
-3. Register it in `packages/cli/src/patterns/index.ts`
-4. Add tests in `packages/cli/src/test/`
+4. Update the pattern count in stats and web UI
 
-## Pattern Guidelines
+## Running Tests
 
-- **Minimize false positives**: Better to miss some issues than flood users with noise
-- **Provide actionable suggestions**: Every finding should include a fix recommendation
-- **Include severity**: critical, high, medium, low, or info
-- **Test both positive and negative cases**: Ensure safe code passes
+```bash
+cd packages/cli
+pnpm test        # Run all tests
+pnpm test:watch  # Watch mode
+```
 
-## Commit Messages
+## Code Style
 
-We use conventional commits:
-
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation
-- `chore:` Maintenance
-- `test:` Adding tests
-- `refactor:` Code refactoring
+- TypeScript with strict mode
+- Use `async/await` over callbacks
+- Document public functions with JSDoc
+- Keep functions small and focused
 
 ## Pull Request Process
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch: `git checkout -b feat/my-feature`
 3. Make your changes
-4. Run tests (`pnpm test`)
-5. Submit a PR with clear description
+4. Run tests: `pnpm test`
+5. Commit with conventional commits: `feat: add X`
+6. Push and open a PR
 
-## Code of Conduct
+## Conventional Commits
 
-Be respectful. We're all here to build cool stuff.
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation
+- `test:` Tests
+- `chore:` Maintenance
 
-## License
+## Questions?
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+Open an issue or reach out on Discord!
+
+---
+
+Built with 🐉 by Midir for the Solana Agent Hackathon 2026
