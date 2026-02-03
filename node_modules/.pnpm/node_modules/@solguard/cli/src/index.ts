@@ -10,6 +10,7 @@ import { auditGithub, formatGithubAuditResult } from './commands/github.js';
 import { ciCommand } from './commands/ci.js';
 import { generateHtmlReport, saveHtmlReport } from './commands/report.js';
 import { checkCommand } from './commands/check.js';
+import { generateExampleConfig } from './config.js';
 
 const program = new Command();
 
@@ -123,6 +124,25 @@ program
   .option('--sarif <file>', 'Output SARIF report for GitHub Code Scanning')
   .option('--summary <file>', 'Write markdown summary to file')
   .action(ciCommand);
+
+program
+  .command('init')
+  .description('Initialize SolGuard in a project')
+  .option('-f, --force', 'Overwrite existing config')
+  .action(async (options: any) => {
+    const { existsSync, writeFileSync } = await import('fs');
+    const configPath = 'solguard.config.json';
+    
+    if (existsSync(configPath) && !options.force) {
+      console.log(chalk.yellow(`Config already exists: ${configPath}`));
+      console.log(chalk.dim('Use --force to overwrite'));
+      return;
+    }
+    
+    writeFileSync(configPath, generateExampleConfig());
+    console.log(chalk.green(`✓ Created ${configPath}`));
+    console.log(chalk.dim('Edit the file to customize SolGuard behavior'));
+  });
 
 program
   .command('check')

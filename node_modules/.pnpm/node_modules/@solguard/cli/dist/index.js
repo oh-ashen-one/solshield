@@ -1618,6 +1618,37 @@ function findRustFiles3(path) {
   return files;
 }
 
+// src/config.ts
+function generateExampleConfig() {
+  return JSON.stringify({
+    // Disable specific patterns
+    disable: [],
+    // Minimum severity to report
+    minSeverity: "low",
+    // Files/directories to ignore
+    ignore: [
+      "tests/**",
+      "**/*.test.rs"
+    ],
+    // Configure individual rules
+    rules: {
+      SOL001: "error",
+      SOL002: "error",
+      SOL003: "warn"
+    },
+    // Output preferences
+    output: {
+      format: "terminal",
+      colors: true
+    },
+    // CI settings
+    ci: {
+      failOn: "high",
+      generateSarif: true
+    }
+  }, null, 2);
+}
+
 // src/index.ts
 var program = new Command();
 var args = process.argv.slice(2);
@@ -1661,6 +1692,18 @@ program.command("github").description("Audit a Solana program directly from GitH
   }
 });
 program.command("ci").description("Run audit in CI mode (GitHub Actions, etc.)").argument("<path>", "Path to program directory").option("--fail-on <level>", "Fail on severity level: critical, high, medium, low, any", "critical").option("--sarif <file>", "Output SARIF report for GitHub Code Scanning").option("--summary <file>", "Write markdown summary to file").action(ciCommand);
+program.command("init").description("Initialize SolGuard in a project").option("-f, --force", "Overwrite existing config").action(async (options) => {
+  const { existsSync: existsSync6, writeFileSync: writeFileSync5 } = await import("fs");
+  const configPath = "solguard.config.json";
+  if (existsSync6(configPath) && !options.force) {
+    console.log(chalk7.yellow(`Config already exists: ${configPath}`));
+    console.log(chalk7.dim("Use --force to overwrite"));
+    return;
+  }
+  writeFileSync5(configPath, generateExampleConfig());
+  console.log(chalk7.green(`\u2713 Created ${configPath}`));
+  console.log(chalk7.dim("Edit the file to customize SolGuard behavior"));
+});
 program.command("check").description("Quick pass/fail check for scripts and pre-commit hooks").argument("<path>", "Path to program directory or Rust file").option("--fail-on <level>", "Fail on severity: critical, high, medium, low, any", "critical").option("-q, --quiet", "Suppress output, only use exit code").action(checkCommand);
 program.command("report").description("Generate HTML audit report").argument("<path>", "Path to program directory").option("-o, --output <file>", "Output HTML file", "solguard-report.html").option("-n, --name <name>", "Program name for report").action(async (path, options) => {
   const { existsSync: existsSync6, readdirSync: readdirSync5, statSync: statSync5, readFileSync: readFileSync2 } = await import("fs");
