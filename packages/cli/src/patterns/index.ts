@@ -61,6 +61,11 @@ import { checkFeeHandling } from './fee-handling.js';
 import { checkPauseMechanism } from './pause-mechanism.js';
 import { checkWithdrawPattern } from './withdraw-pattern.js';
 import { checkInitializationFrontrun } from './initialization-frontrun.js';
+import { checkDataValidation } from './data-validation.js';
+import { checkComputeBudget } from './compute-budget.js';
+import { checkPrivilegeEscalation } from './privilege-escalation.js';
+import { checkSandwichAttack } from './sandwich-attack.js';
+import { checkSupplyManipulation } from './supply-manipulation.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -436,6 +441,36 @@ const patterns: Pattern[] = [
     name: 'Initialization Frontrunning',
     severity: 'critical',
     run: checkInitializationFrontrun,
+  },
+  {
+    id: 'SOL061',
+    name: 'Data Validation Issue',
+    severity: 'high',
+    run: checkDataValidation,
+  },
+  {
+    id: 'SOL062',
+    name: 'Compute Budget Issue',
+    severity: 'high',
+    run: checkComputeBudget,
+  },
+  {
+    id: 'SOL063',
+    name: 'Privilege Escalation',
+    severity: 'critical',
+    run: checkPrivilegeEscalation,
+  },
+  {
+    id: 'SOL064',
+    name: 'Sandwich Attack Vulnerability',
+    severity: 'high',
+    run: checkSandwichAttack,
+  },
+  {
+    id: 'SOL065',
+    name: 'Supply Manipulation',
+    severity: 'high',
+    run: checkSupplyManipulation,
   },
 ];
 
