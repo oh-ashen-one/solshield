@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-19%20passing-brightgreen.svg)](#)
-[![Patterns](https://img.shields.io/badge/patterns-15-blue.svg)](#vulnerability-patterns)
+[![Patterns](https://img.shields.io/badge/patterns-40-blue.svg)](#vulnerability-patterns)
 [![Commands](https://img.shields.io/badge/CLI%20commands-14-purple.svg)](#cli)
 
 **AI-Powered Smart Contract Auditor for Solana**
@@ -14,32 +14,70 @@
 SolGuard is an autonomous smart contract auditing system that:
 
 1. **Parses** Anchor IDL + Rust source code
-2. **Detects** vulnerabilities using 15 specialized patterns
+2. **Detects** vulnerabilities using **40 specialized patterns**
 3. **Generates** AI-powered explanations + fix suggestions  
 4. **Stores** audit results on-chain for verification
 5. **Mints** NFT certificates for passed audits
 
 **The pitch:** Manual audits cost $10K-$100K and take weeks. We do it in seconds for free (beta).
 
-## 🔍 Vulnerability Patterns (15)
+## 🔍 Vulnerability Patterns (40)
 
-| ID | Pattern | Severity | Description |
-|----|---------|----------|-------------|
-| SOL001 | Missing Owner Check | Critical | Accounts without ownership validation |
-| SOL002 | Missing Signer Check | Critical | Authority without cryptographic proof |
-| SOL003 | Integer Overflow | High | Unchecked arithmetic operations |
-| SOL004 | PDA Validation Gap | High | Missing bump verification |
-| SOL005 | Authority Bypass | Critical | Sensitive ops without permission |
-| SOL006 | Missing Init Check | Critical | Uninitialized account access |
-| SOL007 | CPI Vulnerability | High | Cross-program invocation risks |
-| SOL008 | Rounding Error | Medium | Precision loss in calculations |
-| SOL009 | Account Confusion | High | Swappable same-type accounts |
-| SOL010 | Closing Vulnerability | Critical | Account revival attacks |
-| SOL011 | Cross-Program Reentrancy | High | State changes after CPI calls |
-| SOL012 | Arbitrary CPI | Critical | Unconstrained program ID in invokes |
-| SOL013 | Duplicate Mutable Accounts | High | Same account passed as multiple params |
-| SOL014 | Missing Rent Exemption | Medium | Accounts below rent threshold |
-| SOL015 | Type Cosplay | Critical | Missing discriminator validation |
+### Critical Severity (10)
+| ID | Pattern | Description |
+|----|---------|-------------|
+| SOL001 | Missing Owner Check | Accounts without ownership validation |
+| SOL005 | Authority Bypass | Sensitive ops without permission |
+| SOL006 | Missing Init Check | Uninitialized account access |
+| SOL010 | Closing Vulnerability | Account revival attacks |
+| SOL012 | Arbitrary CPI | Unconstrained program ID in invokes |
+| SOL015 | Type Cosplay | Missing discriminator validation |
+| SOL019 | Flash Loan Vulnerability | Same-tx state manipulation |
+| SOL021 | Sysvar Manipulation | Clock for randomness, fake sysvars |
+| SOL031 | Access Control | Missing privilege checks |
+| SOL033 | Signature Replay | Missing nonce/domain separation |
+
+### High Severity (16)
+| ID | Pattern | Description |
+|----|---------|-------------|
+| SOL002 | Missing Signer Check | Authority without cryptographic proof |
+| SOL003 | Integer Overflow | Unchecked arithmetic operations |
+| SOL004 | PDA Validation Gap | Missing bump verification |
+| SOL007 | CPI Vulnerability | Cross-program invocation risks |
+| SOL009 | Account Confusion | Swappable same-type accounts |
+| SOL011 | Cross-Program Reentrancy | State changes after CPI calls |
+| SOL013 | Duplicate Mutable Accounts | Same account passed multiple times |
+| SOL016 | Bump Seed Canonicalization | Non-canonical PDA bumps |
+| SOL018 | Oracle Manipulation | Missing staleness/TWAP checks |
+| SOL020 | Unsafe Arithmetic | Division by zero, lossy casts |
+| SOL023 | Token Validation | Missing mint/ATA validation |
+| SOL024 | Cross-Program State | Stale external state dependency |
+| SOL025 | Lamport Balance | Balance check before CPI |
+| SOL029 | Instruction Introspection | Sysvar validation issues |
+| SOL034 | Storage Collision | Discriminator conflicts |
+| SOL035 | Denial of Service | Unbounded loops, amplification |
+| SOL040 | CPI Guard | User-controlled CPI accounts |
+
+### Medium Severity (11)
+| ID | Pattern | Description |
+|----|---------|-------------|
+| SOL008 | Rounding Error | Precision loss in calculations |
+| SOL014 | Missing Rent Exemption | Accounts below rent threshold |
+| SOL017 | Freeze Authority | Token freeze status unchecked |
+| SOL022 | Upgrade Authority | Missing multisig on upgrades |
+| SOL026 | Seeded Account | Variable seed issues |
+| SOL027 | Error Handling | unwrap(), swallowed errors |
+| SOL030 | Anchor Macro Misuse | init/payer/space issues |
+| SOL032 | Missing Time Lock | Critical ops without delay |
+| SOL036 | Input Validation | Bounds, amounts, percentages |
+| SOL037 | State Initialization | Defaults, versioning issues |
+| SOL038 | Token-2022 Compatibility | Extension handling |
+| SOL039 | Memo and Logging | Sensitive data in logs |
+
+### Low/Info Severity (3)
+| ID | Pattern | Description |
+|----|---------|-------------|
+| SOL028 | Event Emission | Missing events for indexing |
 
 ## 🚀 Quick Start
 
@@ -48,9 +86,6 @@ SolGuard is an autonomous smart contract auditing system that:
 ```bash
 # Install globally
 npm install -g @solguard/cli
-
-# Or build from source
-cd packages/cli && pnpm install && pnpm build
 
 # Audit a program
 solguard audit ./path/to/program
@@ -71,8 +106,36 @@ solguard certificate ./program --program-id <PUBKEY>
 # CI mode for GitHub Actions
 solguard ci . --fail-on high --sarif results.sarif
 
+# List all patterns
+solguard list
+
 # Show stats
 solguard stats
+```
+
+### GitHub Actions Integration
+
+```yaml
+# .github/workflows/audit.yml
+name: SolGuard Audit
+on: [push, pull_request]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install SolGuard
+        run: npm install -g @solguard/cli
+        
+      - name: Run Security Audit
+        run: solguard ci . --fail-on high --sarif results.sarif
+        
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
 ```
 
 ### Web UI
@@ -84,22 +147,6 @@ pnpm dev
 # Open http://localhost:3000
 ```
 
-### GitHub Actions Integration
-
-```yaml
-# .github/workflows/audit.yml
-- name: Install SolGuard
-  run: npm install -g @solguard/cli
-  
-- name: Run Security Audit
-  run: solguard ci . --fail-on high --sarif results.sarif
-  
-- name: Upload SARIF
-  uses: github/codeql-action/upload-sarif@v3
-  with:
-    sarif_file: results.sarif
-```
-
 ## 📁 Project Structure
 
 ```
@@ -107,10 +154,9 @@ solguard/
 ├── packages/
 │   ├── cli/              # Command-line auditor
 │   │   └── src/
-│   │       ├── patterns/ # 10 vulnerability detectors
+│   │       ├── patterns/ # 40 vulnerability detectors
 │   │       ├── parsers/  # IDL + Rust parsing
-│   │       ├── ai/       # Claude integration
-│   │       └── report/   # Output formatters
+│   │       └── commands/ # 14 CLI commands
 │   │
 │   ├── web/              # Next.js frontend
 │   │   └── src/app/
@@ -125,7 +171,7 @@ solguard/
 │   ├── vulnerable/       # Test programs with issues
 │   └── safe/             # Secure reference programs
 │
-└── PLAN.md               # Build roadmap
+└── docs/                 # Documentation
 ```
 
 ## ⛓️ Solana Integration
@@ -141,19 +187,6 @@ SolGuard creates a **composable on-chain audit layer**:
 // Other programs can verify audits via CPI
 let audit_passed = solguard::verify_audit(ctx)?;
 require!(audit_passed, ErrorCode::NotAudited);
-```
-
-## 🤖 Agentic Architecture
-
-SolGuard is designed for autonomous operation:
-
-1. **Scanner Agent** — Discovers new programs to audit
-2. **Auditor Agent** — Runs static analysis + AI reasoning  
-3. **Reviewer Agent** — Validates findings, reduces false positives
-4. **Researcher Agent** — Learns from new exploits automatically
-
-```
-New Exploit → Researcher Extracts Pattern → DB Updated → Re-scan Programs
 ```
 
 ## 📊 Example Output
@@ -184,23 +217,28 @@ New Exploit → Researcher Extracts Pattern → DB Updated → Re-scan Programs
         pub authority: Signer<'info>,
 ```
 
-## 🏆 Hackathon Goals
+## 🏆 Hackathon Achievements
 
-- [x] **15 vulnerability patterns** (SOL001-SOL015)
-- [x] **9 CLI commands** (audit, fetch, github, ci, watch, certificate, stats, programs, parse)
+- [x] **40 vulnerability patterns** (SOL001-SOL040)
+- [x] **14 CLI commands** (audit, fetch, github, compare, list, check, ci, watch, report, certificate, init, stats, programs, parse)
 - [x] **GitHub integration** — audit repos and PRs directly
 - [x] **CI mode** — GitHub Actions with SARIF code scanning
 - [x] **Web UI** with paste-to-audit
 - [x] **On-chain audit registry** (Anchor scaffold)
-- [ ] NFT audit certificates
+- [x] **VSCode integration** — tasks, settings, Git hooks
+- [x] **Full documentation** — cheatsheet, contributing guide
+- [ ] NFT audit certificates (in progress)
 - [ ] Deploy to devnet
-- [ ] Audit 5 real programs publicly
 
 ## 🐉 Built By
 
 **Midir** — An AI agent running on [Clawdbot](https://github.com/clawdbot/clawdbot)
 
 100% of the code in this repository was written by AI agents, as required by hackathon rules.
+
+---
+
+**Repo:** https://github.com/oh-ashen-one/solguard
 
 ## 📜 License
 
