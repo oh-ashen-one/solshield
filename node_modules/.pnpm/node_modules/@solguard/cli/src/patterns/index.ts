@@ -81,6 +81,11 @@ import { checkProgramDataAuthority } from './program-data-authority.js';
 import { checkMintAuthority } from './mint-authority.js';
 import { checkDiscriminator } from './discriminator.js';
 import { checkTimestampManipulation } from './timestamp-manipulation.js';
+import { checkAnchorAccountInit } from './anchor-account-init.js';
+import { checkTokenOwnership } from './token-ownership.js';
+import { checkPdaSignerSeeds } from './pda-signer-seeds.js';
+import { checkConstraintOrder } from './constraint-order.js';
+import { checkCpiReturnData } from './cpi-return-data.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -576,6 +581,36 @@ const patterns: Pattern[] = [
     name: 'Timestamp Manipulation',
     severity: 'high',
     run: checkTimestampManipulation,
+  },
+  {
+    id: 'SOL081',
+    name: 'Anchor Account Initialization',
+    severity: 'medium',
+    run: checkAnchorAccountInit,
+  },
+  {
+    id: 'SOL082',
+    name: 'Token Account Ownership',
+    severity: 'critical',
+    run: checkTokenOwnership,
+  },
+  {
+    id: 'SOL083',
+    name: 'PDA Signer Seeds Mismatch',
+    severity: 'critical',
+    run: checkPdaSignerSeeds,
+  },
+  {
+    id: 'SOL084',
+    name: 'Account Constraints Order',
+    severity: 'medium',
+    run: checkConstraintOrder,
+  },
+  {
+    id: 'SOL085',
+    name: 'CPI Return Data Security',
+    severity: 'high',
+    run: checkCpiReturnData,
   },
 ];
 
