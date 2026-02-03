@@ -5,6 +5,8 @@ import { checkMissingOwner } from './owner-check.js';
 import { checkMissingSigner } from './signer-check.js';
 import { checkIntegerOverflow } from './overflow.js';
 import { checkPdaValidation } from './pda-validation.js';
+import { checkAuthorityBypass } from './authority-bypass.js';
+import { checkMissingInitCheck } from './init-check.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -44,6 +46,18 @@ const patterns: Pattern[] = [
     name: 'PDA Validation Gap',
     severity: 'high',
     run: checkPdaValidation,
+  },
+  {
+    id: 'SOL005',
+    name: 'Authority Bypass',
+    severity: 'critical',
+    run: checkAuthorityBypass,
+  },
+  {
+    id: 'SOL006',
+    name: 'Missing Initialization Check',
+    severity: 'critical',
+    run: checkMissingInitCheck,
   },
 ];
 
