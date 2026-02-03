@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import {
+  listPatterns,
   runPatterns
 } from "./chunk-IZJZB5ZX.js";
 import {
@@ -11,7 +12,7 @@ import {
 
 // src/index.ts
 import { Command } from "commander";
-import chalk6 from "chalk";
+import chalk7 from "chalk";
 
 // src/commands/audit.ts
 import chalk2 from "chalk";
@@ -773,12 +774,76 @@ async function watchCommand(path, options) {
   });
 }
 
+// src/commands/stats.ts
+import chalk6 from "chalk";
+function statsCommand() {
+  const patterns = listPatterns();
+  console.log("");
+  console.log(chalk6.bold("  \u{1F4CA} SolGuard Statistics"));
+  console.log(chalk6.gray("  \u2500".repeat(25)));
+  console.log("");
+  console.log(chalk6.cyan("  Version:"), "0.1.0");
+  console.log(chalk6.cyan("  Patterns:"), patterns.length);
+  console.log("");
+  const bySeverity = {
+    critical: patterns.filter((p) => p.severity === "critical"),
+    high: patterns.filter((p) => p.severity === "high"),
+    medium: patterns.filter((p) => p.severity === "medium"),
+    low: patterns.filter((p) => p.severity === "low")
+  };
+  console.log(chalk6.bold("  Vulnerability Patterns:"));
+  console.log("");
+  if (bySeverity.critical.length > 0) {
+    console.log(chalk6.red("  \u{1F534} Critical:"));
+    for (const p of bySeverity.critical) {
+      console.log(chalk6.gray(`     ${p.id}: ${p.name}`));
+    }
+    console.log("");
+  }
+  if (bySeverity.high.length > 0) {
+    console.log(chalk6.yellow("  \u{1F7E0} High:"));
+    for (const p of bySeverity.high) {
+      console.log(chalk6.gray(`     ${p.id}: ${p.name}`));
+    }
+    console.log("");
+  }
+  if (bySeverity.medium.length > 0) {
+    console.log(chalk6.blue("  \u{1F7E1} Medium:"));
+    for (const p of bySeverity.medium) {
+      console.log(chalk6.gray(`     ${p.id}: ${p.name}`));
+    }
+    console.log("");
+  }
+  console.log(chalk6.bold("  Capabilities:"));
+  console.log("");
+  console.log(chalk6.green("  \u2713"), "Anchor IDL parsing");
+  console.log(chalk6.green("  \u2713"), "Rust source code analysis");
+  console.log(chalk6.green("  \u2713"), "AI-powered explanations");
+  console.log(chalk6.green("  \u2713"), "On-chain program fetching");
+  console.log(chalk6.green("  \u2713"), "NFT certificate generation");
+  console.log(chalk6.green("  \u2713"), "Watch mode for development");
+  console.log(chalk6.green("  \u2713"), "JSON/Markdown output");
+  console.log("");
+  console.log(chalk6.bold("  Available Commands:"));
+  console.log("");
+  console.log(chalk6.cyan("  solguard audit <path>"), "      Audit a program");
+  console.log(chalk6.cyan("  solguard fetch <program-id>"), "Fetch and audit on-chain");
+  console.log(chalk6.cyan("  solguard certificate <path>"), "Generate NFT certificate");
+  console.log(chalk6.cyan("  solguard watch <path>"), "      Watch and auto-audit");
+  console.log(chalk6.cyan("  solguard programs"), "          List known programs");
+  console.log(chalk6.cyan("  solguard stats"), "             Show this info");
+  console.log("");
+  console.log(chalk6.gray("  Built by Midir for Solana Agent Hackathon 2026"));
+  console.log(chalk6.gray("  https://github.com/oh-ashen-one/solguard"));
+  console.log("");
+}
+
 // src/index.ts
 var program = new Command();
 var args = process.argv.slice(2);
 var isJsonOutput = args.includes("--output") && args[args.indexOf("--output") + 1] === "json";
 if (!isJsonOutput) {
-  console.log(chalk6.cyan(`
+  console.log(chalk7.cyan(`
 \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557
 \u2551  \u{1F6E1}\uFE0F  SolGuard - Smart Contract Auditor    \u2551
 \u2551     AI-Powered Security for Solana        \u2551
@@ -796,4 +861,5 @@ program.command("fetch").description("Fetch and audit a program by its on-chain 
 program.command("programs").description("List known Solana programs").action(listKnownPrograms);
 program.command("certificate").description("Generate an audit certificate (metadata + SVG)").argument("<path>", "Path to program directory or Rust file").option("-o, --output <dir>", "Output directory", ".").option("-p, --program-id <id>", "Program ID for the certificate").action(certificateCommand);
 program.command("watch").description("Watch for file changes and auto-audit").argument("<path>", "Path to program directory").option("-o, --output <format>", "Output format: terminal, json, markdown", "terminal").option("--no-ai", "Skip AI explanations").action(watchCommand);
+program.command("stats").description("Show SolGuard statistics and capabilities").action(statsCommand);
 program.parse();

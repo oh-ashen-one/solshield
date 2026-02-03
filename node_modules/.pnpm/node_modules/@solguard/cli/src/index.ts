@@ -5,6 +5,7 @@ import { auditCommand } from './commands/audit.js';
 import { fetchAndAuditCommand, listKnownPrograms } from './commands/fetch.js';
 import { certificateCommand } from './commands/certificate.js';
 import { watchCommand } from './commands/watch.js';
+import { statsCommand } from './commands/stats.js';
 
 const program = new Command();
 
@@ -74,5 +75,10 @@ program
   .option('-o, --output <format>', 'Output format: terminal, json, markdown', 'terminal')
   .option('--no-ai', 'Skip AI explanations')
   .action(watchCommand);
+
+program
+  .command('stats')
+  .description('Show SolGuard statistics and capabilities')
+  .action(statsCommand);
 
 program.parse();
