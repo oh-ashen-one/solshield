@@ -116,6 +116,11 @@ import { checkTokenApproval } from './token-approval.js';
 import { checkRentCollection } from './rent-collection.js';
 import { checkInstructionSysvar } from './instruction-sysvar.js';
 import { checkStateTransition } from './state-transition.js';
+import { checkAccountDataMatch } from './account-data-match.js';
+import { checkTokenFreeze } from './token-freeze.js';
+import { checkZeroCopyAccount } from './zero-copy-account.js';
+import { checkProgramUpgrade } from './program-upgrade.js';
+import { checkAccountConstraintCombo } from './account-constraint-combo.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -821,6 +826,36 @@ const patterns: Pattern[] = [
     name: 'State Transition Validation',
     severity: 'high',
     run: checkStateTransition,
+  },
+  {
+    id: 'SOL116',
+    name: 'Account Data Matching',
+    severity: 'high',
+    run: checkAccountDataMatch,
+  },
+  {
+    id: 'SOL117',
+    name: 'Token Freeze Operations',
+    severity: 'critical',
+    run: checkTokenFreeze,
+  },
+  {
+    id: 'SOL118',
+    name: 'Zero-Copy Account Handling',
+    severity: 'high',
+    run: checkZeroCopyAccount,
+  },
+  {
+    id: 'SOL119',
+    name: 'Program Upgrade Security',
+    severity: 'critical',
+    run: checkProgramUpgrade,
+  },
+  {
+    id: 'SOL120',
+    name: 'Account Constraint Combinations',
+    severity: 'high',
+    run: checkAccountConstraintCombo,
   },
 ];
 
