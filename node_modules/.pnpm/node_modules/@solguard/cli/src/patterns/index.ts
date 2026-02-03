@@ -86,6 +86,11 @@ import { checkTokenOwnership } from './token-ownership.js';
 import { checkPdaSignerSeeds } from './pda-signer-seeds.js';
 import { checkConstraintOrder } from './constraint-order.js';
 import { checkCpiReturnData } from './cpi-return-data.js';
+import { checkAccountLifetime } from './account-lifetime.js';
+import { checkArithmeticPrecision } from './arithmetic-precision.js';
+import { checkEventOrdering } from './event-ordering.js';
+import { checkAccountTypeSafety } from './account-type-safety.js';
+import { checkSyscallSecurity } from './syscall-security.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -611,6 +616,36 @@ const patterns: Pattern[] = [
     name: 'CPI Return Data Security',
     severity: 'high',
     run: checkCpiReturnData,
+  },
+  {
+    id: 'SOL086',
+    name: 'Account Lifetime Management',
+    severity: 'medium',
+    run: checkAccountLifetime,
+  },
+  {
+    id: 'SOL087',
+    name: 'Arithmetic Precision Issues',
+    severity: 'high',
+    run: checkArithmeticPrecision,
+  },
+  {
+    id: 'SOL088',
+    name: 'Event Ordering and Emission',
+    severity: 'medium',
+    run: checkEventOrdering,
+  },
+  {
+    id: 'SOL089',
+    name: 'Account Type Safety',
+    severity: 'high',
+    run: checkAccountTypeSafety,
+  },
+  {
+    id: 'SOL090',
+    name: 'Solana Syscall Security',
+    severity: 'medium',
+    run: checkSyscallSecurity,
   },
 ];
 
