@@ -72,14 +72,14 @@ export async function ciCommand(path: string, options: CiOptions) {
   let idl = null;
   if (idlPath) {
     try {
-      idl = parseIdl(readFileSync(idlPath, 'utf-8'));
+      idl = await parseIdl(idlPath);
     } catch {
       console.log('::warning::Failed to parse IDL');
     }
   }
 
   // Parse Rust files
-  const parsedRust = parseRustFiles(rustFiles);
+  const parsedRust = await parseRustFiles(rustFiles);
   
   // Run all patterns
   const allFindings: Finding[] = [];

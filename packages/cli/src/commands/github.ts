@@ -183,7 +183,7 @@ export async function auditGithub(
       idlFiles.map(async (f) => {
         try {
           const content = await readFile(f, 'utf-8');
-          return { path: f.replace(tempDir! + '/', ''), idl: parseIdl(content) };
+          return { path: f.replace(tempDir! + '/', ''), idl: await parseIdl(content) };
         } catch {
           return null;
         }
@@ -194,7 +194,7 @@ export async function auditGithub(
     const allFindings: Finding[] = [];
     
     try {
-      const parsedRust = parseRustFiles(rustFiles);
+      const parsedRust = await parseRustFiles(rustFiles);
       
       // Run patterns on each file
       for (const file of parsedRust.files) {

@@ -36,12 +36,15 @@ async function generateExplanations(findings: Finding[]): Promise<string[]> {
 3. Confirms or refines the suggested fix
 
 Findings:
-${findings.map((f, i) => `
+${findings.map((f, i) => {
+  const loc = typeof f.location === 'string' ? f.location : `${f.location.file}${f.location.line ? `:${f.location.line}` : ''}`;
+  return `
 ${i + 1}. ${f.pattern} (${f.severity.toUpperCase()})
-   Location: ${f.location.file}${f.location.line ? `:${f.location.line}` : ''}
+   Location: ${loc}
    ${f.code ? `Code: ${f.code}` : ''}
-   Current suggestion: ${f.suggestion || 'None'}
-`).join('\n')}
+   Current suggestion: ${f.suggestion || f.recommendation || 'None'}
+`;
+}).join('\n')}
 
 Respond with a JSON array of explanations, one per finding:
 ["explanation for finding 1", "explanation for finding 2", ...]`;

@@ -20,13 +20,14 @@ export interface Finding {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
   title: string;
   description: string;
-  location: {
+  location: string | {
     file: string;
     line?: number;
     column?: number;
   };
   code?: string;
   suggestion?: string;
+  recommendation?: string; // Alias for suggestion (some patterns use this)
   aiExplanation?: string;
 }
 

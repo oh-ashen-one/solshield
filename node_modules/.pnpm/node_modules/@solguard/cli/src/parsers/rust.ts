@@ -14,6 +14,7 @@ export interface ParsedRust {
   functions: RustFunction[];
   structs: RustStruct[];
   implBlocks: RustImpl[];
+  content?: string; // Combined content or single file content when auditing per-file
 }
 
 export interface RustFunction {

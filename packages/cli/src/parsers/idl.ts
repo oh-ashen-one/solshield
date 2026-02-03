@@ -51,8 +51,14 @@ export interface ParsedIdl {
   metadata?: any;
 }
 
-export async function parseIdl(idlPath: string): Promise<ParsedIdl> {
-  const content = readFileSync(idlPath, 'utf-8');
+export async function parseIdl(idlPathOrContent: string): Promise<ParsedIdl> {
+  // Accept either a file path or JSON content directly
+  let content: string;
+  if (idlPathOrContent.trim().startsWith('{')) {
+    content = idlPathOrContent;
+  } else {
+    content = readFileSync(idlPathOrContent, 'utf-8');
+  }
   const idl = JSON.parse(content);
   
   // Normalize IDL format (Anchor IDL can vary between versions)

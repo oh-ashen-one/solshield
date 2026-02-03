@@ -261,10 +261,10 @@ export function generateHtmlReport(data: ReportData): string {
         <div class="finding-pattern">[${f.pattern}]</div>
         <div class="finding-desc">${escapeHtml(f.description)}</div>
         <div class="finding-location">📍 ${escapeHtml(typeof f.location === 'string' ? f.location : f.location.file)}</div>
-        ${f.recommendation ? `
+        ${f.suggestion ? `
         <div class="recommendation">
           <div class="recommendation-title">💡 Recommendation</div>
-          <div class="recommendation-text">${escapeHtml(f.recommendation)}</div>
+          <div class="recommendation-text">${escapeHtml(f.suggestion)}</div>
         </div>
         ` : ''}
       </div>
