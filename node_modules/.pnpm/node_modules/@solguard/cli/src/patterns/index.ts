@@ -126,6 +126,11 @@ import { checkAccountCloseDestination } from './account-close-destination.js';
 import { checkTokenAccountClosure } from './token-account-closure.js';
 import { checkAccountDataInit } from './account-data-init.js';
 import { checkProgramSigner } from './program-signer.js';
+import { checkAccountLamportCheck } from './account-lamport-check.js';
+import { checkInstructionSize } from './instruction-size.js';
+import { checkAccountSeedLength } from './account-seed-length.js';
+import { checkTokenDecimalHandling } from './token-decimal-handling.js';
+import { checkAccountPdaBumpStorage } from './account-pda-bump-storage.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -891,6 +896,36 @@ const patterns: Pattern[] = [
     name: 'Program as Signer',
     severity: 'medium',
     run: checkProgramSigner,
+  },
+  {
+    id: 'SOL126',
+    name: 'Account Lamport Checks',
+    severity: 'high',
+    run: checkAccountLamportCheck,
+  },
+  {
+    id: 'SOL127',
+    name: 'Instruction Size Limits',
+    severity: 'medium',
+    run: checkInstructionSize,
+  },
+  {
+    id: 'SOL128',
+    name: 'Account Seed Length',
+    severity: 'medium',
+    run: checkAccountSeedLength,
+  },
+  {
+    id: 'SOL129',
+    name: 'Token Decimal Handling',
+    severity: 'medium',
+    run: checkTokenDecimalHandling,
+  },
+  {
+    id: 'SOL130',
+    name: 'PDA Bump Storage',
+    severity: 'low',
+    run: checkAccountPdaBumpStorage,
   },
 ];
 
