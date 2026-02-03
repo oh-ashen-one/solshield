@@ -111,6 +111,11 @@ import { checkTokenBurnSafety } from './token-burn-safety.js';
 import { checkAssociatedProgram } from './associated-program.js';
 import { checkSignerSeedsValidation } from './signer-seeds-validation.js';
 import { checkAccountReallocation } from './account-reallocation.js';
+import { checkAccountDiscriminatorCheck } from './account-discriminator-check.js';
+import { checkTokenApproval } from './token-approval.js';
+import { checkRentCollection } from './rent-collection.js';
+import { checkInstructionSysvar } from './instruction-sysvar.js';
+import { checkStateTransition } from './state-transition.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -786,6 +791,36 @@ const patterns: Pattern[] = [
     name: 'Account Reallocation',
     severity: 'high',
     run: checkAccountReallocation,
+  },
+  {
+    id: 'SOL111',
+    name: 'Account Discriminator Validation',
+    severity: 'critical',
+    run: checkAccountDiscriminatorCheck,
+  },
+  {
+    id: 'SOL112',
+    name: 'Token Approval/Delegation',
+    severity: 'high',
+    run: checkTokenApproval,
+  },
+  {
+    id: 'SOL113',
+    name: 'Rent Collection Security',
+    severity: 'high',
+    run: checkRentCollection,
+  },
+  {
+    id: 'SOL114',
+    name: 'Instruction Sysvar Usage',
+    severity: 'medium',
+    run: checkInstructionSysvar,
+  },
+  {
+    id: 'SOL115',
+    name: 'State Transition Validation',
+    severity: 'high',
+    run: checkStateTransition,
   },
 ];
 
