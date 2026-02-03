@@ -105,6 +105,14 @@ This project was **100% built by AI agents**:
 
 ---
 
+## 📄 Sample Reports
+
+Don't want to run the tool? See pre-generated reports:
+- [Failed audit](examples/sample-reports/vulnerable-vault-report.md) — 4 critical, 5 high findings
+- [Passed audit](examples/sample-reports/secure-vault-report.md) — Clean code with certificate
+
+---
+
 ## Questions?
 
 | Topic | Document |

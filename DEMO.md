@@ -136,4 +136,12 @@ See [HACKATHON.md](HACKATHON.md) for the full agent journey.
 
 ---
 
+## 📄 Sample Reports
+
+See what SolGuard output looks like:
+- [Failed audit example](examples/sample-reports/vulnerable-vault-report.md) — 4 critical findings
+- [Passed audit example](examples/sample-reports/secure-vault-report.md) — Clean with certificate
+
+---
+
 **Questions?** Open an issue or check the README.
