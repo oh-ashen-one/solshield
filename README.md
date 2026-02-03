@@ -331,15 +331,16 @@ require!(audit_passed, ErrorCode::NotAudited);
 - [ ] VS Code extension
 - [ ] GitHub App for auto-PR audits
 
-## 📚 Learn More
+## 📚 Documentation
 
-- [**INTEGRATIONS.md**](INTEGRATIONS.md) — GitHub Actions, pre-commit hooks, VS Code
-- [**BENCHMARKS.md**](BENCHMARKS.md) — Performance data (< 1 second audits)
-- [**COMPARISON.md**](COMPARISON.md) — How we compare to alternatives
-- [**REAL-WORLD.md**](REAL-WORLD.md) — $495M+ in preventable exploits
-- [**DEPLOYMENT.md**](DEPLOYMENT.md) — On-chain program deployment guide
-- [**BADGE.md**](BADGE.md) — Add audit badges to your README
-- [**DEMO.md**](DEMO.md) — Quick demo guide for judges
+| Getting Started | Reference | For Judges |
+|-----------------|-----------|------------|
+| [QUICKSTART.md](QUICKSTART.md) | [PATTERNS.md](PATTERNS.md) | [JUDGING.md](JUDGING.md) |
+| [DEMO.md](DEMO.md) | [FAQ.md](FAQ.md) | [HACKATHON.md](HACKATHON.md) |
+| [INTEGRATIONS.md](INTEGRATIONS.md) | [BENCHMARKS.md](BENCHMARKS.md) | [CHANGELOG.md](CHANGELOG.md) |
+| [BADGE.md](BADGE.md) | [COMPARISON.md](COMPARISON.md) | |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | [REAL-WORLD.md](REAL-WORLD.md) | |
+| | [DEPLOYMENT.md](DEPLOYMENT.md) | |
 
 ## 🐉 Built By
 
