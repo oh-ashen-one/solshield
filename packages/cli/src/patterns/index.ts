@@ -26,6 +26,11 @@ import { checkUpgradeAuthority } from './upgrade-authority.js';
 import { checkTokenValidation } from './token-validation.js';
 import { checkCrossProgramState } from './cross-program-state.js';
 import { checkLamportBalance } from './lamport-balance.js';
+import { checkSeededAccount } from './seeded-account.js';
+import { checkErrorHandling } from './error-handling.js';
+import { checkEventEmission } from './event-emission.js';
+import { checkInstructionIntrospection } from './instruction-introspection.js';
+import { checkAnchorMacros } from './anchor-macros.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -191,6 +196,36 @@ const patterns: Pattern[] = [
     name: 'Lamport Balance Vulnerability',
     severity: 'high',
     run: checkLamportBalance,
+  },
+  {
+    id: 'SOL026',
+    name: 'Seeded Account Vulnerability',
+    severity: 'medium',
+    run: checkSeededAccount,
+  },
+  {
+    id: 'SOL027',
+    name: 'Inadequate Error Handling',
+    severity: 'medium',
+    run: checkErrorHandling,
+  },
+  {
+    id: 'SOL028',
+    name: 'Event Emission Issues',
+    severity: 'low',
+    run: checkEventEmission,
+  },
+  {
+    id: 'SOL029',
+    name: 'Instruction Introspection Issues',
+    severity: 'high',
+    run: checkInstructionIntrospection,
+  },
+  {
+    id: 'SOL030',
+    name: 'Anchor Macro Misuse',
+    severity: 'medium',
+    run: checkAnchorMacros,
   },
 ];
 
