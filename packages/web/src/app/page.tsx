@@ -103,7 +103,7 @@ export default function Home() {
             <div className="text-zinc-500">Vuln Patterns</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-emerald-400">7</div>
+            <div className="text-4xl font-bold text-emerald-400">16</div>
             <div className="text-zinc-500">CLI Commands</div>
           </div>
           <div className="text-center">
@@ -128,7 +128,8 @@ export default function Home() {
             <span className="ml-2 text-zinc-500 text-sm">Terminal</span>
           </div>
           <pre className="p-6 text-sm text-zinc-300 overflow-x-auto">
-{`$ npm install -g @solguard/cli
+{`$ git clone https://github.com/oh-ashen-one/solguard && cd solguard/packages/cli
+$ npm install && npm run build && npm link
 
 $ solguard audit ./my-program
 🛡️ SolGuard - Scanning...
