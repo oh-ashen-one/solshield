@@ -1,0 +1,15 @@
+# Source files (dist is included)
+src/
+tsconfig.json
+vitest.config.ts
+
+# Test files
+*.test.ts
+__tests__/
+
+# Dev files
+.eslintrc
+.prettierrc
+
+# Build artifacts
+*.tsbuildinfo
