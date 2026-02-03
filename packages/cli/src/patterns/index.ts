@@ -101,6 +101,11 @@ import { checkMultisig } from './multisig.js';
 import { checkVersioning } from './versioning.js';
 import { checkAtomicOperations } from './atomic-operations.js';
 import { checkInitializationOrder } from './initialization-order.js';
+import { checkProgramCache } from './program-cache.js';
+import { checkInstructionData } from './instruction-data.js';
+import { checkAnchorCpiSafety } from './anchor-cpi-safety.js';
+import { checkAuthorityScope } from './authority-scope.js';
+import { checkErrorPropagation } from './error-propagation.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -716,6 +721,36 @@ const patterns: Pattern[] = [
     name: 'Initialization Order Dependencies',
     severity: 'high',
     run: checkInitializationOrder,
+  },
+  {
+    id: 'SOL101',
+    name: 'Program Cache Considerations',
+    severity: 'low',
+    run: checkProgramCache,
+  },
+  {
+    id: 'SOL102',
+    name: 'Instruction Data Handling',
+    severity: 'high',
+    run: checkInstructionData,
+  },
+  {
+    id: 'SOL103',
+    name: 'Anchor CPI Safety',
+    severity: 'high',
+    run: checkAnchorCpiSafety,
+  },
+  {
+    id: 'SOL104',
+    name: 'Authority Scope',
+    severity: 'medium',
+    run: checkAuthorityScope,
+  },
+  {
+    id: 'SOL105',
+    name: 'Error Propagation',
+    severity: 'medium',
+    run: checkErrorPropagation,
   },
 ];
 
