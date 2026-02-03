@@ -70,12 +70,13 @@ export function statsCommand() {
   console.log('');
   
   // Commands
-  console.log(chalk.bold('  Available Commands (13):'));
+  console.log(chalk.bold('  Available Commands (14):'));
   console.log('');
   console.log(chalk.cyan('  solguard audit <path>'), '       Audit a program');
   console.log(chalk.cyan('  solguard fetch <id>'), '         Fetch and audit on-chain');
   console.log(chalk.cyan('  solguard github <repo>'), '      Audit GitHub repo/PR');
   console.log(chalk.cyan('  solguard compare <a> <b>'), '    Compare two versions');
+  console.log(chalk.cyan('  solguard list'), '               List all patterns');
   console.log(chalk.cyan('  solguard check <path>'), '       Quick pass/fail check');
   console.log(chalk.cyan('  solguard ci <path>'), '          CI mode with SARIF');
   console.log(chalk.cyan('  solguard watch <path>'), '       Watch and auto-audit');

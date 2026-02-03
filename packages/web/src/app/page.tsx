@@ -102,7 +102,7 @@ export default function Home() {
             <div className="text-zinc-500">Vuln Patterns</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-emerald-400">13</div>
+            <div className="text-4xl font-bold text-emerald-400">14</div>
             <div className="text-zinc-500">CLI Commands</div>
           </div>
           <div className="text-center">
