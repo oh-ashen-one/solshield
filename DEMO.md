@@ -46,6 +46,13 @@ npm link
 
 # Audit our vulnerable example
 solguard audit ../examples/vulnerable/token-vault
+
+# Get a letter grade (A-F) for quick assessment
+solguard score ../examples/vulnerable/token-vault
+# Output: Grade D (score deductions for critical issues)
+
+solguard score ../examples/safe/token-vault  
+# Output: Grade A+ (100/100) 🏆
 ```
 
 ### Test Suite

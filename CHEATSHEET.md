@@ -113,6 +113,32 @@ solguard list --category cpi
 solguard stats
 ```
 
+### `score` — Get security grade (A-F)
+
+```bash
+# Get a letter grade for your program
+solguard score ./path/to/program
+
+# JSON output
+solguard score . --output json
+
+# Example output:
+#     ╔═══════════════════════════════════╗
+#     ║       🏆  GRADE: A+              ║
+#     ║          SCORE: 100/100          ║
+#     ╚═══════════════════════════════════╝
+```
+
+**Grading Scale:**
+| Grade | Score | Meaning |
+|-------|-------|---------|
+| A+ | 95-100 | Production ready |
+| A/A- | 85-94 | Excellent security |
+| B+/B/B- | 70-84 | Good, minor issues |
+| C+/C/C- | 55-69 | Needs attention |
+| D+/D/D- | 30-54 | Significant issues |
+| F | 0-29 | Critical vulnerabilities |
+
 ---
 
 ## Output Formats
