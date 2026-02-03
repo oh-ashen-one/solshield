@@ -6,6 +6,7 @@ import { fetchAndAuditCommand, listKnownPrograms } from './commands/fetch.js';
 import { certificateCommand } from './commands/certificate.js';
 import { watchCommand } from './commands/watch.js';
 import { statsCommand } from './commands/stats.js';
+import { auditGithub, formatGithubAuditResult } from './commands/github.js';
 
 const program = new Command();
 
@@ -80,5 +81,35 @@ program
   .command('stats')
   .description('Show SolGuard statistics and capabilities')
   .action(statsCommand);
+
+program
+  .command('github')
+  .description('Audit a Solana program directly from GitHub')
+  .argument('<repo>', 'GitHub repository (owner/repo or URL)')
+  .option('-p, --pr <number>', 'Pull request number to audit', parseInt)
+  .option('-b, --branch <name>', 'Branch name to audit')
+  .option('-o, --output <format>', 'Output format: text, json, markdown', 'text')
+  .option('-v, --verbose', 'Show detailed output')
+  .action(async (repo: string, options: any) => {
+    try {
+      const result = await auditGithub(repo, {
+        pr: options.pr,
+        branch: options.branch,
+        output: options.output,
+        verbose: options.verbose,
+      });
+      
+      console.log(formatGithubAuditResult(result, options.output));
+      
+      // Exit with error code if critical findings
+      const hasCritical = result.findings.some(f => f.severity === 'critical');
+      if (hasCritical) {
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error(chalk.red(`Error: ${(error as Error).message}`));
+      process.exit(1);
+    }
+  });
 
 program.parse();

@@ -609,13 +609,13 @@ async function certificateCommand(path, options) {
       const isDirectory = statSync3(path).isDirectory();
       let rustFiles = [];
       if (isDirectory) {
-        const findRustFiles2 = (dir) => {
+        const findRustFiles3 = (dir) => {
           const files = [];
           const entries = readdirSync3(dir, { withFileTypes: true });
           for (const entry of entries) {
             const fullPath = join3(dir, entry.name);
             if (entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "target") {
-              files.push(...findRustFiles2(fullPath));
+              files.push(...findRustFiles3(fullPath));
             } else if (entry.name.endsWith(".rs")) {
               files.push(fullPath);
             }
@@ -625,11 +625,11 @@ async function certificateCommand(path, options) {
         const srcDir = join3(path, "src");
         const programsDir = join3(path, "programs");
         if (existsSync4(programsDir)) {
-          rustFiles = findRustFiles2(programsDir);
+          rustFiles = findRustFiles3(programsDir);
         } else if (existsSync4(srcDir)) {
-          rustFiles = findRustFiles2(srcDir);
+          rustFiles = findRustFiles3(srcDir);
         } else {
-          rustFiles = findRustFiles2(path);
+          rustFiles = findRustFiles3(path);
         }
       } else if (path.endsWith(".rs")) {
         rustFiles = [path];
@@ -838,6 +838,221 @@ function statsCommand() {
   console.log("");
 }
 
+// src/commands/github.ts
+import { exec } from "child_process";
+import { promisify } from "util";
+import { mkdir, rm, readdir, readFile } from "fs/promises";
+import { join as join5 } from "path";
+import { tmpdir } from "os";
+var execAsync = promisify(exec);
+function parseGithubUrl(input) {
+  const urlMatch = input.match(/github\.com[\/:]([^\/]+)\/([^\/\.\s]+)/);
+  if (urlMatch) {
+    return { owner: urlMatch[1], repo: urlMatch[2].replace(/\.git$/, "") };
+  }
+  const shortMatch = input.match(/^([^\/]+)\/([^\/]+)$/);
+  if (shortMatch) {
+    return { owner: shortMatch[1], repo: shortMatch[2] };
+  }
+  return null;
+}
+async function cloneRepo(owner, repo, options) {
+  const tempDir = join5(tmpdir(), `solguard-${Date.now()}`);
+  await mkdir(tempDir, { recursive: true });
+  const repoUrl = `https://github.com/${owner}/${repo}.git`;
+  await execAsync(`git clone --depth 1 ${repoUrl} ${tempDir}`, {
+    timeout: 6e4
+  });
+  if (options.pr) {
+    await execAsync(
+      `git fetch origin pull/${options.pr}/head:pr-${options.pr}`,
+      { cwd: tempDir, timeout: 3e4 }
+    );
+    await execAsync(
+      `git checkout pr-${options.pr}`,
+      { cwd: tempDir }
+    );
+  } else if (options.branch) {
+    await execAsync(
+      `git checkout ${options.branch}`,
+      { cwd: tempDir }
+    );
+  }
+  return tempDir;
+}
+async function findRustFiles2(dir) {
+  const files = [];
+  async function scan(currentDir) {
+    const entries = await readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join5(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        if (["node_modules", "target", ".git", "dist", "build"].includes(entry.name)) {
+          continue;
+        }
+        await scan(fullPath);
+      } else if (entry.name.endsWith(".rs")) {
+        files.push(fullPath);
+      }
+    }
+  }
+  await scan(dir);
+  return files;
+}
+async function findIdlFiles(dir) {
+  const files = [];
+  async function scan(currentDir) {
+    const entries = await readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join5(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        if (["node_modules", "target", ".git"].includes(entry.name)) continue;
+        await scan(fullPath);
+      } else if (entry.name.endsWith(".json") && (entry.name.includes("idl") || currentDir.includes("idl"))) {
+        files.push(fullPath);
+      }
+    }
+  }
+  await scan(dir);
+  return files;
+}
+async function auditGithub(repoInput, options = {}) {
+  const startTime = Date.now();
+  const parsed = parseGithubUrl(repoInput);
+  if (!parsed) {
+    throw new Error(`Invalid GitHub repository: ${repoInput}`);
+  }
+  const { owner, repo } = parsed;
+  let tempDir = null;
+  try {
+    if (options.verbose) {
+      console.log(`Cloning ${owner}/${repo}...`);
+    }
+    tempDir = await cloneRepo(owner, repo, {
+      pr: options.pr,
+      branch: options.branch
+    });
+    const rustFiles = await findRustFiles2(tempDir);
+    const idlFiles = await findIdlFiles(tempDir);
+    if (options.verbose) {
+      console.log(`Found ${rustFiles.length} Rust files, ${idlFiles.length} IDL files`);
+    }
+    const idls = await Promise.all(
+      idlFiles.map(async (f) => {
+        try {
+          const content = await readFile(f, "utf-8");
+          return { path: f.replace(tempDir + "/", ""), idl: parseIdl(content) };
+        } catch {
+          return null;
+        }
+      })
+    );
+    const allFindings = [];
+    try {
+      const parsedRust = parseRustFiles(rustFiles);
+      for (const file of parsedRust.files) {
+        const relativePath = file.path.replace(tempDir + "\\", "").replace(tempDir + "/", "");
+        const findings = await runPatterns({
+          path: relativePath,
+          rust: {
+            files: [file],
+            functions: parsedRust.functions.filter((f) => f.file === file.path),
+            structs: parsedRust.structs.filter((s) => s.file === file.path),
+            implBlocks: parsedRust.implBlocks.filter((i) => i.file === file.path),
+            content: file.content
+          },
+          idl: idls[0]?.idl || null
+        });
+        allFindings.push(...findings);
+      }
+    } catch (error) {
+      if (options.verbose) {
+        console.warn(`Failed to audit: ${error}`);
+      }
+    }
+    const duration = Date.now() - startTime;
+    return {
+      repo: `${owner}/${repo}`,
+      ref: options.pr ? `PR #${options.pr}` : options.branch || "main",
+      files: rustFiles.length,
+      findings: allFindings,
+      duration
+    };
+  } finally {
+    if (tempDir) {
+      try {
+        await rm(tempDir, { recursive: true, force: true });
+      } catch {
+      }
+    }
+  }
+}
+function formatGithubAuditResult(result, format = "text") {
+  if (format === "json") {
+    return JSON.stringify(result, null, 2);
+  }
+  if (format === "markdown") {
+    const lines2 = [
+      `# SolGuard Audit: ${result.repo}`,
+      "",
+      `**Ref:** ${result.ref}`,
+      `**Files Scanned:** ${result.files}`,
+      `**Duration:** ${result.duration}ms`,
+      "",
+      `## Findings (${result.findings.length})`,
+      ""
+    ];
+    if (result.findings.length === 0) {
+      lines2.push("\u2705 No vulnerabilities detected!");
+    } else {
+      const bySeverity = /* @__PURE__ */ new Map();
+      for (const f of result.findings) {
+        if (!bySeverity.has(f.severity)) {
+          bySeverity.set(f.severity, []);
+        }
+        bySeverity.get(f.severity).push(f);
+      }
+      const severityEmoji = {
+        critical: "\u{1F534}",
+        high: "\u{1F7E0}",
+        medium: "\u{1F7E1}",
+        low: "\u{1F535}",
+        info: "\u26AA"
+      };
+      for (const [severity, findings] of bySeverity) {
+        lines2.push(`### ${severityEmoji[severity] || ""} ${severity.toUpperCase()} (${findings.length})`);
+        lines2.push("");
+        for (const f of findings) {
+          lines2.push(`- **[${f.pattern}] ${f.title}**`);
+          lines2.push(`  - Location: \`${f.location}\``);
+          lines2.push(`  - ${f.description}`);
+          lines2.push("");
+        }
+      }
+    }
+    return lines2.join("\n");
+  }
+  const lines = [
+    `SolGuard Audit: ${result.repo} (${result.ref})`,
+    `Files: ${result.files} | Duration: ${result.duration}ms`,
+    ""
+  ];
+  if (result.findings.length === 0) {
+    lines.push("\u2713 No vulnerabilities detected");
+  } else {
+    lines.push(`Found ${result.findings.length} issue(s):`);
+    lines.push("");
+    for (const f of result.findings) {
+      const emoji = { critical: "\u{1F534}", high: "\u{1F7E0}", medium: "\u{1F7E1}", low: "\u{1F535}", info: "\u26AA" }[f.severity] || "";
+      lines.push(`${emoji} [${f.pattern}] ${f.title}`);
+      lines.push(`   ${f.location}`);
+      lines.push(`   ${f.description}`);
+      lines.push("");
+    }
+  }
+  return lines.join("\n");
+}
+
 // src/index.ts
 var program = new Command();
 var args = process.argv.slice(2);
@@ -862,4 +1077,22 @@ program.command("programs").description("List known Solana programs").action(lis
 program.command("certificate").description("Generate an audit certificate (metadata + SVG)").argument("<path>", "Path to program directory or Rust file").option("-o, --output <dir>", "Output directory", ".").option("-p, --program-id <id>", "Program ID for the certificate").action(certificateCommand);
 program.command("watch").description("Watch for file changes and auto-audit").argument("<path>", "Path to program directory").option("-o, --output <format>", "Output format: terminal, json, markdown", "terminal").option("--no-ai", "Skip AI explanations").action(watchCommand);
 program.command("stats").description("Show SolGuard statistics and capabilities").action(statsCommand);
+program.command("github").description("Audit a Solana program directly from GitHub").argument("<repo>", "GitHub repository (owner/repo or URL)").option("-p, --pr <number>", "Pull request number to audit", parseInt).option("-b, --branch <name>", "Branch name to audit").option("-o, --output <format>", "Output format: text, json, markdown", "text").option("-v, --verbose", "Show detailed output").action(async (repo, options) => {
+  try {
+    const result = await auditGithub(repo, {
+      pr: options.pr,
+      branch: options.branch,
+      output: options.output,
+      verbose: options.verbose
+    });
+    console.log(formatGithubAuditResult(result, options.output));
+    const hasCritical = result.findings.some((f) => f.severity === "critical");
+    if (hasCritical) {
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error(chalk7.red(`Error: ${error.message}`));
+    process.exit(1);
+  }
+});
 program.parse();
