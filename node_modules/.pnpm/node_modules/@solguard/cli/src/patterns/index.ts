@@ -11,6 +11,7 @@ import { checkCpiVulnerabilities } from './cpi-check.js';
 import { checkRoundingErrors } from './rounding.js';
 import { checkAccountConfusion } from './account-confusion.js';
 import { checkClosingVulnerabilities } from './closing-account.js';
+import { checkReentrancyRisk } from './reentrancy.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -86,6 +87,12 @@ const patterns: Pattern[] = [
     name: 'Account Closing Vulnerability',
     severity: 'critical',
     run: checkClosingVulnerabilities,
+  },
+  {
+    id: 'SOL011',
+    name: 'Cross-Program Reentrancy',
+    severity: 'high',
+    run: checkReentrancyRisk,
   },
 ];
 
