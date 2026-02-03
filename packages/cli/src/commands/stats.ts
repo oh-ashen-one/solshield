@@ -58,24 +58,32 @@ export function statsCommand() {
   // Capabilities
   console.log(chalk.bold('  Capabilities:'));
   console.log('');
-  console.log(chalk.green('  ✓'), 'Anchor IDL parsing');
-  console.log(chalk.green('  ✓'), 'Rust source code analysis');
-  console.log(chalk.green('  ✓'), 'AI-powered explanations');
-  console.log(chalk.green('  ✓'), 'On-chain program fetching');
+  console.log(chalk.green('  ✓'), 'Anchor IDL + Rust parsing');
+  console.log(chalk.green('  ✓'), 'GitHub repo/PR auditing');
+  console.log(chalk.green('  ✓'), 'CI/CD with SARIF output');
+  console.log(chalk.green('  ✓'), 'HTML report generation');
   console.log(chalk.green('  ✓'), 'NFT certificate generation');
   console.log(chalk.green('  ✓'), 'Watch mode for development');
-  console.log(chalk.green('  ✓'), 'JSON/Markdown output');
+  console.log(chalk.green('  ✓'), 'Git pre-commit/push hooks');
+  console.log(chalk.green('  ✓'), 'Config file support');
+  console.log(chalk.green('  ✓'), 'JSON/Markdown/Terminal output');
   console.log('');
   
   // Commands
-  console.log(chalk.bold('  Available Commands:'));
+  console.log(chalk.bold('  Available Commands (12):'));
   console.log('');
-  console.log(chalk.cyan('  solguard audit <path>'), '      Audit a program');
-  console.log(chalk.cyan('  solguard fetch <program-id>'), 'Fetch and audit on-chain');
-  console.log(chalk.cyan('  solguard certificate <path>'), 'Generate NFT certificate');
-  console.log(chalk.cyan('  solguard watch <path>'), '      Watch and auto-audit');
-  console.log(chalk.cyan('  solguard programs'), '          List known programs');
-  console.log(chalk.cyan('  solguard stats'), '             Show this info');
+  console.log(chalk.cyan('  solguard audit <path>'), '       Audit a program');
+  console.log(chalk.cyan('  solguard fetch <id>'), '         Fetch and audit on-chain');
+  console.log(chalk.cyan('  solguard github <repo>'), '      Audit GitHub repo/PR');
+  console.log(chalk.cyan('  solguard check <path>'), '       Quick pass/fail check');
+  console.log(chalk.cyan('  solguard ci <path>'), '          CI mode with SARIF');
+  console.log(chalk.cyan('  solguard watch <path>'), '       Watch and auto-audit');
+  console.log(chalk.cyan('  solguard report <path>'), '      Generate HTML report');
+  console.log(chalk.cyan('  solguard certificate <path>'), ' Generate NFT certificate');
+  console.log(chalk.cyan('  solguard init'), '               Create config file');
+  console.log(chalk.cyan('  solguard programs'), '           List known programs');
+  console.log(chalk.cyan('  solguard parse <idl>'), '        Parse IDL file');
+  console.log(chalk.cyan('  solguard stats'), '              Show this info');
   console.log('');
   
   // Footer
