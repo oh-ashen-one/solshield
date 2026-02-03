@@ -98,12 +98,12 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="text-center">
-            <div className="text-4xl font-bold text-emerald-400">10</div>
+            <div className="text-4xl font-bold text-emerald-400">15</div>
             <div className="text-zinc-500">Vuln Patterns</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-emerald-400">&lt;5s</div>
-            <div className="text-zinc-500">Avg Scan Time</div>
+            <div className="text-4xl font-bold text-emerald-400">9</div>
+            <div className="text-zinc-500">CLI Commands</div>
           </div>
           <div className="text-center">
             <div className="text-4xl font-bold text-emerald-400">$0</div>
@@ -111,8 +111,37 @@ export default function Home() {
           </div>
           <div className="text-center">
             <div className="text-4xl font-bold text-emerald-400">100%</div>
-            <div className="text-zinc-500">Open Source</div>
+            <div className="text-zinc-500">Agent-Coded</div>
           </div>
+        </div>
+      </section>
+      
+      {/* CLI Preview */}
+      <section className="max-w-6xl mx-auto px-4 py-12">
+        <h2 className="text-3xl font-bold text-center mb-8">Powerful CLI</h2>
+        <div className="bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 bg-zinc-800 border-b border-zinc-700">
+            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <span className="ml-2 text-zinc-500 text-sm">Terminal</span>
+          </div>
+          <pre className="p-6 text-sm text-zinc-300 overflow-x-auto">
+{`$ npm install -g @solguard/cli
+
+$ solguard audit ./my-program
+🛡️ SolGuard - Scanning...
+Found 3 critical, 5 high severity issues
+
+$ solguard github coral-xyz/anchor --pr 1234
+Cloning... Analyzing 47 files... Done!
+
+$ solguard ci . --fail-on high --sarif results.sarif
+✅ CI mode: SARIF generated for GitHub Code Scanning
+
+$ solguard watch ./program
+👀 Watching for changes... (Ctrl+C to stop)`}
+          </pre>
         </div>
       </section>
 
@@ -132,6 +161,11 @@ export default function Home() {
             { icon: '📊', title: 'Rounding Errors', desc: 'Precision loss in financial calculations', severity: 'Medium' },
             { icon: '🔄', title: 'Account Confusion', desc: 'Swappable accounts of the same type', severity: 'High' },
             { icon: '🚪', title: 'Closing Issues', desc: 'Account revival attacks and rent theft', severity: 'Critical' },
+            { icon: '♻️', title: 'Reentrancy', desc: 'State changes after cross-program calls', severity: 'High' },
+            { icon: '🎯', title: 'Arbitrary CPI', desc: 'Unconstrained program ID in invoke calls', severity: 'Critical' },
+            { icon: '👯', title: 'Duplicate Accounts', desc: 'Same account passed as multiple parameters', severity: 'High' },
+            { icon: '🏠', title: 'Rent Exemption', desc: 'Accounts that may be garbage collected', severity: 'Medium' },
+            { icon: '🎭', title: 'Type Cosplay', desc: 'Missing discriminator validation', severity: 'Critical' },
           ].map((feature, i) => (
             <div key={i} className="p-6 bg-zinc-800/50 border border-zinc-700 rounded-xl hover:border-zinc-600 transition">
               <div className="text-3xl mb-4">{feature.icon}</div>
