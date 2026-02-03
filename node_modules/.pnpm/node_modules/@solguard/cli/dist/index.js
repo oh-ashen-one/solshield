@@ -532,6 +532,395 @@ Or use a typed Account with appropriate constraints if possible.`
   return findings;
 }
 
+// src/patterns/cpi-check.ts
+function checkCpiVulnerabilities(input) {
+  const rust = input.rust;
+  const findings = [];
+  if (!rust?.files) return findings;
+  let counter = 1;
+  for (const file of rust.files) {
+    const lines = file.content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineNum = i + 1;
+      if (/\binvoke\s*\(/.test(line) && !line.includes("invoke_signed")) {
+        const context = lines.slice(Math.max(0, i - 10), Math.min(lines.length, i + 5)).join("\n");
+        if (!/(program_id|program\.key\(\)).*==|require.*program/.test(context)) {
+          findings.push({
+            id: `SOL007-${counter++}`,
+            pattern: "cpi-vulnerability",
+            severity: "high",
+            title: "CPI invoke() without program ID verification",
+            description: "Cross-program invocation (invoke) is called without verifying the target program ID. An attacker could substitute a malicious program with the same interface, leading to arbitrary code execution with your program's privileges.",
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Verify the program ID before CPI:
+require_keys_eq!(target_program.key(), expected_program::ID, ErrorCode::InvalidProgram);
+invoke(&instruction, &account_infos)?;`
+          });
+        }
+      }
+      if (/invoke_signed\s*\(/.test(line)) {
+        const context = lines.slice(i, Math.min(lines.length, i + 10)).join("\n");
+        if (/seeds\s*=\s*\[\s*b"[^"]+"\s*\]/.test(context) && !context.includes(".key()") && !context.includes(".as_ref()")) {
+          findings.push({
+            id: `SOL007-${counter++}`,
+            pattern: "cpi-static-seeds",
+            severity: "medium",
+            title: "invoke_signed() with static-only seeds",
+            description: "The PDA seeds for invoke_signed appear to contain only static values without any dynamic components (like user pubkey). This could lead to a single global PDA that any user can interact with, potentially causing unauthorized access.",
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Include dynamic seeds to create user-specific PDAs:
+let seeds = &[
+    b"prefix",
+    user.key().as_ref(),
+    &[bump],
+];`
+          });
+        }
+      }
+      if (/AccountInfo.*program/.test(line) && !/Program<'info/.test(line)) {
+        const context = lines.slice(Math.max(0, i - 5), Math.min(lines.length, i + 10)).join("\n");
+        if (/invoke/.test(context) && !/(executable|key\(\)\s*==|CHECK:)/.test(context)) {
+          findings.push({
+            id: `SOL007-${counter++}`,
+            pattern: "cpi-unchecked-program",
+            severity: "critical",
+            title: "CPI to unverified program account",
+            description: "A program account is passed as AccountInfo and used for CPI without verification. The account might not be executable or could be a different program than expected. Use Anchor's Program<> type or manually verify the executable flag and program ID.",
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Use Anchor's Program type for automatic verification:
+pub token_program: Program<'info, Token>,
+
+Or manually verify:
+require!(program_account.executable, ErrorCode::NotExecutable);
+require_keys_eq!(program_account.key(), expected::ID, ErrorCode::InvalidProgram);`
+          });
+        }
+      }
+    }
+  }
+  return findings;
+}
+
+// src/patterns/rounding.ts
+function checkRoundingErrors(input) {
+  const rust = input.rust;
+  const findings = [];
+  if (!rust?.files) return findings;
+  let counter = 1;
+  for (const file of rust.files) {
+    const lines = file.content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineNum = i + 1;
+      if (line.trim().startsWith("//")) continue;
+      if (/\/.*\*/.test(line) || /\bdiv\s*\(.*\).*mul/.test(line)) {
+        if (!/(ceil|floor|round|checked_div.*checked_mul)/.test(line)) {
+          findings.push({
+            id: `SOL008-${counter++}`,
+            pattern: "rounding-division-first",
+            severity: "medium",
+            title: "Division before multiplication may cause precision loss",
+            description: "Performing division before multiplication can lead to precision loss due to integer truncation. In financial calculations, this can result in users receiving fewer tokens than expected, or protocol fees being under-collected.",
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Reorder to multiply before divide:
+// Instead of: (amount / total) * shares
+// Use: (amount * shares) / total
+
+// Or use fixed-point math:
+let result = amount
+    .checked_mul(shares)?
+    .checked_div(total)?;`
+          });
+        }
+      }
+      if (/(amount|balance|tokens?).*\/.*10/.test(line) || /\/ 1_?000_?000/.test(line)) {
+        if (!/decimals|DECIMALS|checked_div/.test(line)) {
+          findings.push({
+            id: `SOL008-${counter++}`,
+            pattern: "rounding-decimal-truncation",
+            severity: "low",
+            title: "Potential decimal truncation in token calculation",
+            description: "Division by powers of 10 (often for decimal conversion) without proper rounding may truncate small amounts. Consider whether rounding up or down is appropriate for your use case.",
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Consider explicit rounding direction:
+// Round down (default, favors protocol):
+let amount = raw_amount / 10u64.pow(decimals);
+
+// Round up (favors user):
+let amount = (raw_amount + 10u64.pow(decimals) - 1) / 10u64.pow(decimals);`
+          });
+        }
+      }
+      if (/(fee|commission|tax).*[*\/]/.test(line.toLowerCase())) {
+        const context = lines.slice(Math.max(0, i - 2), Math.min(lines.length, i + 3)).join("\n");
+        if (!/(min|minimum|max|\.max\(|\.min\()/.test(context.toLowerCase())) {
+          findings.push({
+            id: `SOL008-${counter++}`,
+            pattern: "rounding-zero-fee",
+            severity: "medium",
+            title: "Fee calculation may round to zero",
+            description: "Fee calculations on small amounts may truncate to zero, allowing users to transact without paying fees. Consider enforcing a minimum fee or using ceiling division for fee calculations.",
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Enforce minimum fee or use ceiling division:
+// Option 1: Minimum fee
+let fee = calculated_fee.max(MINIMUM_FEE);
+
+// Option 2: Ceiling division (rounds up)
+let fee = (amount * fee_rate + FEE_DENOMINATOR - 1) / FEE_DENOMINATOR;`
+          });
+        }
+      }
+      if (/(shares?|lp_?tokens?|mint_amount).*[=].*[\/]/.test(line.toLowerCase())) {
+        if (!/(checked_|ceil|floor|round)/.test(line)) {
+          findings.push({
+            id: `SOL008-${counter++}`,
+            pattern: "rounding-share-calculation",
+            severity: "medium",
+            title: "Share calculation may have rounding issues",
+            description: "LP token or share calculations using division may lead to rounding exploits. First depositor attacks and share inflation attacks often exploit rounding in these calculations.",
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Use safe share calculation patterns:
+// For minting (round down to protect protocol):
+let shares = if total_supply == 0 {
+    deposit_amount
+} else {
+    deposit_amount
+        .checked_mul(total_supply)?
+        .checked_div(total_assets)?
+};
+
+// Consider minimum share requirements for first deposit`
+          });
+        }
+      }
+    }
+  }
+  return findings;
+}
+
+// src/patterns/account-confusion.ts
+function checkAccountConfusion(input) {
+  const rust = input.rust;
+  const findings = [];
+  if (!rust?.files) return findings;
+  let counter = 1;
+  for (const file of rust.files) {
+    const lines = file.content.split("\n");
+    const content = file.content;
+    const accountPattern = /pub\s+(\w+):\s*(Account|AccountInfo|UncheckedAccount)<'info(?:,\s*(\w+))?>/g;
+    const accounts = [];
+    let match;
+    while ((match = accountPattern.exec(content)) !== null) {
+      const lineNum = content.substring(0, match.index).split("\n").length;
+      accounts.push({
+        name: match[1],
+        type: match[2],
+        dataType: match[3],
+        line: lineNum
+      });
+    }
+    for (let i = 0; i < accounts.length; i++) {
+      for (let j = i + 1; j < accounts.length; j++) {
+        const a = accounts[i];
+        const b = accounts[j];
+        if (a.dataType && a.dataType === b.dataType && a.type === "Account") {
+          const hasDiscrimination = new RegExp(
+            `(${a.name}|${b.name}).*!=.*(${a.name}|${b.name})|require.*${a.name}.*${b.name}|constraint.*${a.name}.*!=.*${b.name}`
+          ).test(content);
+          if (!hasDiscrimination) {
+            findings.push({
+              id: `SOL009-${counter++}`,
+              pattern: "account-confusion",
+              severity: "high",
+              title: `Accounts '${a.name}' and '${b.name}' may be confusable`,
+              description: `Both '${a.name}' and '${b.name}' are of type ${a.dataType}. An attacker might pass the same account for both, or swap them, leading to unexpected behavior. This is especially dangerous in transfer/swap operations.`,
+              location: {
+                file: file.path,
+                line: a.line
+              },
+              suggestion: `Add constraints to ensure accounts are different:
+#[account(
+    constraint = ${a.name}.key() != ${b.name}.key() @ ErrorCode::SameAccount
+)]
+
+Or use different account types/discriminators for different purposes.`
+            });
+          }
+        }
+      }
+    }
+    for (const account of accounts) {
+      if (account.type === "AccountInfo" || account.type === "UncheckedAccount") {
+        if (/system_program|rent|clock|token_program|^_/.test(account.name)) continue;
+        const lineContent = lines[account.line - 1] || "";
+        const prevLines = lines.slice(Math.max(0, account.line - 4), account.line).join("\n");
+        if (!prevLines.includes("CHECK:")) {
+          const usagePattern = new RegExp(`${account.name}\\s*\\.\\s*(data|try_borrow_data|deserialize)`);
+          if (usagePattern.test(content)) {
+            findings.push({
+              id: `SOL009-${counter++}`,
+              pattern: "untyped-account-data-access",
+              severity: "high",
+              title: `Untyped account '${account.name}' has data accessed`,
+              description: `The account '${account.name}' is declared as ${account.type} but its data is accessed. Without type validation, an attacker could pass any account with arbitrary data, potentially bypassing security checks.`,
+              location: {
+                file: file.path,
+                line: account.line
+              },
+              code: lineContent.trim(),
+              suggestion: `Use a typed Account instead:
+pub ${account.name}: Account<'info, YourDataType>,
+
+Or manually validate the account discriminator:
+let data = ${account.name}.try_borrow_data()?;
+require!(data[..8] == YourDataType::DISCRIMINATOR, ErrorCode::InvalidAccount);`
+            });
+          }
+        }
+      }
+    }
+  }
+  return findings;
+}
+
+// src/patterns/closing-account.ts
+function checkClosingVulnerabilities(input) {
+  const rust = input.rust;
+  const findings = [];
+  if (!rust?.files) return findings;
+  let counter = 1;
+  for (const file of rust.files) {
+    const lines = file.content.split("\n");
+    const content = file.content;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineNum = i + 1;
+      if (/lamports.*=\s*0|\.sub\(.*lamports\)|transfer.*lamports/.test(line)) {
+        const context = lines.slice(i, Math.min(lines.length, i + 10)).join("\n");
+        if (!/(realloc|data.*=.*\[0|zero|clear|close\s*=)/.test(context)) {
+          findings.push({
+            id: `SOL010-${counter++}`,
+            pattern: "closing-without-zeroing",
+            severity: "critical",
+            title: "Account closed without zeroing data",
+            description: 'Lamports are being removed from an account (closing it) but the data is not being zeroed. An attacker can "revive" the account by sending lamports back before the runtime garbage collects it, potentially reusing stale data for exploits.',
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Zero the account data before closing:
+// Zero the data
+account.data.borrow_mut().fill(0);
+
+// Or use Anchor's close constraint:
+#[account(mut, close = recipient)]
+pub account_to_close: Account<'info, MyData>,`
+          });
+        }
+      }
+      if (/#\[account\([^)]*close\s*[,\)]/.test(line) && !/#\[account\([^)]*close\s*=/.test(line)) {
+        findings.push({
+          id: `SOL010-${counter++}`,
+          pattern: "close-missing-recipient",
+          severity: "medium",
+          title: "Account close without explicit recipient",
+          description: "The close constraint is used but no recipient is specified for the rent refund. This could lead to funds being sent to an unintended address.",
+          location: {
+            file: file.path,
+            line: lineNum
+          },
+          code: line.trim(),
+          suggestion: `Specify the recipient for the rent refund:
+#[account(mut, close = authority)]
+pub account_to_close: Account<'info, MyData>,`
+        });
+      }
+      if (/#\[account\([^)]*close\s*=\s*(\w+)/.test(line)) {
+        const match = line.match(/close\s*=\s*(\w+)/);
+        if (match) {
+          const recipient = match[1];
+          const recipientPattern = new RegExp(`${recipient}.*Signer|${recipient}.*authority|has_one.*${recipient}`, "i");
+          if (!recipientPattern.test(content)) {
+            findings.push({
+              id: `SOL010-${counter++}`,
+              pattern: "close-to-unvalidated",
+              severity: "high",
+              title: `Account closes to unvalidated recipient '${recipient}'`,
+              description: `The account is closed with rent sent to '${recipient}', but this recipient doesn't appear to be validated. An attacker might be able to specify their own address to receive the rent.`,
+              location: {
+                file: file.path,
+                line: lineNum
+              },
+              code: line.trim(),
+              suggestion: `Ensure the close recipient is validated:
+#[account(
+    mut,
+    close = authority,
+    has_one = authority  // Validate authority owns this account
+)]
+pub account_to_close: Account<'info, MyData>,
+
+pub authority: Signer<'info>,  // Must sign`
+            });
+          }
+        }
+      }
+      if (/realloc\s*\(\s*0/.test(line)) {
+        const context = lines.slice(Math.max(0, i - 5), Math.min(lines.length, i + 5)).join("\n");
+        if (!/close|lamports/.test(context)) {
+          findings.push({
+            id: `SOL010-${counter++}`,
+            pattern: "realloc-zero-incomplete",
+            severity: "medium",
+            title: "Account reallocated to zero size",
+            description: "The account is reallocated to zero size but may not be properly closed. The account will still exist with zero data but non-zero lamports, which could cause confusion.",
+            location: {
+              file: file.path,
+              line: lineNum
+            },
+            code: line.trim(),
+            suggestion: `Use Anchor's close constraint for proper account closure:
+#[account(mut, close = recipient)]
+
+Or manually transfer all lamports after realloc.`
+          });
+        }
+      }
+    }
+  }
+  return findings;
+}
+
 // src/patterns/index.ts
 var patterns = [
   {
@@ -569,6 +958,30 @@ var patterns = [
     name: "Missing Initialization Check",
     severity: "critical",
     run: checkMissingInitCheck
+  },
+  {
+    id: "SOL007",
+    name: "CPI Vulnerability",
+    severity: "high",
+    run: checkCpiVulnerabilities
+  },
+  {
+    id: "SOL008",
+    name: "Rounding Error",
+    severity: "medium",
+    run: checkRoundingErrors
+  },
+  {
+    id: "SOL009",
+    name: "Account Confusion",
+    severity: "high",
+    run: checkAccountConfusion
+  },
+  {
+    id: "SOL010",
+    name: "Account Closing Vulnerability",
+    severity: "critical",
+    run: checkClosingVulnerabilities
   }
 ];
 async function runPatterns(input) {

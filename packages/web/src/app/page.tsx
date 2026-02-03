@@ -97,7 +97,7 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="text-center">
-            <div className="text-4xl font-bold text-emerald-400">6</div>
+            <div className="text-4xl font-bold text-emerald-400">10</div>
             <div className="text-zinc-500">Vuln Patterns</div>
           </div>
           <div className="text-center">
@@ -127,6 +127,10 @@ export default function Home() {
             { icon: '🔑', title: 'Authority Bypass', desc: 'Sensitive operations without permission checks', severity: 'Critical' },
             { icon: '🏠', title: 'PDA Validation', desc: 'Program Derived Addresses without bump verification', severity: 'High' },
             { icon: '⚡', title: 'Initialization', desc: 'Accounts used without initialization verification', severity: 'Critical' },
+            { icon: '🔗', title: 'CPI Vulnerabilities', desc: 'Cross-program invocation without verification', severity: 'High' },
+            { icon: '📊', title: 'Rounding Errors', desc: 'Precision loss in financial calculations', severity: 'Medium' },
+            { icon: '🔄', title: 'Account Confusion', desc: 'Swappable accounts of the same type', severity: 'High' },
+            { icon: '🚪', title: 'Closing Issues', desc: 'Account revival attacks and rent theft', severity: 'Critical' },
           ].map((feature, i) => (
             <div key={i} className="p-6 bg-zinc-800/50 border border-zinc-700 rounded-xl hover:border-zinc-600 transition">
               <div className="text-3xl mb-4">{feature.icon}</div>

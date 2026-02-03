@@ -7,6 +7,10 @@ import { checkIntegerOverflow } from './overflow.js';
 import { checkPdaValidation } from './pda-validation.js';
 import { checkAuthorityBypass } from './authority-bypass.js';
 import { checkMissingInitCheck } from './init-check.js';
+import { checkCpiVulnerabilities } from './cpi-check.js';
+import { checkRoundingErrors } from './rounding.js';
+import { checkAccountConfusion } from './account-confusion.js';
+import { checkClosingVulnerabilities } from './closing-account.js';
 
 export interface PatternInput {
   idl: ParsedIdl | null;
@@ -58,6 +62,30 @@ const patterns: Pattern[] = [
     name: 'Missing Initialization Check',
     severity: 'critical',
     run: checkMissingInitCheck,
+  },
+  {
+    id: 'SOL007',
+    name: 'CPI Vulnerability',
+    severity: 'high',
+    run: checkCpiVulnerabilities,
+  },
+  {
+    id: 'SOL008',
+    name: 'Rounding Error',
+    severity: 'medium',
+    run: checkRoundingErrors,
+  },
+  {
+    id: 'SOL009',
+    name: 'Account Confusion',
+    severity: 'high',
+    run: checkAccountConfusion,
+  },
+  {
+    id: 'SOL010',
+    name: 'Account Closing Vulnerability',
+    severity: 'critical',
+    run: checkClosingVulnerabilities,
   },
 ];
 
