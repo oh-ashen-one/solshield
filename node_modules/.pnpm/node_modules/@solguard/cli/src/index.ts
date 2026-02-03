@@ -13,6 +13,7 @@ import { checkCommand } from './commands/check.js';
 import { generateExampleConfig } from './config.js';
 import { compareCommand } from './commands/compare.js';
 import { listCommand } from './commands/list.js';
+import { scoreCommand } from './commands/score.js';
 
 const program = new Command();
 
@@ -36,7 +37,7 @@ program
   .on('option:verbose-version', () => {
     console.log(`SolGuard v0.1.0`);
     console.log(`  Patterns: 130`);
-    console.log(`  Commands: 14`);
+    console.log(`  Commands: 15`);
     console.log(`  Built: 2026-02-02`);
     console.log(`  Node: ${process.version}`);
     console.log(`  Platform: ${process.platform}`);
@@ -98,6 +99,13 @@ program
   .command('stats')
   .description('Show SolGuard statistics and capabilities')
   .action(statsCommand);
+
+program
+  .command('score')
+  .description('Calculate security grade (A-F) for a program')
+  .argument('<path>', 'Path to program directory or Rust file')
+  .option('-o, --output <format>', 'Output format: terminal, json', 'terminal')
+  .action(scoreCommand);
 
 program
   .command('github')
