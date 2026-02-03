@@ -1,0 +1,31 @@
+{
+  "name": "SolGuard Development",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+  "postCreateCommand": "cd packages/cli && npm install && npm run build && npm link && cd ../web && npm install",
+  "postStartCommand": "cd packages/web && npm run dev &",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "SolGuard Web UI",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "remoteUser": "node"
+}

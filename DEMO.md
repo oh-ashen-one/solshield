@@ -2,8 +2,34 @@
 
 > Quick guide for hackathon judges to evaluate SolGuard
 
-## 🚀 Option 1: Web UI (Fastest)
+---
 
+## ⚡ FASTEST: One-Click Demo (No Setup!)
+
+### Option A: GitHub Codespaces (Recommended)
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-GitHub%20Codespaces-blue?logo=github)](https://codespaces.new/oh-ashen-one/solguard?quickstart=1)
+
+1. Click the badge above (or [this link](https://codespaces.new/oh-ashen-one/solguard?quickstart=1))
+2. Wait ~60 seconds for environment to spin up
+3. Web UI opens automatically at port 3000
+4. Click **"🔓 Vulnerable Vault"** → **"🔍 Run Security Audit"**
+5. See instant vulnerability detection!
+
+### Option B: Gitpod
+[![Open in Gitpod](https://img.shields.io/badge/Open%20in-Gitpod-orange?logo=gitpod)](https://gitpod.io/#https://github.com/oh-ashen-one/solguard)
+
+1. Click the badge above
+2. Authorize Gitpod if prompted
+3. Web UI starts automatically
+4. Same steps as above
+
+> **Why one-click?** Judges are busy. We respect your time. No `npm install` needed.
+
+---
+
+## 🖥️ Local Setup (If You Prefer)
+
+### Web UI
 ```bash
 cd packages/web
 pnpm install
@@ -11,14 +37,8 @@ pnpm dev
 # Open http://localhost:3000
 ```
 
-1. Click **"🔓 Vulnerable Vault"** button to load example code
-2. Click **"🔍 Run Security Audit"**
-3. See instant vulnerability detection with fix suggestions
-
-## 🖥️ Option 2: CLI
-
+### CLI
 ```bash
-# Install
 cd packages/cli
 pnpm install
 pnpm build
@@ -26,12 +46,9 @@ npm link
 
 # Audit our vulnerable example
 solguard audit ../examples/vulnerable/token-vault
-
-# Expected output: Multiple findings across severity levels
 ```
 
-## 📋 Option 3: Test Suite
-
+### Test Suite
 ```bash
 cd packages/cli
 pnpm test
@@ -48,7 +65,7 @@ The audit should detect:
 - **SOL003** - Integer overflow risks  
 - **SOL005** - Authority bypass
 - **SOL007** - CPI vulnerabilities
-- And many more...
+- And 126 more...
 
 ### 2. AI-Powered Explanations
 Each finding includes:
@@ -77,41 +94,45 @@ Each finding includes:
 
 ---
 
-## 🏗️ Architecture Summary
+## 🏗️ Architecture
 
 ```
-User Input (code/URL) 
-    → Parsing (Rust/IDL) 
-    → Detection (130 patterns) 
-    → Report (Terminal/JSON/SARIF)
-    → On-chain Storage (Anchor PDA)
-```
-
----
-
-## ⚡ Quick Verification
-
-```bash
-# Verify patterns exist
-ls packages/cli/src/patterns/*.ts | wc -l
-# Should show many pattern files
-
-# Run a quick audit
-echo 'pub authority: AccountInfo' | solguard audit --stdin
-# Should flag missing Signer constraint
+┌─────────────────────────────────────────────────────────────────┐
+│                         USER INPUT                               │
+│        (Paste code, GitHub URL, or on-chain Program ID)         │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      PARSING LAYER                               │
+│   Rust Parser (tree-sitter) │ IDL Parser │ GitHub/RPC Fetcher   │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    DETECTION ENGINE                              │
+│            130 VULNERABILITY PATTERNS (SOL001-SOL130)           │
+│   Core │ CPI │ Token │ PDA │ DeFi │ NFT │ Anchor │ Advanced    │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      OUTPUT LAYER                                │
+│     Terminal Report │ JSON │ Markdown │ SARIF (GitHub CI)       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🤖 Built by AI
 
-This entire codebase was written by **Midir**, an AI agent running on Clawdbot.
+This entire codebase was written by **Midir**, an AI agent running on [Clawdbot](https://github.com/clawdbot/clawdbot).
 
 - Zero human-written code
-- Continuous improvement via review/build cycles
+- Continuous improvement via automated review/build cycles
 - Self-documenting as it builds
 
-See [HACKATHON.md](HACKATHON.md) for the full story.
+See [HACKATHON.md](HACKATHON.md) for the full agent journey.
 
 ---
 

@@ -29,4 +29,11 @@ This creates a decentralized security layer where audit results are immutable, v
 https://github.com/oh-ashen-one/solguard
 
 ## Demo
-(Add demo URL or video link here)
+
+**One-Click Demo (No Setup Required):**
+- 🚀 **GitHub Codespaces:** https://codespaces.new/oh-ashen-one/solguard?quickstart=1
+- 🟠 **Gitpod:** https://gitpod.io/#https://github.com/oh-ashen-one/solguard
+
+Click either link → Wait for environment to spin up → Web UI opens automatically at port 3000 → Click "Vulnerable Vault" → Run audit!
+
+**Local Demo:** See [DEMO.md](DEMO.md) for CLI and local web UI instructions.

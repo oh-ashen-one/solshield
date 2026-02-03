@@ -1,0 +1,34 @@
+# Gitpod configuration for SolGuard
+# Open in Gitpod: https://gitpod.io/#https://github.com/oh-ashen-one/solguard
+
+image: node:20
+
+tasks:
+  - name: Install & Build CLI
+    init: |
+      cd packages/cli
+      npm install
+      npm run build
+      npm link
+    command: echo "CLI ready! Run: solguard --help"
+
+  - name: Start Web UI
+    init: |
+      cd packages/web
+      npm install
+    command: |
+      cd packages/web
+      npm run dev
+    openMode: split-right
+
+ports:
+  - port: 3000
+    onOpen: open-browser
+    visibility: public
+    name: SolGuard Web UI
+
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+    - esbenp.prettier-vscode
+    - bradlc.vscode-tailwindcss

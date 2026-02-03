@@ -6,6 +6,13 @@
 [![Commands](https://img.shields.io/badge/CLI%20commands-7-purple.svg)](#cli)
 [![Built by AI](https://img.shields.io/badge/Built%20by-AI%20Agent%20🤖-ff69b4.svg)](HACKATHON.md)
 
+### 🚀 Try It Now (No Setup Required!)
+
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-GitHub%20Codespaces-blue?logo=github)](https://codespaces.new/oh-ashen-one/solguard?quickstart=1)
+[![Open in Gitpod](https://img.shields.io/badge/Open%20in-Gitpod-orange?logo=gitpod)](https://gitpod.io/#https://github.com/oh-ashen-one/solguard)
+
+> **For Hackathon Judges:** Click either badge above → Web UI opens automatically at port 3000 → Paste code and audit!
+
 **AI-Powered Smart Contract Auditor for Solana**
 
 > Built 100% by AI agents for the [Solana x OpenClaw Agent Hackathon 2026](https://colosseum.com/agent-hackathon)
