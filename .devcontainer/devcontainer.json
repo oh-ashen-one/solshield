@@ -7,7 +7,8 @@
     }
   },
   "postCreateCommand": "cd packages/cli && npm install && npm run build && npm link && cd ../web && npm install",
-  "postStartCommand": "cd packages/web && npm run dev &",
+  "postStartCommand": "echo '🛡️ SolGuard ready! Web UI starting at port 3000...' && cd packages/web && npm run dev &",
+  "postAttachCommand": "echo '' && echo '╔════════════════════════════════════════════════════════════╗' && echo '║  🛡️ SOLGUARD - AI-Powered Smart Contract Auditor           ║' && echo '╠════════════════════════════════════════════════════════════╣' && echo '║  Web UI: Click port 3000 in Ports tab (or wait for popup)  ║' && echo '║  CLI:    solguard audit ./examples/vulnerable/token-vault  ║' && echo '║  Tests:  cd packages/cli && npm test                       ║' && echo '╚════════════════════════════════════════════════════════════╝' && echo ''",
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {
