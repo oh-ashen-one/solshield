@@ -2730,4 +2730,11 @@ program.command("report").description("Generate HTML audit report").argument("<p
   console.log(chalk9.green(`\u2713 Report saved to ${options.output}`));
   console.log(chalk9.dim(`  ${summary.total} findings | ${duration}ms`));
 });
+program.command("scan").description("Scan your code for vulnerabilities (alias for audit)").argument("[path]", "Path to scan", ".").option("-q, --quick", "Quick scan (skip AI explanations)").option("-o, --output <format>", "Output format: terminal, json, markdown", "terminal").action(async (path, options) => {
+  await auditCommand(path, {
+    output: options.output,
+    ai: !options.quick,
+    verbose: false
+  });
+});
 program.parse();
