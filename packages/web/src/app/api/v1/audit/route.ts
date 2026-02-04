@@ -6,7 +6,7 @@ const PATTERNS = [
     id: 'SOL001',
     title: 'Missing Owner Check',
     severity: 'critical',
-    pattern: /AccountInfo.*(?!.*owner\s*==)(?!.*has_one)/s,
+    pattern: /AccountInfo[\s\S]*(?![\s\S]*owner\s*==)(?![\s\S]*has_one)/,
     description: 'Account ownership is not verified. Anyone could pass a malicious account.',
     suggestion: 'Add owner validation: require!(account.owner == expected_program, ErrorCode::InvalidOwner);'
   },
