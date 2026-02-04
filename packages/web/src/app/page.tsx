@@ -103,7 +103,7 @@ export default function Home() {
             <div className="text-zinc-500">Vuln Patterns</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-emerald-400">16</div>
+            <div className="text-4xl font-bold text-emerald-400">17</div>
             <div className="text-zinc-500">CLI Commands</div>
           </div>
           <div className="text-center">
@@ -131,18 +131,20 @@ export default function Home() {
 {`$ git clone https://github.com/oh-ashen-one/solguard && cd solguard/packages/cli
 $ npm install && npm run build && npm link
 
+$ solguard demo
+🛡️ SolGuard Demo - Auditing examples/vulnerable/token-vault...
+Found 4 critical, 8 high severity issues!
+[SOL002] Missing Signer Check - Anyone can impersonate authority
+💡 Fix: pub authority: Signer<'info>
+
 $ solguard audit ./my-program
-🛡️ SolGuard - Scanning...
-Found 3 critical, 5 high severity issues
+🛡️ SolGuard - Scanning... Found 3 critical issues
 
 $ solguard github coral-xyz/anchor --pr 1234
 Cloning... Analyzing 47 files... Done!
 
-$ solguard ci . --fail-on high --sarif results.sarif
-✅ CI mode: SARIF generated for GitHub Code Scanning
-
-$ solguard watch ./program
-👀 Watching for changes... (Ctrl+C to stop)`}
+$ solguard score ./program
+🏆 GRADE: A+ (100/100) - Ready for production`}
           </pre>
         </div>
       </section>
