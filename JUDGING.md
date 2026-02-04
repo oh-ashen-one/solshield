@@ -1,12 +1,12 @@
-# 🏆 SolGuard Judging Guide
+# 🏆 SolShield Judging Guide
 
-Quick reference for hackathon judges evaluating SolGuard.
+Quick reference for hackathon judges evaluating SolShield.
 
 ---
 
 ## 30-Second Demo
 
-1. **Click:** [![Open in Codespaces](https://img.shields.io/badge/Open-Codespaces-blue)](https://codespaces.new/oh-ashen-one/solguard?quickstart=1)
+1. **Click:** [![Open in Codespaces](https://img.shields.io/badge/Open-Codespaces-blue)](https://codespaces.new/oh-ashen-one/SolShield?quickstart=1)
 2. **Wait:** ~60 seconds for environment
 3. **Try:** Click "Vulnerable Vault" → "Run Audit"
 4. **See:** Instant vulnerability detection with fixes
@@ -19,7 +19,7 @@ Quick reference for hackathon judges evaluating SolGuard.
 
 | Check | Evidence |
 |-------|----------|
-| Code compiles | [![CI](https://github.com/oh-ashen-one/solguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-ashen-one/solguard/actions) |
+| Code compiles | [![CI](https://github.com/oh-ashen-one/SolShield/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-ashen-one/SolShield/actions) |
 | Tests pass | 19 tests, 100% passing |
 | Demo works | One-click Codespaces |
 | Multiple interfaces | CLI, Web UI, API |
@@ -55,7 +55,7 @@ Quick reference for hackathon judges evaluating SolGuard.
 ## Quick Stats
 
 ```
-📊 SolGuard by the Numbers
+📊 SolShield by the Numbers
 ├── Vulnerability Patterns: 150
 ├── CLI Commands: 7
 ├── Tests: 19 (passing)
@@ -70,7 +70,7 @@ Quick reference for hackathon judges evaluating SolGuard.
 ## File Structure Tour
 
 ```
-solguard/
+SolShield/
 ├── packages/
 │   ├── cli/               ← Main product
 │   │   ├── src/patterns/  ← 150 vulnerability detectors
@@ -126,4 +126,4 @@ Don't want to run the tool? See pre-generated reports:
 
 ---
 
-*Thank you for evaluating SolGuard! 🛡️*
+*Thank you for evaluating SolShield! 🛡️*

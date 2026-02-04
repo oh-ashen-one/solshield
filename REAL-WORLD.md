@@ -1,6 +1,6 @@
-# 🔒 Real-World Exploits SolGuard Would Catch
+# 🔒 Real-World Exploits SolShield Would Catch
 
-This document shows how SolGuard's 150 patterns map to real Solana exploits. These are simplified examples based on public post-mortems.
+This document shows how SolShield's 150 patterns map to real Solana exploits. These are simplified examples based on public post-mortems.
 
 ---
 
@@ -8,7 +8,7 @@ This document shows how SolGuard's 150 patterns map to real Solana exploits. The
 
 **What happened:** Attacker bypassed signature verification by exploiting a deprecated system program.
 
-**SolGuard Pattern:** `SOL002 - Missing Signer Check`, `SOL029 - Instruction Introspection`
+**SolShield Pattern:** `SOL002 - Missing Signer Check`, `SOL029 - Instruction Introspection`
 
 ```rust
 // ❌ VULNERABLE: Trusts sysvar without verification
@@ -38,7 +38,7 @@ pub fn verify_signatures(
 }
 ```
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL029] Instruction Introspection
 └─ lib.rs:42 — instruction_sysvar loaded without key verification
@@ -51,7 +51,7 @@ pub fn verify_signatures(
 
 **What happened:** Attacker manipulated oracle price to artificially inflate collateral, then borrowed against it.
 
-**SolGuard Pattern:** `SOL018 - Oracle Manipulation`
+**SolShield Pattern:** `SOL018 - Oracle Manipulation`
 
 ```rust
 // ❌ VULNERABLE: Uses spot price without checks
@@ -85,7 +85,7 @@ pub fn calculate_collateral(
 }
 ```
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL018] Oracle Manipulation
 └─ lib.rs:28 — Price feed used without staleness or TWAP check
@@ -98,7 +98,7 @@ pub fn calculate_collateral(
 
 **What happened:** Missing validation allowed attacker to mint tokens by creating fake "collateral" accounts.
 
-**SolGuard Pattern:** `SOL001 - Missing Owner Check`, `SOL015 - Type Cosplay`
+**SolShield Pattern:** `SOL001 - Missing Owner Check`, `SOL015 - Type Cosplay`
 
 ```rust
 // ❌ VULNERABLE: No validation on collateral account
@@ -124,7 +124,7 @@ pub struct MintTokens<'info> {
 }
 ```
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL001] Missing Owner Check
 └─ lib.rs:15 — collateral: AccountInfo without owner validation
@@ -141,7 +141,7 @@ pub struct MintTokens<'info> {
 
 **What happened:** Private keys were accidentally logged and sent to a third-party service.
 
-**SolGuard Pattern:** `SOL039 - Memo and Logging`
+**SolShield Pattern:** `SOL039 - Memo and Logging`
 
 ```rust
 // ❌ VULNERABLE: Logging sensitive data
@@ -154,7 +154,7 @@ pub fn process_transaction(
 }
 ```
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL039] Memo and Logging
 └─ lib.rs:10 — msg! macro may log sensitive data
@@ -167,7 +167,7 @@ pub fn process_transaction(
 
 **What happened:** Flash loan manipulation of pool prices.
 
-**SolGuard Pattern:** `SOL019 - Flash Loan Vulnerability`
+**SolShield Pattern:** `SOL019 - Flash Loan Vulnerability`
 
 ```rust
 // ❌ VULNERABLE: State can be manipulated in same tx
@@ -195,7 +195,7 @@ pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
 }
 ```
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL019] Flash Loan Vulnerability
 └─ lib.rs:22 — Price used in same transaction it's read
@@ -210,9 +210,9 @@ pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
 
 **What happened:** Attacker created fake tick accounts with spoofed data to manipulate liquidity calculations.
 
-**SolGuard Pattern:** `SOL131 - Tick Account Spoofing`, `SOL140 - CLMM/AMM Exploit`
+**SolShield Pattern:** `SOL131 - Tick Account Spoofing`, `SOL140 - CLMM/AMM Exploit`
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL131] Tick Account Spoofing Risk
 └─ lib.rs:156 — Tick accounts must validate ownership to prevent spoofed tick data
@@ -225,9 +225,9 @@ pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
 
 **What happened:** Attacker injected a malicious governance proposal that drained the treasury.
 
-**SolGuard Pattern:** `SOL132 - Governance Proposal Injection`
+**SolShield Pattern:** `SOL132 - Governance Proposal Injection`
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL132] Missing Proposal State Validation
 └─ lib.rs:89 — Proposals must validate state transitions
@@ -240,9 +240,9 @@ pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
 
 **What happened:** Private keys exposed through insecure storage, affecting 9,000+ wallets.
 
-**SolGuard Pattern:** `SOL137 - Private Key Exposure`
+**SolShield Pattern:** `SOL137 - Private Key Exposure`
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL137] Key Material Serialization
 └─ lib.rs:34 — Private key material should never be serialized
@@ -255,9 +255,9 @@ pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
 
 **What happened:** Compromised employee used privileged access to drain bonding curve contracts.
 
-**SolGuard Pattern:** `SOL138 - Insider Threat Vector`
+**SolShield Pattern:** `SOL138 - Insider Threat Vector`
 
-**SolGuard Output:**
+**SolShield Output:**
 ```
 [SOL138] Single Point of Authority
 └─ lib.rs:12 — Single admin accounts are vulnerable to insider threats
@@ -268,7 +268,7 @@ pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
 
 ## Summary
 
-| Exploit | Loss | SolGuard Pattern | Would Catch |
+| Exploit | Loss | SolShield Pattern | Would Catch |
 |---------|------|------------------|-------------|
 | Wormhole | $320M | SOL002, SOL029, SOL142 | ✅ Yes |
 | Mango Markets | $114M | SOL018, SOL135 | ✅ Yes |
@@ -286,7 +286,7 @@ pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
 
 ## Disclaimer
 
-These are simplified examples for illustration. Real-world vulnerabilities often involve complex interactions. SolGuard is a detection tool, not a guarantee. Always conduct thorough manual review and professional audits for production code.
+These are simplified examples for illustration. Real-world vulnerabilities often involve complex interactions. SolShield is a detection tool, not a guarantee. Always conduct thorough manual review and professional audits for production code.
 
 ---
 

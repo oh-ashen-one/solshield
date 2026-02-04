@@ -1,13 +1,13 @@
-# Contributing to SolGuard
+# Contributing to SolShield
 
-Thank you for your interest in contributing to SolGuard! 🛡️
+Thank you for your interest in contributing to SolShield! 🛡️
 
 ## Quick Start
 
 ```bash
 # Clone the repo
-git clone https://github.com/oh-ashen-one/solguard
-cd solguard
+git clone https://github.com/oh-ashen-one/SolShield
+cd SolShield
 
 # Install dependencies
 pnpm install
@@ -23,7 +23,7 @@ pnpm test
 ## Project Structure
 
 ```
-solguard/
+SolShield/
 ├── packages/
 │   ├── cli/          # TypeScript CLI
 │   ├── web/          # Next.js frontend
