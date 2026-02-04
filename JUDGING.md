@@ -6,10 +6,18 @@ Quick reference for hackathon judges evaluating SolGuard.
 
 ## 30-Second Demo
 
+### Option A: Web UI (Codespaces)
 1. **Click:** [![Open in Codespaces](https://img.shields.io/badge/Open-Codespaces-blue)](https://codespaces.new/oh-ashen-one/solguard?quickstart=1)
 2. **Wait:** ~60 seconds for environment
 3. **Try:** Click "Vulnerable Vault" → "Run Audit"
 4. **See:** Instant vulnerability detection with fixes
+
+### Option B: CLI Demo (if already cloned)
+```bash
+cd packages/cli && npm install && npm run build && npm link
+solguard demo
+```
+One command shows the full capability — audits included vulnerable example with findings and fix suggestions.
 
 ---
 
@@ -57,7 +65,7 @@ Quick reference for hackathon judges evaluating SolGuard.
 ```
 📊 SolGuard by the Numbers
 ├── Vulnerability Patterns: 130
-├── CLI Commands: 7
+├── CLI Commands: 17
 ├── Tests: 19 (passing)
 ├── Lines of Code: ~15,000
 ├── Commits: 99+
