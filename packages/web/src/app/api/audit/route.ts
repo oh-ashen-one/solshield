@@ -3,6 +3,7 @@ import { writeFileSync, unlinkSync, mkdirSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import { tmpdir } from 'os';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +17,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create temp directory for the code
-    const tempDir = join(process.cwd(), '.tmp');
+    // Use system temp dir for serverless compatibility (Netlify, Vercel)
+    const tempDir = join(tmpdir(), 'solshield');
     if (!existsSync(tempDir)) {
       mkdirSync(tempDir, { recursive: true });
     }
