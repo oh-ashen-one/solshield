@@ -32,7 +32,7 @@ interface CertificateMetadata {
 export function generateCertificateMetadata(
   result: AuditResult,
   programId: string,
-  imageUri: string = 'https://solguard.dev/certificate.png'
+  imageUri: string = 'https://solshieldai.netlify.app/certificate.png'
 ): CertificateMetadata {
   const passed = result.passed;
   const findingsHash = createHash('sha256')
@@ -41,13 +41,13 @@ export function generateCertificateMetadata(
     .slice(0, 16);
 
   return {
-    name: `SolGuard Audit: ${programId.slice(0, 8)}...`,
+    name: `SolShield Audit: ${programId.slice(0, 8)}...`,
     symbol: 'AUDIT',
     description: passed
-      ? `✅ This program passed the SolGuard security audit with no critical or high severity issues.`
-      : `⚠️ This program was audited by SolGuard. ${result.summary.critical} critical and ${result.summary.high} high severity issues were found.`,
+      ? `✅ This program passed the SolShield security audit with no critical or high severity issues.`
+      : `⚠️ This program was audited by SolShield. ${result.summary.critical} critical and ${result.summary.high} high severity issues were found.`,
     image: imageUri,
-    external_url: `https://solguard.dev/audit/${programId}`,
+    external_url: `https://solshieldai.netlify.app/audit/${programId}`,
     attributes: [
       {
         trait_type: 'Status',
@@ -200,7 +200,7 @@ export function generateCertificateSvg(
   <text x="200" y="370" text-anchor="middle" fill="#71717A" font-family="system-ui" font-size="11">Audited on ${date}</text>
   
   <!-- Footer -->
-  <text x="200" y="450" text-anchor="middle" fill="#52525B" font-family="system-ui" font-size="10">Powered by AI • solguard.dev</text>
+  <text x="200" y="450" text-anchor="middle" fill="#52525B" font-family="system-ui" font-size="10">Powered by AI • solshieldai.netlify.app</text>
   <text x="200" y="470" text-anchor="middle" fill="#3F3F46" font-family="system-ui" font-size="8">This certificate is stored on the Solana blockchain</text>
 </svg>
   `.trim();

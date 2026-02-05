@@ -45,7 +45,7 @@ Add this badge to your README:
 Once on-chain audit registry is deployed, badges will be dynamic:
 
 ```markdown
-![SolGuard Status](https://solguard.dev/badge/<PROGRAM_ID>)
+![SolShield Status](https://solshieldai.netlify.app/badge/<PROGRAM_ID>)
 ```
 
 This will query the on-chain registry and show real-time audit status.

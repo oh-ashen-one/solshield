@@ -23,7 +23,7 @@ Where we're heading after the hackathon.
 ### Core
 - [ ] Deploy Anchor program to devnet
 - [ ] Deploy Anchor program to mainnet
-- [ ] Launch hosted web UI (solguard.dev)
+- [ ] Launch hosted web UI (solshieldai.netlify.app)
 - [ ] Publish `@solguard/cli` to npm
 
 ### Features

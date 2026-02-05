@@ -10,11 +10,10 @@ export default function ApiDocs() {
             <span className="text-xl md:text-2xl">🛡️</span>
             <span className="text-lg md:text-xl font-bold">SolShield</span>
           </Link>
-          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-zinc-400 hover:text-white transition">Home</Link>
             <Link href="/patterns" className="text-zinc-400 hover:text-white transition">Patterns</Link>
-            <Link href="/api" className="text-white font-medium">API</Link>
+            <Link href="/api" className="text-white font-medium">SDK</Link>
             <a 
               href="https://github.com/oh-ashen-one/solshield" 
               target="_blank" 
@@ -24,25 +23,16 @@ export default function ApiDocs() {
               GitHub
             </a>
           </nav>
-          {/* Mobile nav */}
           <nav className="flex md:hidden items-center gap-3 text-sm">
             <Link href="/" className="text-zinc-400 hover:text-white">Home</Link>
-            <Link href="/api" className="text-white font-medium">API</Link>
-            <a 
-              href="https://github.com/oh-ashen-one/solshield" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-zinc-400 hover:text-white"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-            </a>
+            <Link href="/api" className="text-white font-medium">SDK</Link>
           </nav>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-12">
-        <h1 className="text-4xl font-bold mb-2">API Documentation</h1>
-        <p className="text-zinc-400 mb-8">Public REST API for AI agents and developers to audit Solana smart contracts</p>
+        <h1 className="text-4xl font-bold mb-2">SDK Documentation</h1>
+        <p className="text-zinc-400 mb-8">Install and use SolShield in your JavaScript/TypeScript projects</p>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
@@ -52,150 +42,162 @@ export default function ApiDocs() {
           </div>
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-blue-400">Free</div>
-            <div className="text-sm text-zinc-400">During Beta</div>
+            <div className="text-sm text-zinc-400">Open Source</div>
           </div>
           <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-purple-400">JSON</div>
-            <div className="text-sm text-zinc-400">Response Format</div>
+            <div className="text-2xl font-bold text-purple-400">TS</div>
+            <div className="text-sm text-zinc-400">Full Types</div>
           </div>
         </div>
 
         <div className="space-y-8">
-          {/* Base URL */}
+          {/* Installation */}
           <section className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-            <h2 className="text-xl font-semibold mb-4">Base URL</h2>
-            <code className="bg-zinc-900 px-4 py-2 rounded-lg text-emerald-400 block">
-              https://solguard.dev/api/v1
-            </code>
+            <h2 className="text-xl font-semibold mb-4">Installation</h2>
+            <pre className="bg-zinc-900 px-4 py-3 rounded-lg text-cyan-400 block overflow-x-auto">
+npm install solshield
+            </pre>
+            <a 
+              href="https://www.npmjs.com/package/solshield"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-3 text-sm text-zinc-400 hover:text-white transition"
+            >
+              View on npm →
+            </a>
           </section>
 
-          {/* Audit Endpoint */}
+          {/* Quick Start */}
           <section className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="px-3 py-1 bg-emerald-500 text-black text-sm font-bold rounded">POST</span>
-              <code className="text-lg">/audit</code>
-            </div>
-            
-            <p className="text-zinc-300 mb-6">
-              Audit Rust/Anchor smart contract code and receive vulnerability findings. 
-              Scans against <Link href="/patterns" className="text-emerald-400 hover:underline">150 vulnerability patterns</Link>.
-            </p>
-
-            <h3 className="font-semibold mb-2 text-zinc-200">Request Body</h3>
-            <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm mb-6 border border-zinc-700">
-{`{
-  "code": "use anchor_lang::prelude::*; ...",  // Required: Rust source code
-  "format": "json",                            // Optional: "json" (default) | "markdown"
-  "ai": false                                  // Optional: Include AI explanations (slower)
-}`}
-            </pre>
-
-            <h3 className="font-semibold mb-2 text-zinc-200">Response</h3>
-            <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm mb-6 border border-zinc-700">
-{`{
-  "success": true,
-  "passed": false,
-  "timestamp": "2026-02-02T20:00:00.000Z",
-  "summary": {
-    "critical": 2,
-    "high": 3,
-    "medium": 1,
-    "low": 0,
-    "info": 0,
-    "total": 6
-  },
-  "severityScore": 155,
-  "findings": [
-    {
-      "id": "SOL002-1",
-      "pattern": "SOL002",
-      "severity": "critical",
-      "title": "Authority account 'authority' is not a Signer",
-      "description": "The authority account can be any AccountInfo...",
-      "location": { "file": "lib.rs", "line": 42, "column": 5 },
-      "suggestion": "Change to: pub authority: Signer<'info>",
-      "codeSnippet": "pub authority: AccountInfo<'info>"
-    }
-  ],
-  "executionTimeMs": 234,
-  "apiVersion": "1.0.0"
-}`}
-            </pre>
-
-            <h3 className="font-semibold mb-2 text-zinc-200">Example (cURL)</h3>
+            <h2 className="text-xl font-semibold mb-4">Quick Start</h2>
             <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm border border-zinc-700">
-{`curl -X POST https://solguard.dev/api/v1/audit \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "code": "use anchor_lang::prelude::*;\\n\\n#[program]\\npub mod my_program { ... }"
-  }'`}
+{`import { scan } from 'solshield';
+
+const result = await scan(\`
+  pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+    let vault = &mut ctx.accounts.vault;
+    vault.balance = vault.balance - amount;  // No overflow check!
+    Ok(())
+  }
+\`);
+
+console.log(result.summary);
+// { critical: 0, high: 1, medium: 0, low: 0, info: 0, total: 1 }
+
+console.log(result.passed);
+// false (has high severity finding)`}
             </pre>
           </section>
 
-          {/* Health Check */}
+          {/* API Reference */}
           <section className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="px-3 py-1 bg-blue-500 text-white text-sm font-bold rounded">GET</span>
-              <code className="text-lg">/audit</code>
-            </div>
+            <h2 className="text-xl font-semibold mb-4">API Reference</h2>
             
-            <p className="text-zinc-300 mb-4">
-              Health check endpoint. Returns API status and version info.
-            </p>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-mono text-lg text-emerald-400 mb-2">scan(code, options?)</h3>
+                <p className="text-zinc-300 mb-3">Scan Solana/Anchor code for vulnerabilities.</p>
+                <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm border border-zinc-700">
+{`const result = await scan(code, {
+  patterns: ['SOL001', 'SOL002'],  // Only run specific patterns
+  minSeverity: 'high',             // Minimum severity to report
+  includeInfo: false,              // Include info-level findings
+});`}
+                </pre>
+              </div>
 
+              <div>
+                <h3 className="font-mono text-lg text-emerald-400 mb-2">listPatterns()</h3>
+                <p className="text-zinc-300 mb-3">Get all 150 vulnerability patterns.</p>
+                <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm border border-zinc-700">
+{`import { listPatterns } from 'solshield';
+
+const patterns = listPatterns();
+console.log(patterns.length); // 150`}
+                </pre>
+              </div>
+
+              <div>
+                <h3 className="font-mono text-lg text-emerald-400 mb-2">getPattern(id)</h3>
+                <p className="text-zinc-300 mb-3">Get a specific pattern by ID.</p>
+                <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm border border-zinc-700">
+{`import { getPattern } from 'solshield';
+
+const pattern = getPattern('SOL001');
+// { id: 'SOL001', name: 'Missing Owner Check', severity: 'critical', ... }`}
+                </pre>
+              </div>
+            </div>
+          </section>
+
+          {/* Response Types */}
+          <section className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+            <h2 className="text-xl font-semibold mb-4">Response Types</h2>
             <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm border border-zinc-700">
-{`{
-  "status": "ok",
-  "service": "SolGuard Audit API",
-  "version": "1.0.0",
-  "patterns": 150
+{`interface ScanResult {
+  timestamp: string;
+  findings: Finding[];
+  summary: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    info: number;
+    total: number;
+  };
+  passed: boolean;      // True if no critical/high findings
+  patternsUsed: number;
+}
+
+interface Finding {
+  id: string;           // Pattern ID (e.g., SOL001)
+  pattern: string;      // Pattern name
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  title: string;
+  description: string;
+  location: { file: string; line?: number };
+  suggestion?: string;
 }`}
             </pre>
           </section>
 
-          {/* Error Responses */}
+          {/* Use Cases */}
           <section className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-            <h2 className="text-xl font-semibold mb-4">Error Responses</h2>
+            <h2 className="text-xl font-semibold mb-4">Use Cases</h2>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <code className="text-red-400">400 Bad Request</code>
-                <pre className="bg-zinc-900 p-3 rounded-lg text-sm mt-2 border border-zinc-700">
-{`{ "error": "Missing required field: code" }`}
-                </pre>
-              </div>
-              
-              <div>
-                <code className="text-red-400">413 Payload Too Large</code>
-                <pre className="bg-zinc-900 p-3 rounded-lg text-sm mt-2 border border-zinc-700">
-{`{ "error": "Code exceeds maximum size of 500KB" }`}
-                </pre>
-              </div>
-              
-              <div>
-                <code className="text-red-400">429 Too Many Requests</code>
-                <pre className="bg-zinc-900 p-3 rounded-lg text-sm mt-2 border border-zinc-700">
-{`{ "error": "Rate limit exceeded. Try again in 60 seconds." }`}
-                </pre>
-              </div>
-            </div>
-          </section>
+                <h3 className="font-semibold text-zinc-200 mb-2">CI/CD Integration</h3>
+                <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm border border-zinc-700">
+{`import { scan } from 'solshield';
+import { readFileSync } from 'fs';
 
-          {/* Rate Limits */}
-          <section className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-            <h2 className="text-xl font-semibold mb-4">Rate Limits</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-zinc-900 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-zinc-200">100</div>
-                <div className="text-sm text-zinc-500">requests/min</div>
+const code = readFileSync('./programs/my_program/src/lib.rs', 'utf8');
+const result = await scan(code);
+
+if (!result.passed) {
+  console.error('Security audit failed!');
+  console.error(result.findings);
+  process.exit(1);
+}`}
+                </pre>
               </div>
-              <div className="bg-zinc-900 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-zinc-200">500KB</div>
-                <div className="text-sm text-zinc-500">max code size</div>
-              </div>
-              <div className="bg-zinc-900 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-zinc-200">60s</div>
-                <div className="text-sm text-zinc-500">timeout</div>
+
+              <div>
+                <h3 className="font-semibold text-zinc-200 mb-2">IDE/Editor Extension</h3>
+                <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm border border-zinc-700">
+{`import { scan } from 'solshield';
+
+async function onDocumentChange(code: string) {
+  const { findings } = await scan(code, { minSeverity: 'medium' });
+  
+  return findings.map(f => ({
+    line: f.location.line,
+    message: \`[\${f.id}] \${f.title}\`,
+    severity: f.severity,
+  }));
+}`}
+                </pre>
               </div>
             </div>
           </section>
@@ -231,7 +233,7 @@ export default function ApiDocs() {
           <section className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-xl p-6 border border-emerald-500/20">
             <h2 className="text-xl font-semibold mb-2">150 vulnerability patterns</h2>
             <p className="text-zinc-300 mb-4">
-              SolGuard detects vulnerabilities across core security, CPI, DeFi, NFT, token, 
+              SolShield detects vulnerabilities across core security, CPI, DeFi, NFT, token, 
               PDA, Anchor, and more categories.
             </p>
             <Link 
@@ -240,27 +242,6 @@ export default function ApiDocs() {
             >
               View All Patterns →
             </Link>
-          </section>
-
-          {/* CLI */}
-          <section className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-            <h2 className="text-xl font-semibold mb-4">CLI Alternative</h2>
-            <p className="text-zinc-300 mb-4">
-              For local development and CI/CD integration, use the SolGuard CLI:
-            </p>
-            <pre className="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm border border-zinc-700">
-{`# Install
-npm install -g @solguard/cli
-
-# Audit local program
-solguard audit ./my-program
-
-# Audit GitHub repo
-solguard github coral-xyz/anchor
-
-# CI mode with SARIF output
-solguard ci . --fail-on high --sarif results.sarif`}
-            </pre>
           </section>
         </div>
       </main>

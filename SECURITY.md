@@ -13,7 +13,7 @@ SolGuard is a security auditing tool, so we take security seriously. If you disc
 ### In the SolGuard Tool Itself
 
 1. **DO NOT** open a public issue
-2. Email: security@solguard.dev (or open a private GitHub Security Advisory)
+2. Open a [private GitHub Security Advisory](https://github.com/oh-ashen-one/solshield/security/advisories/new)
 3. Include:
    - Description of the vulnerability
    - Steps to reproduce
