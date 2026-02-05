@@ -282,6 +282,9 @@ import { checkHedgeProtocolStability, checkMeanFinanceDCA, checkHubbleLendingIso
 // New patterns SOL351-SOL370 (Feb 4 2026 - Night build session batch 13)
 import { checkAnchorInitIfNeeded, checkAccountCloseLamportDust, checkPdaSeedCollision, checkBorshDeserializationDoS, checkInvokeSignedSeedsMismatch, checkTokenAuthorityConfusion, checkWritableNotMutable, checkAccountCreationRentExemption, checkRecursiveCpiDepth, checkClockSysvarReliability, checkProgramLogSizeLimit, checkHeapMemoryExhaustion, checkAccountDataSizeChange, checkCpiAccountOrdering, checkProgramIdHardcoding, checkSysvarDeprecation, checkTokenAmountTruncation, checkNativeSolWrappedConfusion, checkToken2022TransferHook, checkMetadataUriValidation } from './solana-batched-patterns-13.js';
 
+// New patterns SOL371-SOL395 (Feb 5 2026 - Night build session batch 14 - Advanced Protocol Patterns)
+import { checkAldrinOrderBook, checkCrossChainReplay, checkOptionsVaultEpoch, checkLeverageVaultControls, checkSyntheticDebtTracking, checkZkProofVerification, checkCdpStability, checkDcaSecurity, checkLendingPoolIsolation, checkClmmFeeGrowth, checkLiquidationIncentive, checkNftStakingDuration, checkAmmInvariant, checkVestingContractSecurity, checkOrderBookDepth, checkPerpFundingRate, checkMultiCollateralRisk, checkStorageSlotAuth, checkVaaGuardianQuorum, checkDoubleClaimPrevention, checkMultisigThresholdBounds, checkStakePoolMechanics, checkTickArrayBoundary, checkPythConfidenceInterval, checkOracleGuardrails } from './solana-batched-patterns-14.js';
+
 export interface PatternInput {
   idl: ParsedIdl | null;
   rust: ParsedRust | null;
@@ -2154,6 +2157,157 @@ const patterns: Pattern[] = [
     name: 'Metadata URI Validation',
     severity: 'low',
     run: checkMetadataUriValidation,
+  },
+  // NEW PATTERNS SOL371-SOL395 (Feb 5 2026 - Night session batch 14)
+  {
+    id: 'SOL371',
+    name: 'Aldrin Order Book Manipulation',
+    severity: 'high',
+    run: checkAldrinOrderBook,
+  },
+  {
+    id: 'SOL372',
+    name: 'Cross-Chain Message Replay',
+    severity: 'critical',
+    run: checkCrossChainReplay,
+  },
+  {
+    id: 'SOL373',
+    name: 'Options Vault Epoch Security',
+    severity: 'high',
+    run: checkOptionsVaultEpoch,
+  },
+  {
+    id: 'SOL374',
+    name: 'Leverage Vault Controls (Francium)',
+    severity: 'critical',
+    run: checkLeverageVaultControls,
+  },
+  {
+    id: 'SOL375',
+    name: 'Synthetic Debt Tracking (Synthetify)',
+    severity: 'critical',
+    run: checkSyntheticDebtTracking,
+  },
+  {
+    id: 'SOL376',
+    name: 'ZK Proof Verification (Light)',
+    severity: 'critical',
+    run: checkZkProofVerification,
+  },
+  {
+    id: 'SOL377',
+    name: 'CDP Stability Mechanism (Hedge)',
+    severity: 'high',
+    run: checkCdpStability,
+  },
+  {
+    id: 'SOL378',
+    name: 'DCA Security (Mean Finance)',
+    severity: 'high',
+    run: checkDcaSecurity,
+  },
+  {
+    id: 'SOL379',
+    name: 'Lending Pool Isolation (Hubble)',
+    severity: 'high',
+    run: checkLendingPoolIsolation,
+  },
+  {
+    id: 'SOL380',
+    name: 'CLMM Fee Growth Tracking (Invariant)',
+    severity: 'high',
+    run: checkClmmFeeGrowth,
+  },
+  {
+    id: 'SOL381',
+    name: 'Liquidation Incentive (Larix)',
+    severity: 'high',
+    run: checkLiquidationIncentive,
+  },
+  {
+    id: 'SOL382',
+    name: 'NFT Staking Duration (Genopets)',
+    severity: 'medium',
+    run: checkNftStakingDuration,
+  },
+  {
+    id: 'SOL383',
+    name: 'AMM Invariant Preservation',
+    severity: 'critical',
+    run: checkAmmInvariant,
+  },
+  {
+    id: 'SOL384',
+    name: 'Vesting Contract Security (Streamflow)',
+    severity: 'critical',
+    run: checkVestingContractSecurity,
+  },
+  {
+    id: 'SOL385',
+    name: 'Order Book Depth Protection (Phoenix)',
+    severity: 'high',
+    run: checkOrderBookDepth,
+  },
+  {
+    id: 'SOL386',
+    name: 'Perpetual Funding Rate Manipulation',
+    severity: 'high',
+    run: checkPerpFundingRate,
+  },
+  {
+    id: 'SOL387',
+    name: 'Multi-Collateral Type Risk (Parrot)',
+    severity: 'high',
+    run: checkMultiCollateralRisk,
+  },
+  {
+    id: 'SOL388',
+    name: 'Storage Slot Authorization (Audius)',
+    severity: 'critical',
+    run: checkStorageSlotAuth,
+  },
+  {
+    id: 'SOL389',
+    name: 'VAA Guardian Quorum (Wormhole Deep)',
+    severity: 'critical',
+    run: checkVaaGuardianQuorum,
+  },
+  {
+    id: 'SOL390',
+    name: 'Double-Claim Prevention (Debridge)',
+    severity: 'critical',
+    run: checkDoubleClaimPrevention,
+  },
+  {
+    id: 'SOL391',
+    name: 'Multisig Threshold Bounds (Cashmere)',
+    severity: 'critical',
+    run: checkMultisigThresholdBounds,
+  },
+  {
+    id: 'SOL392',
+    name: 'Stake Pool Mechanics (Marinade)',
+    severity: 'medium',
+    run: checkStakePoolMechanics,
+  },
+  {
+    id: 'SOL393',
+    name: 'Tick Array Boundary (Whirlpool)',
+    severity: 'high',
+    run: checkTickArrayBoundary,
+  },
+  {
+    id: 'SOL394',
+    name: 'Pyth Confidence Interval Check',
+    severity: 'high',
+    run: checkPythConfidenceInterval,
+  },
+  {
+    id: 'SOL395',
+    name: 'Oracle Guardrails (Drift)',
+    severity: 'high',
+    run: checkOracleGuardrails,
   },
 ];
 
