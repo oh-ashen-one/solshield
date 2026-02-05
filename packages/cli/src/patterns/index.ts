@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 4095+ security patterns for Solana smart contract auditing
- * Updated: Feb 5, 2026 5:00 PM - Added Batch 54 Helius Exploit Deep Dives (SOL2071-SOL2140)
+ * 4235+ security patterns for Solana smart contract auditing
+ * Updated: Feb 5, 2026 5:30 PM - Added Batch 55-56 Academic + PoC Patterns (SOL2141-SOL2280)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -20,6 +20,10 @@ import { checkBatch53Patterns } from './solana-batched-patterns-53.js';
 
 // Import Batch 54 patterns (Feb 5, 2026 5:00 PM) - Helius Exploit Deep Dives
 import { checkBatch54Patterns } from './solana-batched-patterns-54.js';
+
+// Import Batch 55-56 patterns (Feb 5, 2026 5:30 PM) - Academic + PoC Research
+import { checkBatch55Patterns } from './solana-batched-patterns-55.js';
+import { checkBatch56Patterns } from './solana-batched-patterns-56.js';
 
 export interface Finding {
   id: string;
@@ -558,6 +562,20 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 54 patterns fail
   }
   
+  // Run Batch 55 patterns (70 patterns: arXiv Academic + Sealevel + Audit Research)
+  try {
+    findings.push(...checkBatch55Patterns(input));
+  } catch (error) {
+    // Skip if Batch 55 patterns fail
+  }
+  
+  // Run Batch 56 patterns (70 patterns: PoC Framework + Protocol-Specific + Advanced DeFi)
+  try {
+    findings.push(...checkBatch56Patterns(input));
+  } catch (error) {
+    // Skip if Batch 56 patterns fail
+  }
+  
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -615,7 +633,7 @@ export function listPatterns(): Pattern[] {
 }
 
 // Export total pattern count (including dynamic imports when available)
-// Updated: Feb 5, 2026 5:00 PM - Added SOL2071-SOL2140 Helius Exploit Deep Dives (70 new)
+// Updated: Feb 5, 2026 5:30 PM - Added SOL2141-SOL2280 Academic + PoC Research (140 new)
 // New batches: 
 //   - solana-batched-patterns-41.ts (SOL1161-SOL1230): CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance
 //   - solana-batched-patterns-42.ts (SOL1231-SOL1300): DeFi (AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming)
@@ -632,6 +650,8 @@ export function listPatterns(): Pattern[] {
 //   - helius-2024-2025-deep.ts (HELIUS-DEXX-001 to HELIUS-SOLEND-002): 35 patterns from Helius Complete History
 //   - solana-batched-patterns-53.ts (SOL2001-SOL2070): Sec3 Enhanced + 2024-2025 Attack Vectors
 //   - solana-batched-patterns-54.ts (SOL2071-SOL2140): Helius Exploit Deep Dives (Solend, Wormhole, Cashio, Crema, Program Closure)
-// Categories: CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain, Helius Complete History, Wallet Security, Insider Threats, Token-2022, Compression, Blink Actions, Lookup Tables, Program Closure, Signature Bypass, Mint Validation, Tick Spoofing
-// 55 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 4095+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 4045; // 4095+ total with all batched patterns
+//   - solana-batched-patterns-55.ts (SOL2141-SOL2210): arXiv Academic + Sealevel Attacks + Audit Research (Neodyme, OtterSec, Sec3, Kudelski)
+//   - solana-batched-patterns-56.ts (SOL2211-SOL2280): PoC Framework + Protocol-Specific + Advanced DeFi Attack Vectors
+// Categories: CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain, Helius Complete History, Wallet Security, Insider Threats, Token-2022, Compression, Blink Actions, Lookup Tables, Program Closure, Signature Bypass, Mint Validation, Tick Spoofing, arXiv Academic, Sealevel Attacks, PoC Framework, Protocol-Specific
+// 57 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 4235+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 4185; // 4235+ total with all batched patterns
