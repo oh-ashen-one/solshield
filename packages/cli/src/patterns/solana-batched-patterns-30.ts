@@ -1,373 +1,615 @@
-/**
- * Batch 30: Input Validation & Data Hygiene Patterns
- * Based on Sec3 2025 Report - Input Validation (25% of severe findings)
- * Added: Feb 5, 2026 6:00 AM CST
- */
-
-import type { PatternInput } from './index.js';
 import type { Finding } from '../commands/audit.js';
+import type { PatternInput } from './index.js';
 
-// SOL821: Missing Account Data Size Validation
-export function checkAccountDataSizeValidation(input: PatternInput): Finding[] {
+// SOL825-SOL844: Advanced Runtime & Protocol Security (Feb 5 2026 8:00AM)
+// Sources: Solana Runtime Internals, ThreeSigma Rust Memory Safety Research
+//          Loopscale RateX PT Token Exploit ($5.8M - April 2025)
+
+function createFinding(id: string, name: string, severity: Finding['severity'], file: string, line: number, details: string): Finding {
+  return { id, name, severity, file, line, details };
+}
+
+// SOL825: Loopscale RateX PT Token Calculation Flaw ($5.8M)
+// Incorrect token value calculation in DeFi protocols
+export function checkTokenValueCalculationFlaw(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('AccountInfo') || content.includes('try_borrow_data')) {
-    if (!content.includes('data.len()') && !content.includes('data_len') &&
-        !content.includes('MIN_SIZE')) {
-      findings.push({
-        id: 'SOL821',
-        severity: 'high',
-        title: 'Missing Account Data Size Validation',
-        description: 'Account data size should be validated before deserialization to prevent buffer overflows',
-        location: input.path,
-        recommendation: 'Validate account data length matches expected size before processing',
-      });
-    }
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/value|worth|price|calculate.*amount/i.test(content)) {
+    // Check for external token value calculations
+    lines.forEach((line, idx) => {
+      if (/calculate.*value|get.*price|token.*worth/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 10), idx + 10).join('\n');
+        // Check for proper validation of external token values
+        if (!/validate|verify|check.*rate|sanity.*check/i.test(context)) {
+          findings.push(createFinding(
+            'SOL825',
+            'External Token Value Not Validated',
+            'critical',
+            input.filePath,
+            idx + 1,
+            'Token value calculation without validation. Loopscale lost $5.8M due to flawed RateX PT token value calculation.'
+          ));
+        }
+      }
+    });
   }
+
   return findings;
 }
 
-// SOL822: Unsafe String Input Handling
-export function checkUnsafeStringInput(input: PatternInput): Finding[] {
+// SOL826: Rust Memory Safety - Unsafe Block Misuse
+// Unsafe code can introduce memory vulnerabilities even in Rust
+export function checkUnsafeBlockMisuse(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('String') && (content.includes('instruction_data') || 
-      content.includes('from_utf8'))) {
-    if (!content.includes('max_len') && !content.includes('truncate') &&
-        !content.includes('MAX_STRING_LENGTH')) {
-      findings.push({
-        id: 'SOL822',
-        severity: 'medium',
-        title: 'Unsafe String Input Handling',
-        description: 'String inputs should have maximum length limits to prevent DoS and memory exhaustion',
-        location: input.path,
-        recommendation: 'Enforce maximum string length limits on all string inputs',
-      });
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  lines.forEach((line, idx) => {
+    if (/unsafe\s*{/.test(line) || /unsafe\s+fn/.test(line)) {
+      // Check for raw pointer operations
+      const context = lines.slice(idx, Math.min(lines.length, idx + 20)).join('\n');
+      if (/\*mut|\*const|as\s+\*|from_raw|into_raw/i.test(context)) {
+        findings.push(createFinding(
+          'SOL826',
+          'Unsafe Raw Pointer Operation',
+          'high',
+          input.filePath,
+          idx + 1,
+          'Unsafe block with raw pointer operations. Memory safety guarantees bypassed - review carefully.'
+        ));
+      }
+      
+      // Check for transmute
+      if (/transmute/.test(context)) {
+        findings.push(createFinding(
+          'SOL826',
+          'Unsafe Transmute Operation',
+          'critical',
+          input.filePath,
+          idx + 1,
+          'std::mem::transmute bypasses type safety. Can cause undefined behavior if types are incompatible.'
+        ));
+      }
     }
-  }
+  });
+
   return findings;
 }
 
-// SOL823: Missing Pubkey Format Validation
-export function checkPubkeyFormatValidation(input: PatternInput): Finding[] {
+// SOL827: BPF Loader Exploit Patterns
+// Malicious program loading vulnerabilities
+export function checkBPFLoaderExploits(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  // Check for pubkey handling without proper validation
-  if (content.includes('Pubkey::new') || content.includes('Pubkey::from')) {
-    if (!content.includes('try_from') && !content.includes('is_on_curve')) {
-      findings.push({
-        id: 'SOL823',
-        severity: 'medium',
-        title: 'Missing Pubkey Format Validation',
-        description: 'Pubkeys should be validated for proper format before use',
-        location: input.path,
-        recommendation: 'Use Pubkey::try_from and validate pubkey format',
-      });
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  lines.forEach((line, idx) => {
+    // Check for BPF loader interactions
+    if (/bpf.*loader|loader.*v[234]|upgradeable.*loader/i.test(line)) {
+      const context = lines.slice(Math.max(0, idx - 5), idx + 5).join('\n');
+      // Ensure proper authority validation
+      if (!/upgrade.*authority|program.*authority|verify.*authority/i.test(context)) {
+        findings.push(createFinding(
+          'SOL827',
+          'BPF Loader Without Authority Check',
+          'high',
+          input.filePath,
+          idx + 1,
+          'BPF loader interaction without authority validation. Malicious upgrades could replace program.'
+        ));
+      }
     }
-  }
+  });
+
   return findings;
 }
 
-// SOL824: Unchecked Array Bounds Access
-export function checkUncheckedArrayBounds(input: PatternInput): Finding[] {
+// SOL828: ELF Alignment Attacks
+// Malformed ELF can cause runtime issues
+export function checkELFAlignmentIssues(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  // Check for direct array indexing without bounds checking
-  if (content.match(/\[\s*\d+\s*\]/) || content.match(/\[\s*index\s*\]/)) {
-    if (!content.includes('.get(') && !content.includes('.get_mut(') &&
-        !content.includes('if index <')) {
-      findings.push({
-        id: 'SOL824',
-        severity: 'high',
-        title: 'Unchecked Array Bounds Access',
-        description: 'Array access should use .get() or bounds checking to prevent panics',
-        location: input.path,
-        recommendation: 'Use .get() for safe array access or validate index bounds before access',
-      });
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  // Check for alignment assumptions
+  lines.forEach((line, idx) => {
+    if (/align|offset|padding|struct.*repr/i.test(line)) {
+      if (!/repr\s*\(\s*C\s*\)|repr\s*\(\s*packed\s*\)|align\s*\(\s*\d+\s*\)/i.test(line)) {
+        // Check for potential alignment issues in structs
+        if (/struct\s+\w+/.test(line)) {
+          findings.push(createFinding(
+            'SOL828',
+            'Struct Without Explicit Alignment',
+            'low',
+            input.filePath,
+            idx + 1,
+            'Struct without repr(C) or explicit alignment. May cause issues with cross-platform serialization.'
+          ));
+        }
+      }
     }
-  }
+  });
+
   return findings;
 }
 
-// SOL825: Missing Timestamp Range Validation
-export function checkTimestampRangeValidation(input: PatternInput): Finding[] {
+// SOL829: Epoch Schedule Exploitation
+// Timing attacks based on epoch transitions
+export function checkEpochScheduleExploitation(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('timestamp') || content.includes('unix_timestamp')) {
-    // Check for timestamp range validation
-    if (!content.includes('MIN_TIMESTAMP') && !content.includes('MAX_TIMESTAMP') &&
-        !content.includes('is_valid_timestamp')) {
-      findings.push({
-        id: 'SOL825',
-        severity: 'medium',
-        title: 'Missing Timestamp Range Validation',
-        description: 'Timestamps should be validated to be within reasonable ranges',
-        location: input.path,
-        recommendation: 'Validate timestamps are within expected min/max bounds',
-      });
-    }
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/epoch|slot.*schedule|leader.*schedule/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/epoch.*boundary|slot.*transition|leader.*change/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 10), idx + 10).join('\n');
+        if (!/verify.*epoch|check.*transition|atomic/i.test(context)) {
+          findings.push(createFinding(
+            'SOL829',
+            'Epoch Boundary Not Handled Safely',
+            'medium',
+            input.filePath,
+            idx + 1,
+            'Epoch/slot boundary operations without safety checks. State may be inconsistent across transitions.'
+          ));
+        }
+      }
+    });
   }
+
   return findings;
 }
 
-// SOL826: Missing Percentage/BPS Validation
-export function checkPercentageValidation(input: PatternInput): Finding[] {
+// SOL830: Rent Collection Attack Patterns
+// Exploiting rent mechanics for griefing
+export function checkRentCollectionAttack(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('percentage') || content.includes('bps') || 
-      content.includes('basis_points')) {
-    if (!content.includes('<= 100') && !content.includes('<= 10000') &&
-        !content.includes('MAX_BPS')) {
-      findings.push({
-        id: 'SOL826',
-        severity: 'high',
-        title: 'Missing Percentage/BPS Bounds Validation',
-        description: 'Percentage and basis points values must be validated to be within valid ranges (0-100% or 0-10000 bps)',
-        location: input.path,
-        recommendation: 'Enforce maximum bounds on percentage/BPS inputs',
-      });
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  lines.forEach((line, idx) => {
+    // Check for rent-related operations
+    if (/rent.*collect|collect.*rent|lamports.*drain/i.test(line)) {
+      const context = lines.slice(Math.max(0, idx - 5), idx + 5).join('\n');
+      if (!/owner.*check|authority.*check|verify/i.test(context)) {
+        findings.push(createFinding(
+          'SOL830',
+          'Rent Collection Without Authorization',
+          'high',
+          input.filePath,
+          idx + 1,
+          'Rent collection without proper authorization. Attacker could drain lamports from accounts.'
+        ));
+      }
     }
-  }
+  });
+
   return findings;
 }
 
-// SOL827: Missing Decimal Precision Handling
-export function checkDecimalPrecisionHandling(input: PatternInput): Finding[] {
+// SOL831: Transaction Versioning Bypass
+// Legacy vs versioned transaction confusion
+export function checkTransactionVersioningBypass(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('decimals') && (content.includes('mint') || content.includes('token'))) {
-    if (!content.includes('10.pow(decimals)') && !content.includes('decimal_factor') &&
-        !content.includes('normalize_amount')) {
-      findings.push({
-        id: 'SOL827',
-        severity: 'high',
-        title: 'Missing Decimal Precision Handling',
-        description: 'Token amounts must be properly normalized for decimal differences between tokens',
-        location: input.path,
-        recommendation: 'Implement decimal normalization when comparing or operating on different tokens',
-      });
-    }
-  }
-  return findings;
-}
+  const content = input.sourceCode;
+  const lines = content.split('\n');
 
-// SOL828: Unsafe Borsh Deserialization
-export function checkUnsafeBorshDeserialization(input: PatternInput): Finding[] {
-  const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('try_from_slice') || content.includes('deserialize')) {
-    if (!content.includes('try_from_slice_unchecked') === false &&
-        !content.includes('BorshDeserialize')) {
-      // Check for proper error handling
-      if (!content.includes('?') && !content.includes('unwrap_or') &&
-          !content.includes('map_err')) {
-        findings.push({
-          id: 'SOL828',
-          severity: 'high',
-          title: 'Unsafe Borsh Deserialization',
-          description: 'Deserialization operations should properly handle errors to prevent crashes',
-          location: input.path,
-          recommendation: 'Use proper error handling for all deserialization operations',
-        });
+  if (/transaction|message|instruction/i.test(content)) {
+    // Check for version-aware transaction handling
+    if (/VersionedTransaction|MessageV0|v0.*message/i.test(content)) {
+      if (!/version.*check|is.*legacy|message.*version/i.test(content)) {
+        findings.push(createFinding(
+          'SOL831',
+          'Transaction Version Not Validated',
+          'medium',
+          input.filePath,
+          1,
+          'Versioned transaction handling without version check. Legacy/v0 confusion could cause issues.'
+        ));
       }
     }
   }
+
   return findings;
 }
 
-// SOL829: Missing Enum Variant Validation
-export function checkEnumVariantValidation(input: PatternInput): Finding[] {
+// SOL832: Address Lookup Table Poisoning
+// Malicious ALT entries
+export function checkALTPoisoning(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  // Check for enum handling without exhaustive matching
-  if (content.includes('match') && content.includes('enum')) {
-    if (content.includes('_ =>') && !content.includes('unreachable!')) {
-      findings.push({
-        id: 'SOL829',
-        severity: 'medium',
-        title: 'Non-Exhaustive Enum Matching',
-        description: 'Enum matching should be exhaustive to handle all variants explicitly',
-        location: input.path,
-        recommendation: 'Remove wildcard match and handle all enum variants explicitly',
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/lookup.*table|AddressLookupTable|ALT/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/extend.*lookup|add.*address.*table|create.*lookup/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 10), idx + 10).join('\n');
+        if (!/verify.*address|whitelist|validate.*entry/i.test(context)) {
+          findings.push(createFinding(
+            'SOL832',
+            'Address Lookup Table Entry Not Validated',
+            'high',
+            input.filePath,
+            idx + 1,
+            'ALT entries added without validation. Malicious addresses could be injected for later use.'
+          ));
+        }
+      }
+    });
+  }
+
+  return findings;
+}
+
+// SOL833: Priority Fee Manipulation
+// Exploiting priority fees for MEV
+export function checkPriorityFeeManipulation(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/priority.*fee|compute.*unit.*price|set.*compute/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/set.*priority|compute.*budget/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 5), idx + 5).join('\n');
+        if (!/max.*fee|fee.*cap|limit.*priority/i.test(context)) {
+          findings.push(createFinding(
+            'SOL833',
+            'Priority Fee Not Bounded',
+            'low',
+            input.filePath,
+            idx + 1,
+            'Priority fee without upper bound. Users could pay excessive fees in congestion.'
+          ));
+        }
+      }
+    });
+  }
+
+  return findings;
+}
+
+// SOL834: Jito Bundle Manipulation
+// MEV bundle ordering attacks
+export function checkJitoBundleManipulation(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/jito|bundle|mev|searcher/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/bundle.*submit|send.*bundle|jito.*tip/i.test(line)) {
+        findings.push(createFinding(
+          'SOL834',
+          'Jito Bundle Usage Detected',
+          'info',
+          input.filePath,
+          idx + 1,
+          'Jito bundle submission detected. Ensure bundle atomicity and proper tip handling to prevent extraction.'
+        ));
+      }
+    });
+    
+    // Check for bundle ordering assumptions
+    if (!/atomic|all.*or.*none|revert.*bundle/i.test(content)) {
+      findings.push(createFinding(
+        'SOL834',
+        'Bundle Atomicity Not Guaranteed',
+        'medium',
+        input.filePath,
+        1,
+        'MEV bundle without explicit atomicity. Partial execution could lead to losses.'
+      ));
+    }
+  }
+
+  return findings;
+}
+
+// SOL835: Compute Budget Griefing
+// Attackers exhausting compute units
+export function checkComputeBudgetGriefing(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  // Check for unbounded loops
+  lines.forEach((line, idx) => {
+    if (/for\s+.*\s+in\s+|while\s+|loop\s*{/.test(line)) {
+      const context = lines.slice(idx, Math.min(lines.length, idx + 15)).join('\n');
+      // Check for iteration limits
+      if (!/\.take\s*\(|limit|max.*iter|break.*if|counter.*</.test(context)) {
+        findings.push(createFinding(
+          'SOL835',
+          'Unbounded Loop May Exhaust Compute',
+          'high',
+          input.filePath,
+          idx + 1,
+          'Loop without explicit bound could exhaust compute budget. Attacker can cause transaction failure.'
+        ));
+      }
+    }
+  });
+
+  return findings;
+}
+
+// SOL836: Durable Nonce Replay Attack
+// Reusing durable nonces improperly
+export function checkDurableNonceReplay(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/durable.*nonce|nonce.*account|advance.*nonce/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/use.*nonce|nonce.*instruction/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 10), idx + 10).join('\n');
+        if (!/advance.*nonce|nonce.*advance|check.*nonce.*used/i.test(context)) {
+          findings.push(createFinding(
+            'SOL836',
+            'Durable Nonce Not Advanced',
+            'high',
+            input.filePath,
+            idx + 1,
+            'Durable nonce used without advancement. Same nonce can be replayed for duplicate transactions.'
+          ));
+        }
+      }
+    });
+  }
+
+  return findings;
+}
+
+// SOL837: Slot Hashes Manipulation
+// Using slot hashes for randomness
+export function checkSlotHashesRandomness(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  lines.forEach((line, idx) => {
+    if (/slot.*hash|SlotHashes|recent.*hash/i.test(line)) {
+      // Check if used for randomness
+      const context = lines.slice(idx, Math.min(lines.length, idx + 10)).join('\n');
+      if (/random|seed|entropy|lottery|raffle/i.test(context)) {
+        findings.push(createFinding(
+          'SOL837',
+          'Slot Hashes Used for Randomness',
+          'critical',
+          input.filePath,
+          idx + 1,
+          'Slot hashes are predictable and should not be used for randomness. Use VRF (e.g., Switchboard) instead.'
+        ));
+      }
+    }
+  });
+
+  return findings;
+}
+
+// SOL838: Stake History Manipulation
+// Exploiting stake distribution data
+export function checkStakeHistoryExploitation(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/stake.*history|StakeHistory|delegation.*history/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/get.*stake|stake.*amount|delegation.*info/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 5), idx + 5).join('\n');
+        if (!/current.*epoch|verify.*epoch|fresh.*data/i.test(context)) {
+          findings.push(createFinding(
+            'SOL838',
+            'Stake History Freshness Not Verified',
+            'medium',
+            input.filePath,
+            idx + 1,
+            'Stake history data used without epoch verification. Stale data could lead to incorrect calculations.'
+          ));
+        }
+      }
+    });
+  }
+
+  return findings;
+}
+
+// SOL839: Vote Program Exploits
+// Manipulating validator voting
+export function checkVoteProgramExploits(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/vote.*program|VoteState|voter.*authority/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/cast.*vote|vote.*instruction|authorized.*voter/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 10), idx + 10).join('\n');
+        if (!/verify.*authority|check.*authorized|validate.*voter/i.test(context)) {
+          findings.push(createFinding(
+            'SOL839',
+            'Vote Authority Not Verified',
+            'critical',
+            input.filePath,
+            idx + 1,
+            'Vote operation without authority verification. Unauthorized voting could affect consensus.'
+          ));
+        }
+      }
+    });
+  }
+
+  return findings;
+}
+
+// SOL840: Config Program Manipulation
+// Exploiting on-chain configuration
+export function checkConfigProgramManipulation(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/config.*program|ConfigKeys|on.*chain.*config/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/update.*config|set.*config|store.*config/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 10), idx + 10).join('\n');
+        if (!/admin.*only|owner.*check|authority.*required/i.test(context)) {
+          findings.push(createFinding(
+            'SOL840',
+            'Config Update Without Authorization',
+            'high',
+            input.filePath,
+            idx + 1,
+            'Configuration update without proper authorization. Attacker could modify protocol settings.'
+          ));
+        }
+      }
+    });
+  }
+
+  return findings;
+}
+
+// SOL841: Recent Blockhashes Attack
+// Using stale blockhashes
+export function checkRecentBlockhashesAttack(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/recent.*blockhash|getLatestBlockhash|blockhash.*cache/i.test(content)) {
+    // Check for blockhash freshness
+    if (!/refresh.*blockhash|new.*blockhash|fresh.*hash/i.test(content)) {
+      lines.forEach((line, idx) => {
+        if (/blockhash/i.test(line)) {
+          findings.push(createFinding(
+            'SOL841',
+            'Blockhash May Be Stale',
+            'medium',
+            input.filePath,
+            idx + 1,
+            'Blockhash used without freshness check. Stale blockhashes cause transaction failures after ~2 minutes.'
+          ));
+        }
       });
     }
   }
+
   return findings;
 }
 
-// SOL830: Missing Negative Number Check
-export function checkNegativeNumberCheck(input: PatternInput): Finding[] {
+// SOL842: Instructions Sysvar Attack
+// Malicious instruction introspection
+export function checkInstructionsSysvarAttack(input: PatternInput): Finding[] {
   const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('i64') || content.includes('i128') || content.includes('i32')) {
-    // Check for negative number handling in amounts
-    if (content.includes('amount') && !content.includes('>= 0') && 
-        !content.includes('is_positive') && !content.includes('abs()')) {
-      findings.push({
-        id: 'SOL830',
-        severity: 'high',
-        title: 'Missing Negative Number Check',
-        description: 'Signed integers used for amounts should be validated for non-negative values',
-        location: input.path,
-        recommendation: 'Validate signed integer amounts are non-negative or use unsigned types',
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/instructions.*sysvar|get_instruction|load_instruction/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/load.*instruction|get.*current.*instruction/i.test(line)) {
+        const context = lines.slice(idx, Math.min(lines.length, idx + 15)).join('\n');
+        // Check for proper validation
+        if (!/verify.*program.*id|check.*instruction.*data|validate.*caller/i.test(context)) {
+          findings.push(createFinding(
+            'SOL842',
+            'Instruction Introspection Without Validation',
+            'high',
+            input.filePath,
+            idx + 1,
+            'Instruction sysvar read without validation. Attacker could craft malicious surrounding instructions.'
+          ));
+        }
+      }
+    });
+  }
+
+  return findings;
+}
+
+// SOL843: Turbine Propagation Attack
+// Block propagation timing attacks
+export function checkTurbinePropagationAttack(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  // Check for timing-sensitive operations
+  if (/confirmation|finality|commit.*level/i.test(content)) {
+    lines.forEach((line, idx) => {
+      if (/await.*confirm|wait.*finality|check.*commit/i.test(line)) {
+        const context = lines.slice(Math.max(0, idx - 5), idx + 5).join('\n');
+        if (!/finalized|max.*confirmations|retry.*logic/i.test(context)) {
+          findings.push(createFinding(
+            'SOL843',
+            'Transaction Confirmation Not Finalized',
+            'medium',
+            input.filePath,
+            idx + 1,
+            'Transaction checked before finalization. Block reorgs during propagation could invalidate state.'
+          ));
+        }
+      }
+    });
+  }
+
+  return findings;
+}
+
+// SOL844: Validator Stake Concentration
+// Centralization risk in stake delegation
+export function checkValidatorStakeConcentration(input: PatternInput): Finding[] {
+  const findings: Finding[] = [];
+  const content = input.sourceCode;
+  const lines = content.split('\n');
+
+  if (/delegate.*stake|stake.*pool|validator.*selection/i.test(content)) {
+    // Check for stake distribution logic
+    if (!/distribute|multiple.*validator|diversif|max.*stake.*per/i.test(content)) {
+      lines.forEach((line, idx) => {
+        if (/delegate|stake.*to/i.test(line)) {
+          findings.push(createFinding(
+            'SOL844',
+            'Stake Delegation Not Diversified',
+            'medium',
+            input.filePath,
+            idx + 1,
+            'Stake delegation without distribution logic. Single validator concentration increases network risk.'
+          ));
+        }
       });
     }
   }
+
   return findings;
 }
 
-// SOL831: Missing Instruction Discriminator Validation
-export function checkInstructionDiscriminatorValidation(input: PatternInput): Finding[] {
-  const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('instruction_data') && !content.includes('#[program]')) {
-    if (!content.includes('discriminator') && !content.includes('instruction_data[0]') &&
-        !content.includes('tag')) {
-      findings.push({
-        id: 'SOL831',
-        severity: 'high',
-        title: 'Missing Instruction Discriminator Validation',
-        description: 'Instructions should validate discriminator/tag before processing',
-        location: input.path,
-        recommendation: 'Implement instruction discriminator validation at the start of processing',
-      });
-    }
-  }
-  return findings;
-}
-
-// SOL832: Missing Remaining Data Check
-export function checkRemainingDataCheck(input: PatternInput): Finding[] {
-  const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('deserialize') || content.includes('try_from_slice')) {
-    if (!content.includes('remaining') && !content.includes('is_empty()') &&
-        !content.includes('exact_size')) {
-      findings.push({
-        id: 'SOL832',
-        severity: 'low',
-        title: 'Missing Remaining Data Check',
-        description: 'Deserialization should verify no remaining data to detect malformed inputs',
-        location: input.path,
-        recommendation: 'Check for remaining data after deserialization',
-      });
-    }
-  }
-  return findings;
-}
-
-// SOL833: Missing Account Lamport Validation
-export function checkAccountLamportValidation(input: PatternInput): Finding[] {
-  const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('lamports') && content.includes('AccountInfo')) {
-    if (!content.includes('rent_exempt') && !content.includes('minimum_balance') &&
-        !content.includes('lamports() >=')) {
-      findings.push({
-        id: 'SOL833',
-        severity: 'medium',
-        title: 'Missing Account Lamport Validation',
-        description: 'Account lamport balances should be validated for rent exemption',
-        location: input.path,
-        recommendation: 'Validate accounts have sufficient lamports for rent exemption',
-      });
-    }
-  }
-  return findings;
-}
-
-// SOL834: Unsafe Vec Capacity Allocation
-export function checkUnsafeVecCapacity(input: PatternInput): Finding[] {
-  const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('Vec::with_capacity') || content.includes('vec!')) {
-    // Check for unbounded vec allocation
-    if (content.match(/with_capacity\s*\(\s*[a-z_]+\s*\)/) &&
-        !content.includes('MAX_CAPACITY') && !content.includes('min(')) {
-      findings.push({
-        id: 'SOL834',
-        severity: 'high',
-        title: 'Unsafe Vec Capacity Allocation',
-        description: 'Vec capacity should be bounded to prevent memory exhaustion attacks',
-        location: input.path,
-        recommendation: 'Enforce maximum bounds on Vec capacity allocation',
-      });
-    }
-  }
-  return findings;
-}
-
-// SOL835: Missing Seed Length Validation
-export function checkSeedLengthValidation(input: PatternInput): Finding[] {
-  const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('seeds') && content.includes('Pubkey::find_program_address')) {
-    if (!content.includes('MAX_SEED_LEN') && !content.includes('32') &&
-        !content.includes('seed.len()')) {
-      findings.push({
-        id: 'SOL835',
-        severity: 'medium',
-        title: 'Missing Seed Length Validation',
-        description: 'PDA seeds should validate length (max 32 bytes each) before use',
-        location: input.path,
-        recommendation: 'Validate seed lengths do not exceed 32 bytes',
-      });
-    }
-  }
-  return findings;
-}
-
-// SOL836: Missing Account Executable Check
-export function checkAccountExecutableCheck(input: PatternInput): Finding[] {
-  const findings: Finding[] = [];
-  const content = input.rust?.content || '';
-  
-  if (content.includes('invoke') || content.includes('invoke_signed')) {
-    if (!content.includes('executable') && !content.includes('is_executable')) {
-      findings.push({
-        id: 'SOL836',
-        severity: 'high',
-        title: 'Missing Account Executable Check',
-        description: 'Program accounts should be verified as executable before CPI',
-        location: input.path,
-        recommendation: 'Verify program accounts are executable before invoking',
-      });
-    }
-  }
-  return findings;
-}
-
-// Export all batch 30 patterns
-export const batchedPatterns30 = {
-  checkAccountDataSizeValidation,
-  checkUnsafeStringInput,
-  checkPubkeyFormatValidation,
-  checkUncheckedArrayBounds,
-  checkTimestampRangeValidation,
-  checkPercentageValidation,
-  checkDecimalPrecisionHandling,
-  checkUnsafeBorshDeserialization,
-  checkEnumVariantValidation,
-  checkNegativeNumberCheck,
-  checkInstructionDiscriminatorValidation,
-  checkRemainingDataCheck,
-  checkAccountLamportValidation,
-  checkUnsafeVecCapacity,
-  checkSeedLengthValidation,
-  checkAccountExecutableCheck,
-};
+// Export all pattern checks
+export const batchPatterns30 = [
+  checkTokenValueCalculationFlaw,      // SOL825
+  checkUnsafeBlockMisuse,              // SOL826
+  checkBPFLoaderExploits,              // SOL827
+  checkELFAlignmentIssues,             // SOL828
+  checkEpochScheduleExploitation,      // SOL829
+  checkRentCollectionAttack,           // SOL830
+  checkTransactionVersioningBypass,    // SOL831
+  checkALTPoisoning,                   // SOL832
+  checkPriorityFeeManipulation,        // SOL833
+  checkJitoBundleManipulation,         // SOL834
+  checkComputeBudgetGriefing,          // SOL835
+  checkDurableNonceReplay,             // SOL836
+  checkSlotHashesRandomness,           // SOL837
+  checkStakeHistoryExploitation,       // SOL838
+  checkVoteProgramExploits,            // SOL839
+  checkConfigProgramManipulation,      // SOL840
+  checkRecentBlockhashesAttack,        // SOL841
+  checkInstructionsSysvarAttack,       // SOL842
+  checkTurbinePropagationAttack,       // SOL843
+  checkValidatorStakeConcentration,    // SOL844
+];
