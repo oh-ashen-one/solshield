@@ -322,6 +322,25 @@ import { checkSimulationBypass } from './simulation-bypass.js';
 import { checkOracleTwapManipulation } from './oracle-twap-manipulation.js';
 import { checkNpmSupplyChain } from './npm-supply-chain.js';
 
+// NEW PATTERNS SOL576-SOL600 (Feb 5 2026 2AM - Real-world exploit research patterns)
+import { checkRevertingTransactionExploit } from './reverting-transaction-exploit.js';
+import { checkTokenApprovalExploitation } from './token-approval-exploitation.js';
+import { checkLpTokenFairPricing } from './lp-token-fair-pricing.js';
+import { checkSignatureSetSpoofing } from './signature-set-spoofing.js';
+import { checkRootOfTrustChain } from './root-of-trust-chain.js';
+import { checkIncineratorNftAttack } from './incinerator-nft-attack.js';
+import { checkCandyMachineSecurity } from './candy-machine-security.js';
+import { checkCheckedMathRequired } from './checked-math-required.js';
+import { checkJetBreakBug } from './jet-break-bug.js';
+import { checkRoundingDirectionAttack } from './rounding-direction-attack.js';
+import { checkSolendReserveBypass } from './solend-reserve-bypass.js';
+import { checkKudelskiOwnershipCheck } from './kudelski-ownership-check.js';
+import { checkSec3AuditPatterns } from './sec3-audit-patterns.js';
+import { checkDriftOracleGuardrails } from './drift-oracle-guardrails.js';
+import { checkMangoMarketsPatterns } from './mango-markets-patterns.js';
+import { checkZellicAnchorPatterns } from './zellic-anchor-patterns.js';
+import { checkOttersecAuditPatterns } from './ottersec-audit-patterns.js';
+
 export interface PatternInput {
   idl: ParsedIdl | null;
   rust: ParsedRust | null;
@@ -2491,6 +2510,25 @@ const patterns: Pattern[] = [
   { id: 'SOL573', name: 'Simulation Bypass Detection', severity: 'critical', run: checkSimulationBypass },
   { id: 'SOL574', name: 'Oracle TWAP Manipulation', severity: 'critical', run: checkOracleTwapManipulation },
   { id: 'SOL575', name: 'NPM Supply Chain Attack Detection', severity: 'critical', run: checkNpmSupplyChain },
+  
+  // NEW PATTERNS SOL576-SOL600 (Feb 5 2026 2AM - Real-world exploit research patterns)
+  { id: 'SOL576', name: 'Reverting Transaction Exploit (Cope Roulette)', severity: 'critical', run: checkRevertingTransactionExploit },
+  { id: 'SOL577', name: 'Token Approval Exploitation Patterns', severity: 'high', run: checkTokenApprovalExploitation },
+  { id: 'SOL578', name: 'LP Token Fair Pricing Vulnerability', severity: 'critical', run: checkLpTokenFairPricing },
+  { id: 'SOL579', name: 'Signature Set Spoofing (Wormhole)', severity: 'critical', run: checkSignatureSetSpoofing },
+  { id: 'SOL580', name: 'Root of Trust Chain (Cashio)', severity: 'critical', run: checkRootOfTrustChain },
+  { id: 'SOL581', name: 'Incinerator NFT Attack (Schrodinger)', severity: 'high', run: checkIncineratorNftAttack },
+  { id: 'SOL582', name: 'Candy Machine Security', severity: 'critical', run: checkCandyMachineSecurity },
+  { id: 'SOL583', name: 'Checked Math Required (BlockSec)', severity: 'high', run: checkCheckedMathRequired },
+  { id: 'SOL584', name: 'Jet Break Statement Bug', severity: 'high', run: checkJetBreakBug },
+  { id: 'SOL585', name: 'Rounding Direction Attack (Neodyme SPL)', severity: 'critical', run: checkRoundingDirectionAttack },
+  { id: 'SOL586', name: 'Solend Reserve Bypass', severity: 'critical', run: checkSolendReserveBypass },
+  { id: 'SOL587', name: 'Kudelski Ownership Check Patterns', severity: 'critical', run: checkKudelskiOwnershipCheck },
+  { id: 'SOL588', name: 'Sec3 Audit Methodology Patterns', severity: 'high', run: checkSec3AuditPatterns },
+  { id: 'SOL589', name: 'Drift Oracle Guardrails', severity: 'high', run: checkDriftOracleGuardrails },
+  { id: 'SOL590', name: 'Mango Markets Exploit Patterns', severity: 'critical', run: checkMangoMarketsPatterns },
+  { id: 'SOL591', name: 'Zellic Anchor Vulnerability Patterns', severity: 'critical', run: checkZellicAnchorPatterns },
+  { id: 'SOL592', name: 'OtterSec Audit Methodology Patterns', severity: 'high', run: checkOttersecAuditPatterns },
 ];
 
 export async function runPatterns(input: PatternInput): Promise<Finding[]> {
