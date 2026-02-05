@@ -1,5 +1,93 @@
 # SolGuard Hackathon Sprint Notes
 
+## Session: Feb 4, 2026 - 9:30 PM CST (Evening Build)
+
+### Patterns Added (3 new batch files, 50 registered patterns!)
+
+**Pattern Files Created:**
+1. `solana-batched-patterns-8.ts` - SOL261-275 (15 patterns)
+   - Private key logging (Slope-style leak)
+   - Centralized logging security
+   - TWAP oracle manipulation
+   - Leveraged position manipulation (Mango-style)
+   - Flash loan oracle attacks
+   - Bonding curve flash loan (Nirvana-style)
+   - Governance timelock bypass (Audius-style)
+   - Third-party pool dependency (UXD/Tulip)
+   - NoSQL injection (Thunder Terminal)
+   - Session token security
+   - Insider access control (Pump.fun-style)
+   - Guardian validation (Wormhole-style)
+   - Trading bot security (Banana Gun)
+   - Private key management (DEXX-style)
+   - NPM dependency hijacking (Web3.js)
+
+2. `solana-batched-patterns-9.ts` - SOL276-290 (15 patterns)
+   - Ownership phishing (2025 Solana attacks)
+   - Program account confusion
+   - AMM pool drain (Raydium-style)
+   - Insider exploit vectors (Cypher-style)
+   - Reserve config manipulation (Solend)
+   - Rug pull detection (Solareum)
+   - Distributed network exploit (io.net)
+   - Gaming exploit vectors (Aurory-style)
+   - CertiK alert patterns (SVT Token)
+   - Hidden minting patterns (Synthetify-style)
+   - DAO governance attack (Saga)
+   - P2P platform exploit (NoOnes)
+   - Flash loan undercollateralized (Loopscale)
+   - NFT minting DoS (Candy Machine)
+   - Wallet DDoS (Phantom)
+
+3. `solana-batched-patterns-10.ts` - SOL291-310 (20 patterns)
+   - JIT cache vulnerability (Solana 2023)
+   - Durable nonce misuse
+   - Duplicate block pattern
+   - Turbine propagation security
+   - ELF alignment vulnerability
+   - Checked math enforcement
+   - Seed derivation predictability
+   - CPI return data injection
+   - Account lifetime issues
+   - Anchor constraint ordering
+   - Missing rent check V2
+   - System program invocation
+   - Token program version mismatch
+   - Lookup table poisoning
+   - Compute unit exhaustion
+   - Priority fee manipulation
+   - Versioned transaction handling
+   - Signer seed validation complete
+   - Account lamport drain
+   - Instruction sysvar spoofing
+
+**Pattern Count Progress:**
+- Before this session: 199 registered patterns
+- After: **249 registered patterns** 🎯
+- Net gain: **+50 registered patterns**
+
+**Research Sources:**
+- Helius Blog: "Solana Hacks, Bugs, and Exploits: A Complete History" (comprehensive!)
+- Real-world exploit analysis 2020-2025
+- $600M+ in exploits documented
+
+### Key Exploits Now Covered:
+| Exploit | Loss | Pattern ID |
+|---------|------|------------|
+| Wormhole | $326M | SOL272 |
+| Mango Markets | $116M | SOL264 |
+| Cashio | $52.8M | SOL251 |
+| DEXX | $30M | SOL274 |
+| Slope Wallet | $8M | SOL261 |
+| Crema Finance | $8.8M | SOL140 |
+| Audius | $6.1M | SOL267 |
+| Loopscale | $5.8M | SOL288 |
+| Raydium | $4.4M | SOL278 |
+| NoOnes | $4M | SOL287 |
+| Nirvana | $3.5M | SOL266 |
+
+---
+
 ## Session: Feb 4, 2026 - 9:00 PM CST
 
 ### Patterns Added (12 new files, 10+ registered patterns)
@@ -41,13 +129,14 @@
 | Aurory SyncSpace | Various | gaming-nft-exploits |
 
 ### Next Session Goals:
-- [ ] Add more patterns from audit reports
-- [ ] Improve detection accuracy
+- [x] ~~Add more patterns from audit reports~~ ✅ Done! 249 patterns now
+- [ ] Target: **300+ registered patterns** (need 51 more)
 - [ ] Add test cases for new patterns
-- [ ] Update web demo
-- [ ] Target: 250+ registered patterns
+- [ ] Update web demo to show pattern count
+- [ ] Improve detection accuracy
 
 ### Build Status
 ✅ All builds passing
 ✅ TypeScript compilation clean
 ✅ CLI working correctly
+✅ GitHub pushed: commit f23aa0c
