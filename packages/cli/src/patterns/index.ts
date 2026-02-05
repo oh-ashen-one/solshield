@@ -356,6 +356,9 @@ import { checkPhishingAccountTransfer } from './phishing-account-transfer.js';
 import { checkLoopscaleAdminExploit } from './loopscale-admin-exploit.js';
 import { checkNpmSupplyChain2025 } from './npm-supply-chain-2025.js';
 
+// NEW PATTERNS SOL657-SOL676 (Feb 5 2026 3:30AM - Latest 2025 Exploits from Helius Research)
+import { checkNoOnesPlatformExploit, checkDexxHotWalletExposure, checkBananaGunBotVulnerability, checkPumpFunInsiderThreat, checkThunderTerminalInjection, checkSolareumBotExploit, checkCypherInsiderTheft, checkIoNetSybilAttack, checkSvtTokenHoneypot, checkSagaDaoGovernanceAttack, checkAurorySyncSpaceExploit, checkTulipCrankManipulation, checkUxdStabilityFlaw, checkOptiFiCloseVulnerability, checkWeb3JsSupplyChainAttack, checkParclFrontendAttack, checkJitoDdosPattern, checkPhantomDdosPattern, checkGrapeProtocolDos, checkCandyMachineZeroAccount } from './solana-batched-patterns-21.js';
+
 export interface PatternInput {
   idl: ParsedIdl | null;
   rust: ParsedRust | null;
@@ -2616,6 +2619,28 @@ const patterns: Pattern[] = [
   { id: 'SOL654', name: 'Phishing Account Transfer Attack', severity: 'critical', run: checkPhishingAccountTransfer },
   { id: 'SOL655', name: 'Loopscale Admin Wallet Exploit (Apr 2025)', severity: 'critical', run: checkLoopscaleAdminExploit },
   { id: 'SOL656', name: 'NPM Supply Chain Attack 2025', severity: 'high', run: checkNpmSupplyChain2025 },
+  
+  // NEW PATTERNS SOL657-SOL676 (Feb 5 2026 3:30AM - Latest 2025 Exploits from Helius Research)
+  { id: 'SOL657', name: 'NoOnes P2P Platform Hot Wallet Exploit ($4M)', severity: 'critical', run: checkNoOnesPlatformExploit },
+  { id: 'SOL658', name: 'DEXX Hot Wallet Key Exposure ($30M)', severity: 'critical', run: checkDexxHotWalletExposure },
+  { id: 'SOL659', name: 'Banana Gun Trading Bot Vulnerability ($1.4M)', severity: 'high', run: checkBananaGunBotVulnerability },
+  { id: 'SOL660', name: 'Pump.fun Insider Employee Exploit ($1.9M)', severity: 'critical', run: checkPumpFunInsiderThreat },
+  { id: 'SOL661', name: 'Thunder Terminal MongoDB Injection ($240K)', severity: 'high', run: checkThunderTerminalInjection },
+  { id: 'SOL662', name: 'Solareum Bot Payment Exploit ($500K+)', severity: 'high', run: checkSolareumBotExploit },
+  { id: 'SOL663', name: 'Cypher Protocol Insider Theft ($1.35M)', severity: 'critical', run: checkCypherInsiderTheft },
+  { id: 'SOL664', name: 'io.net Sybil Attack (Fake GPUs)', severity: 'medium', run: checkIoNetSybilAttack },
+  { id: 'SOL665', name: 'SVT Token Honeypot Pattern', severity: 'critical', run: checkSvtTokenHoneypot },
+  { id: 'SOL666', name: 'Saga DAO Governance Attack ($230K)', severity: 'critical', run: checkSagaDaoGovernanceAttack },
+  { id: 'SOL667', name: 'Aurory SyncSpace Gaming Exploit', severity: 'medium', run: checkAurorySyncSpaceExploit },
+  { id: 'SOL668', name: 'Tulip Protocol Crank Manipulation', severity: 'medium', run: checkTulipCrankManipulation },
+  { id: 'SOL669', name: 'UXD Protocol Stability Mechanism Flaw', severity: 'high', run: checkUxdStabilityFlaw },
+  { id: 'SOL670', name: 'OptiFi Program Close Lockup ($661K)', severity: 'critical', run: checkOptiFiCloseVulnerability },
+  { id: 'SOL671', name: 'Web3.js Supply Chain Attack ($164K)', severity: 'high', run: checkWeb3JsSupplyChainAttack },
+  { id: 'SOL672', name: 'Parcl Frontend Phishing Attack', severity: 'info', run: checkParclFrontendAttack },
+  { id: 'SOL673', name: 'Jito DDoS Attack Pattern', severity: 'medium', run: checkJitoDdosPattern },
+  { id: 'SOL674', name: 'Phantom Wallet Spam/DDoS', severity: 'low', run: checkPhantomDdosPattern },
+  { id: 'SOL675', name: 'Grape Protocol Network DoS', severity: 'high', run: checkGrapeProtocolDos },
+  { id: 'SOL676', name: 'Candy Machine Zero-Account DoS', severity: 'medium', run: checkCandyMachineZeroAccount },
 ];
 
 export async function runPatterns(input: PatternInput): Promise<Finding[]> {
