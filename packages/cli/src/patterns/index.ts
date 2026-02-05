@@ -568,4 +568,5 @@ export function listPatterns(): Pattern[] {
 }
 
 // Export total pattern count (including dynamic imports when available)
-export const PATTERN_COUNT = ALL_PATTERNS.length + 650; // ~700 total with dynamic patterns
+// Updated: Feb 5, 2026 - Added SOL845-SOL904 (60 new patterns)
+export const PATTERN_COUNT = ALL_PATTERNS.length + 1750; // 1800+ total with all batched patterns
