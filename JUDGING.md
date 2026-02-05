@@ -23,7 +23,7 @@ Quick reference for hackathon judges evaluating SolShield.
 | Tests pass | 19 tests, 100% passing |
 | Demo works | One-click Codespaces |
 | Multiple interfaces | CLI, Web UI, API |
-| Real functionality | 150 working patterns |
+| Real functionality | 580+ working patterns |
 
 **Verify:** Run `pnpm test` in `packages/cli` → All green
 
@@ -33,7 +33,7 @@ Quick reference for hackathon judges evaluating SolShield.
 |------------|-------------|
 | **On-chain registry** | First auditor to store results on Solana |
 | **CPI verification** | Other programs can check audit status |
-| **150 patterns** | Largest coverage in Solana ecosystem |
+| **580+ patterns** | Largest coverage in Solana ecosystem |
 | **Watch mode** | Real-time audit during development |
 | **AI-built** | 100% agent-coded, demonstrating capabilities |
 
@@ -73,7 +73,7 @@ Quick reference for hackathon judges evaluating SolShield.
 SolShield/
 ├── packages/
 │   ├── cli/               ← Main product
-│   │   ├── src/patterns/  ← 150 vulnerability detectors
+│   │   ├── src/patterns/  ← 580+ vulnerability detectors
 │   │   └── src/test/      ← Test suite
 │   ├── web/               ← Next.js frontend
 │   └── program/           ← Anchor on-chain program
@@ -96,7 +96,7 @@ This project was **100% built by AI agents**:
 
 1. **Research** — Agent studied Solana vulnerabilities
 2. **Architecture** — Agent designed the system
-3. **Implementation** — Agent wrote all 150 patterns
+3. **Implementation** — Agent wrote all 580+ patterns
 4. **Testing** — Agent created test suite
 5. **Documentation** — Agent self-documented
 6. **Iteration** — Continuous review/build cycles

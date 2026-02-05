@@ -53,7 +53,7 @@ Click either link → Wait for environment to spin up → Web UI opens automatic
 
 ## Why SolShield Should Win
 
-1. **Largest Pattern Coverage** — 150 patterns, more than any alternative
+1. **Largest Pattern Coverage** — 580+ patterns, more than any alternative
 2. **Real-World Impact** — Would have caught Wormhole, Mango, Cashio exploits
 3. **100% Agent-Built** — True demonstration of AI coding capabilities
 4. **Production-Ready** — CLI, Web UI, API, CI/CD integration

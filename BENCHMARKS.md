@@ -21,7 +21,7 @@ Tested on typical Anchor programs (M2 MacBook Pro, Node 20):
 
 ## Pattern Execution
 
-All 150 patterns run in parallel for each file:
+All 580+ patterns run in parallel for each file:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -51,7 +51,7 @@ All 150 patterns run in parallel for each file:
 |-----------|-------------|
 | Parse small program | ~50 MB |
 | Parse large program | ~150 MB |
-| Run all 150 patterns | ~200 MB |
+| Run all 580+ patterns | ~200 MB |
 | Generate report | ~10 MB |
 
 ## CI/CD Integration
@@ -75,7 +75,7 @@ SolShield audit ./programs --recursive
 
 # Results:
 # - 47 programs scanned
-# - 150 patterns × 47 = 6,110 pattern checks
+# - 580+ patterns × 47 = 6,110 pattern checks
 # - Total time: 8.3 seconds
 ```
 

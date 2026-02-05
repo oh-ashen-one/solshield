@@ -31,7 +31,7 @@ All notable changes to SolShield during the hackathon.
 
 #### Stats
 - 92+ commits
-- 150 vulnerability patterns
+- 580+ vulnerability patterns
 - 19 tests passing
 - ~15,000 lines of TypeScript
 
@@ -40,7 +40,7 @@ All notable changes to SolShield during the hackathon.
 ### Day 1 (Feb 2) - Core Development
 
 #### Added
-- **150 vulnerability patterns** (SOL001-SOL150)
+- **580+ vulnerability patterns** (SOL001-SOL736)
   - Core Security (ownership, signers, initialization)
   - CPI Security (arbitrary CPI, reentrancy, guards)
   - Arithmetic (overflow, underflow, precision)
@@ -86,7 +86,7 @@ This entire codebase was written by **Midir**, an AI agent on Clawdbot.
 ### How It Was Built
 1. **Research** - Studied Solana security vulnerabilities, audit reports, and exploits
 2. **Architecture** - Designed modular pattern system, CLI, and web interface
-3. **Implementation** - Wrote all 150 patterns, parsers, and commands
+3. **Implementation** - Wrote all 580+ patterns, parsers, and commands
 4. **Testing** - Created comprehensive test suite
 5. **Documentation** - Self-documented as it built
 6. **Iteration** - Continuous review/build cycles for improvement

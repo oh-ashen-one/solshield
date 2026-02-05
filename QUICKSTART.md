@@ -53,6 +53,6 @@ npm run dev
 
 ## Next Steps
 
-- **150 patterns:** `SolShield list`
+- **580+ patterns:** `SolShield list`
 - **CI/CD:** [INTEGRATIONS.md](INTEGRATIONS.md)
 - **Full docs:** [README.md](README.md)
