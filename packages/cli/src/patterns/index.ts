@@ -387,6 +387,11 @@ import { batchedPatterns27 } from './solana-batched-patterns-27.js';
 // NEW PATTERNS SOL785-SOL804 (Feb 5 2026 5:30AM - Token-2022 Advanced Security)
 import { batchedPatterns28 } from './solana-batched-patterns-28.js';
 
+// NEW PATTERNS SOL805-SOL852 (Feb 5 2026 6AM - Sec3 2025 Report Categories)
+import { batchedPatterns29 } from './solana-batched-patterns-29.js';
+import { batchedPatterns30 } from './solana-batched-patterns-30.js';
+import { batchedPatterns31 } from './solana-batched-patterns-31.js';
+
 export interface PatternInput {
   idl: ParsedIdl | null;
   rust: ParsedRust | null;
@@ -2754,6 +2759,60 @@ const patterns: Pattern[] = [
   
   // NEW PATTERNS SOL785-SOL804 (Feb 5 2026 5:30AM - Token-2022 Advanced Security)
   ...batchedPatterns28,
+  
+  // NEW PATTERNS SOL805-SOL820 (Feb 5 2026 6AM - Business Logic from Sec3 2025)
+  { id: 'SOL805', name: 'Missing Protocol Fee Accrual', severity: 'high', run: batchedPatterns29.checkMissingFeeAccrual },
+  { id: 'SOL806', name: 'Incorrect Reward Rate Calculation', severity: 'high', run: batchedPatterns29.checkIncorrectRewardRate },
+  { id: 'SOL807', name: 'Missing Withdrawal Queue Processing', severity: 'medium', run: batchedPatterns29.checkMissingWithdrawalQueue },
+  { id: 'SOL808', name: 'First Depositor Attack (Vault Shares)', severity: 'critical', run: batchedPatterns29.checkVaultShareCalculation },
+  { id: 'SOL809', name: 'Missing Borrow Capacity Check', severity: 'high', run: batchedPatterns29.checkMissingBorrowCapacity },
+  { id: 'SOL810', name: 'Incorrect Liquidation Incentive', severity: 'high', run: batchedPatterns29.checkLiquidationIncentiveCalc },
+  { id: 'SOL811', name: 'Missing Position Health Update', severity: 'high', run: batchedPatterns29.checkMissingHealthUpdate },
+  { id: 'SOL812', name: 'Missing Interest Rate Model Kink', severity: 'medium', run: batchedPatterns29.checkInterestRateModel },
+  { id: 'SOL813', name: 'Missing Debt Token Tracking', severity: 'high', run: batchedPatterns29.checkMissingDebtTracking },
+  { id: 'SOL814', name: 'Missing Collateral Factor Bounds', severity: 'medium', run: batchedPatterns29.checkCollateralFactorApplication },
+  { id: 'SOL815', name: 'Missing Oracle Fallback Mechanism', severity: 'high', run: batchedPatterns29.checkMissingOracleFallback },
+  { id: 'SOL816', name: 'Missing AMM Invariant Verification', severity: 'critical', run: batchedPatterns29.checkAmmInvariantMaintenance },
+  { id: 'SOL817', name: 'Missing Slippage Protection in Swap', severity: 'high', run: batchedPatterns29.checkSwapSlippageProtection },
+  { id: 'SOL818', name: 'Missing Fee-on-Transfer Handling', severity: 'high', run: batchedPatterns29.checkFeeOnTransferHandling },
+  { id: 'SOL819', name: 'Missing Epoch Boundary Handling', severity: 'medium', run: batchedPatterns29.checkEpochBoundaryHandling },
+  { id: 'SOL820', name: 'Missing Time-Weighted Voting Power', severity: 'medium', run: batchedPatterns29.checkVotingPowerCalculation },
+  
+  // NEW PATTERNS SOL821-SOL836 (Feb 5 2026 6AM - Input Validation from Sec3 2025)
+  { id: 'SOL821', name: 'Missing Account Data Size Validation', severity: 'high', run: batchedPatterns30.checkAccountDataSizeValidation },
+  { id: 'SOL822', name: 'Unsafe String Input Handling', severity: 'medium', run: batchedPatterns30.checkUnsafeStringInput },
+  { id: 'SOL823', name: 'Missing Pubkey Format Validation', severity: 'medium', run: batchedPatterns30.checkPubkeyFormatValidation },
+  { id: 'SOL824', name: 'Unchecked Array Bounds Access', severity: 'high', run: batchedPatterns30.checkUncheckedArrayBounds },
+  { id: 'SOL825', name: 'Missing Timestamp Range Validation', severity: 'medium', run: batchedPatterns30.checkTimestampRangeValidation },
+  { id: 'SOL826', name: 'Missing BPS/Percentage Bounds', severity: 'high', run: batchedPatterns30.checkPercentageValidation },
+  { id: 'SOL827', name: 'Missing Decimal Precision Handling', severity: 'high', run: batchedPatterns30.checkDecimalPrecisionHandling },
+  { id: 'SOL828', name: 'Unsafe Borsh Deserialization', severity: 'high', run: batchedPatterns30.checkUnsafeBorshDeserialization },
+  { id: 'SOL829', name: 'Non-Exhaustive Enum Matching', severity: 'medium', run: batchedPatterns30.checkEnumVariantValidation },
+  { id: 'SOL830', name: 'Missing Negative Number Check', severity: 'high', run: batchedPatterns30.checkNegativeNumberCheck },
+  { id: 'SOL831', name: 'Missing Instruction Discriminator', severity: 'high', run: batchedPatterns30.checkInstructionDiscriminatorValidation },
+  { id: 'SOL832', name: 'Missing Remaining Data Check', severity: 'low', run: batchedPatterns30.checkRemainingDataCheck },
+  { id: 'SOL833', name: 'Missing Account Lamport Validation', severity: 'medium', run: batchedPatterns30.checkAccountLamportValidation },
+  { id: 'SOL834', name: 'Unsafe Vec Capacity Allocation', severity: 'high', run: batchedPatterns30.checkUnsafeVecCapacity },
+  { id: 'SOL835', name: 'Missing Seed Length Validation', severity: 'medium', run: batchedPatterns30.checkSeedLengthValidation },
+  { id: 'SOL836', name: 'Missing Account Executable Check', severity: 'high', run: batchedPatterns30.checkAccountExecutableCheck },
+  
+  // NEW PATTERNS SOL837-SOL852 (Feb 5 2026 6AM - Access Control from Sec3 2025)
+  { id: 'SOL837', name: 'Missing Operator Role Validation', severity: 'high', run: batchedPatterns31.checkOperatorRoleValidation },
+  { id: 'SOL838', name: 'Missing Governance Timelock', severity: 'high', run: batchedPatterns31.checkGovernanceTimelock },
+  { id: 'SOL839', name: 'Missing Two-Step Ownership Transfer', severity: 'medium', run: batchedPatterns31.checkTwoStepOwnershipTransfer },
+  { id: 'SOL840', name: 'Missing Guardian/Emergency Admin', severity: 'medium', run: batchedPatterns31.checkEmergencyAdmin },
+  { id: 'SOL841', name: 'Missing Function Access Control', severity: 'high', run: batchedPatterns31.checkFunctionAccessModifier },
+  { id: 'SOL842', name: 'Missing Upgrade Authority Renunciation', severity: 'medium', run: batchedPatterns31.checkUpgradeAuthorityRenunciation },
+  { id: 'SOL843', name: 'Missing Rate Limiting', severity: 'medium', run: batchedPatterns31.checkMissingRateLimiting },
+  { id: 'SOL844', name: 'Missing CPI Caller Validation', severity: 'high', run: batchedPatterns31.checkCpiCallerValidation },
+  { id: 'SOL845', name: 'Missing PDA Authority Derivation', severity: 'critical', run: batchedPatterns31.checkPdaAuthorityDerivation },
+  { id: 'SOL846', name: 'Missing Token Whitelist Check', severity: 'high', run: batchedPatterns31.checkWhitelistCheck },
+  { id: 'SOL847', name: 'Missing Delegate Revocation', severity: 'medium', run: batchedPatterns31.checkDelegateRevocation },
+  { id: 'SOL848', name: 'Missing Config Update Authorization', severity: 'critical', run: batchedPatterns31.checkConfigUpdateAuth },
+  { id: 'SOL849', name: 'Missing Proposal Threshold', severity: 'medium', run: batchedPatterns31.checkProposalThreshold },
+  { id: 'SOL850', name: 'Missing Execution Delay', severity: 'medium', run: batchedPatterns31.checkExecutionDelay },
+  { id: 'SOL851', name: 'Missing Quorum Validation', severity: 'high', run: batchedPatterns31.checkQuorumValidation },
+  { id: 'SOL852', name: 'Missing Vote Weight Snapshot', severity: 'high', run: batchedPatterns31.checkVoteWeightSnapshot },
 ];
 
 export async function runPatterns(input: PatternInput): Promise<Finding[]> {
