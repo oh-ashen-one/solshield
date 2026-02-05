@@ -587,7 +587,7 @@ export function listPatterns(): Pattern[] {
 }
 
 // Export total pattern count (including dynamic imports when available)
-// Updated: Feb 5, 2026 11:30 AM - Added SOL1441-SOL1580 (140 new patterns)
+// Updated: Feb 5, 2026 1:00 PM - Added SOL1721-SOL1860 (140 new patterns)
 // New batches: 
 //   - solana-batched-patterns-41.ts (SOL1161-SOL1230): CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance
 //   - solana-batched-patterns-42.ts (SOL1231-SOL1300): DeFi (AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming)
@@ -595,8 +595,10 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-44.ts (SOL1371-SOL1440): Infrastructure, BPF, Memory, Compute, Validators, Anchor, Serialization
 //   - solana-batched-patterns-45.ts (SOL1441-SOL1510): 2025 Developer Education, DEXX $30M, Access Control Deep Dive
 //   - solana-batched-patterns-46.ts (SOL1511-SOL1580): Phishing/Social Engineering, SlowMist $3M, MEV, Sybil, Honeypots
-// Categories covered: CPI Security, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF/Runtime, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain
-// 48 batched files × ~70 patterns each + 50 core + 250+ individual patterns = 3640+
-// NEW: solana-batched-patterns-47.ts (SOL1581-SOL1650): Upbit $36M Hack, Lulo Certora Audit, CPI Deep Dive
-// NEW: solana-batched-patterns-48.ts (SOL1651-SOL1720): Advanced DeFi Patterns, Economic Attacks, Governance
-export const PATTERN_COUNT = ALL_PATTERNS.length + 3590; // 3640+ total with all batched patterns
+//   - solana-batched-patterns-47.ts (SOL1581-SOL1650): Upbit $36M Hack, Lulo Certora Audit, CPI Deep Dive
+//   - solana-batched-patterns-48.ts (SOL1651-SOL1720): Advanced DeFi Patterns, Economic Attacks, Governance
+//   - solana-batched-patterns-49.ts (SOL1721-SOL1790): Helius Exploit DB 2020-2023 (Wormhole $326M, Mango $116M, Cashio $52M, etc.)
+//   - solana-batched-patterns-50.ts (SOL1791-SOL1860): Helius Exploit DB 2024-2025 (DEXX $30M, Loopscale $5.8M, Pump.fun $1.9M, etc.)
+// Categories covered: CPI Security, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF/Runtime, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain, Helius Complete History, Wallet Security, Insider Threats
+// 50 batched files × ~70 patterns each + 50 core + 250+ individual patterns = 3780+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 3730; // 3780+ total with all batched patterns
