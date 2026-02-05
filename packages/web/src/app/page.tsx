@@ -340,6 +340,31 @@ pub enum VaultError {
               View Source
             </a>
           </div>
+
+          {/* npm Install */}
+          <div className="mt-12 flex flex-col items-center">
+            <p className="text-sm text-zinc-500 mb-3">Or install the SDK</p>
+            <div className="flex items-center gap-3 px-6 py-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+              <code className="text-lg font-mono text-cyan-400">npm install solshield</code>
+              <button 
+                onClick={() => navigator.clipboard.writeText('npm install solshield')}
+                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-white"
+                title="Copy to clipboard"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </div>
+            <a 
+              href="https://www.npmjs.com/package/solshield"
+              target="_blank"
+              rel="noopener noreferrer" 
+              className="mt-3 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              View on npm →
+            </a>
+          </div>
         </div>
       </section>
 
