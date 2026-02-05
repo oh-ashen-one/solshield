@@ -378,6 +378,15 @@ import { checkThunderStyleExploits } from './thunder-terminal-exploit.js';
 import { checkOptiFiStyleBugs } from './optifi-close-bug.js';
 import { checkCypherStyleInsiderThreats } from './cypher-insider-theft.js';
 
+// NEW PATTERNS SOL745-SOL764 (Feb 5 2026 5:30AM - Advanced DeFi Protocol Security)
+import { batchedPatterns26 } from './solana-batched-patterns-26.js';
+
+// NEW PATTERNS SOL765-SOL784 (Feb 5 2026 5:30AM - Infrastructure & Runtime Security)
+import { batchedPatterns27 } from './solana-batched-patterns-27.js';
+
+// NEW PATTERNS SOL785-SOL804 (Feb 5 2026 5:30AM - Token-2022 Advanced Security)
+import { batchedPatterns28 } from './solana-batched-patterns-28.js';
+
 export interface PatternInput {
   idl: ParsedIdl | null;
   rust: ParsedRust | null;
@@ -2736,6 +2745,15 @@ const patterns: Pattern[] = [
   { id: 'SOL742', name: 'OptiFi Program Close Lockup ($661K)', severity: 'critical', run: checkOptiFiStyleBugs },
   { id: 'SOL743', name: 'Cypher Insider Theft Pattern ($317K)', severity: 'critical', run: checkCypherStyleInsiderThreats },
   { id: 'SOL744', name: 'Helius Batch 25 Patterns (38 patterns)', severity: 'high', run: checkAllBatch25Patterns },
+  
+  // NEW PATTERNS SOL745-SOL764 (Feb 5 2026 5:30AM - Advanced DeFi Protocol Security)
+  ...batchedPatterns26,
+  
+  // NEW PATTERNS SOL765-SOL784 (Feb 5 2026 5:30AM - Infrastructure & Runtime Security)
+  ...batchedPatterns27,
+  
+  // NEW PATTERNS SOL785-SOL804 (Feb 5 2026 5:30AM - Token-2022 Advanced Security)
+  ...batchedPatterns28,
 ];
 
 export async function runPatterns(input: PatternInput): Promise<Finding[]> {
