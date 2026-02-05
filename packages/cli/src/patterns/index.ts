@@ -250,6 +250,20 @@ import { checkAudiusGovernance } from './audius-governance.js';
 import { checkTokenRevokeSafety } from './token-revoke-safety.js';
 import { checkSynthetifyDao } from './synthetify-dao.js';
 
+// New patterns SOL249-SOL300 (Feb 4 2026 - Build session patterns)
+import { checkProgramCloseSafety } from './program-close-safety.js';
+import { checkReserveConfigBypass } from './reserve-config-bypass.js';
+import { checkCollateralMintValidation } from './collateral-mint-validation.js';
+import { checkKeyLoggingExposure } from './key-logging-exposure.js';
+import { checkGovernanceProposalTiming } from './governance-proposal-timing.js';
+import { checkThirdPartyIntegrationSecurity } from './third-party-integration-security.js';
+import { checkGamingNftExploits } from './gaming-nft-exploits.js';
+import { checkValidatorStakingSecurity } from './validator-staking-security.js';
+import { checkMevProtection } from './mev-protection.js';
+import { checkRugPullDetection } from './rug-pull-detection.js';
+import { checkAdvancedDefiPatterns } from './advanced-defi-patterns.js';
+import { checkAccountValidationComprehensive } from './account-validation-comprehensive.js';
+
 export interface PatternInput {
   idl: ParsedIdl | null;
   rust: ParsedRust | null;
@@ -1387,6 +1401,79 @@ const patterns: Pattern[] = [
     name: 'Synthetify DAO Hidden Proposal',
     severity: 'high',
     run: checkSynthetifyDao,
+  },
+  // New patterns SOL249-SOL260 (Feb 4 2026 - Build session)
+  {
+    id: 'SOL249',
+    name: 'Program Close Safety',
+    severity: 'critical',
+    run: checkProgramCloseSafety,
+  },
+  {
+    id: 'SOL250',
+    name: 'Reserve Config Bypass (Solend-style)',
+    severity: 'critical',
+    run: checkReserveConfigBypass,
+  },
+  {
+    id: 'SOL251',
+    name: 'Collateral Mint Validation (Cashio-style)',
+    severity: 'critical',
+    run: checkCollateralMintValidation,
+  },
+  {
+    id: 'SOL252',
+    name: 'Key Logging Exposure (Slope-style)',
+    severity: 'critical',
+    run: checkKeyLoggingExposure,
+  },
+  {
+    id: 'SOL253',
+    name: 'Governance Proposal Timing Attack',
+    severity: 'high',
+    run: checkGovernanceProposalTiming,
+  },
+  {
+    id: 'SOL254',
+    name: 'Third-Party Integration Security',
+    severity: 'high',
+    run: checkThirdPartyIntegrationSecurity,
+  },
+  {
+    id: 'SOL255',
+    name: 'Gaming/NFT Exploit Patterns',
+    severity: 'high',
+    run: checkGamingNftExploits,
+  },
+  {
+    id: 'SOL256',
+    name: 'Validator/Staking Security',
+    severity: 'high',
+    run: checkValidatorStakingSecurity,
+  },
+  {
+    id: 'SOL257',
+    name: 'MEV Protection Patterns',
+    severity: 'high',
+    run: checkMevProtection,
+  },
+  {
+    id: 'SOL258',
+    name: 'Rug Pull Detection',
+    severity: 'critical',
+    run: checkRugPullDetection,
+  },
+  {
+    id: 'SOL259',
+    name: 'Advanced DeFi Patterns',
+    severity: 'high',
+    run: checkAdvancedDefiPatterns,
+  },
+  {
+    id: 'SOL260',
+    name: 'Comprehensive Account Validation',
+    severity: 'critical',
+    run: checkAccountValidationComprehensive,
   },
 ];
 
