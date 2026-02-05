@@ -359,6 +359,15 @@ import { checkNpmSupplyChain2025 } from './npm-supply-chain-2025.js';
 // NEW PATTERNS SOL657-SOL676 (Feb 5 2026 3:30AM - Latest 2025 Exploits from Helius Research)
 import { checkNoOnesPlatformExploit, checkDexxHotWalletExposure, checkBananaGunBotVulnerability, checkPumpFunInsiderThreat, checkThunderTerminalInjection, checkSolareumBotExploit, checkCypherInsiderTheft, checkIoNetSybilAttack, checkSvtTokenHoneypot, checkSagaDaoGovernanceAttack, checkAurorySyncSpaceExploit, checkTulipCrankManipulation, checkUxdStabilityFlaw, checkOptiFiCloseVulnerability, checkWeb3JsSupplyChainAttack, checkParclFrontendAttack, checkJitoDdosPattern, checkPhantomDdosPattern, checkGrapeProtocolDos, checkCandyMachineZeroAccount } from './solana-batched-patterns-21.js';
 
+// NEW PATTERNS SOL677-SOL696 (Feb 5 2026 4AM - Sec3 2025 Report + sannykim/solsec Research)
+import { checkNeodymeRoundingAttack, checkJetBreakStatementBug, checkCopeRouletteExploit, checkSimulationDetectionBypass, checkRootOfTrustChainValidation, checkUncheckedAccountDocumentation, checkLpTokenOracleManipulation, checkSignatureSetFabrication, checkIncineratorNftAttack, checkSemanticInconsistency as checkSemanticInconsistencyV2, checkTokenApprovalRevocation, checkCheckedMathNotUsed, checkDriftOracleGuardrails as checkDriftOracleGuardrailsV2, checkMangoMarketsPattern, checkSolendReserveBypass, checkKudelskiOwnershipPattern, checkSec3AuditCommonFindings, checkTrailOfBitsDefiPattern, checkZellicAnchorVulnerability, checkOttersecAuditPattern } from './solana-batched-patterns-22.js';
+
+// NEW PATTERNS SOL697-SOL716 (Feb 5 2026 4AM - Input Validation & Data Hygiene)
+import { checkInputLengthOverflow, checkNumericRangeValidation, checkPubkeyFormatValidation, checkArrayIndexBounds, checkTimestampFuturePastValidation, checkPercentageOverflow, checkEnumVariantExhaustiveness, checkMerkleProofDepth, checkProgramIdValidationCpi, checkDataVersionMigration, checkChecksumValidation, checkRaceConditionStateUpdate, checkAtomicUpdateGuarantee, checkBitManipulationCorrectness, checkComputeUnitExhaustionDos, checkMemoryAllocationDos, checkStackOverflowRecursionV2, checkLogSpamAttackV2, checkQueueGriefingAttackV2, checkOracleLivenessDependencyV2 } from './solana-batched-patterns-23.js';
+
+// NEW PATTERNS SOL717-SOL736 (Feb 5 2026 4AM - Access Control & Authorization)
+import { checkRoleBasedAccessControl, checkHardcodedAdminAddress, checkMissingMultisigCritical, checkAuthorityDelegationChainV2, checkMissingAuthorityExpiryV2, checkSignerBypassCpi, checkOwnerCheckDerivedAccount, checkPermissionEscalationInit, checkUnprotectedEmergencyFunctions, checkTimelockBypassParameterV2, checkCrossProgramAuthorityConfusion, checkPdaSignerSeedsMismatch, checkOwnershipTransferConfirmation, checkInsufficientPauseProtection, checkGovernanceQuorumManipulationV2, checkMissingFunctionSelectorValidation, checkReentrancyStateUpdateOrder, checkTokenAccountAuthorityValidation, checkUpgradeAuthorityRestriction, checkMissingEventAuthorityChange } from './solana-batched-patterns-24.js';
+
 export interface PatternInput {
   idl: ParsedIdl | null;
   rust: ParsedRust | null;
@@ -2641,6 +2650,72 @@ const patterns: Pattern[] = [
   { id: 'SOL674', name: 'Phantom Wallet Spam/DDoS', severity: 'low', run: checkPhantomDdosPattern },
   { id: 'SOL675', name: 'Grape Protocol Network DoS', severity: 'high', run: checkGrapeProtocolDos },
   { id: 'SOL676', name: 'Candy Machine Zero-Account DoS', severity: 'medium', run: checkCandyMachineZeroAccount },
+  
+  // NEW PATTERNS SOL677-SOL696 (Feb 5 2026 4AM - Sec3 2025 Report + sannykim/solsec Research)
+  { id: 'SOL677', name: 'Neodyme Rounding Attack Vector ($2.6B risk)', severity: 'critical', run: checkNeodymeRoundingAttack },
+  { id: 'SOL678', name: 'Jet Protocol Break Statement Bug', severity: 'high', run: checkJetBreakStatementBug },
+  { id: 'SOL679', name: 'Cope Roulette Revert Exploit Pattern', severity: 'critical', run: checkCopeRouletteExploit },
+  { id: 'SOL680', name: 'Simulation Detection Bypass Risk', severity: 'medium', run: checkSimulationDetectionBypass },
+  { id: 'SOL681', name: 'Missing Root of Trust Chain (Cashio)', severity: 'critical', run: checkRootOfTrustChainValidation },
+  { id: 'SOL682', name: 'Unchecked Account Without Documentation', severity: 'high', run: checkUncheckedAccountDocumentation },
+  { id: 'SOL683', name: 'LP Token Oracle Manipulation ($200M risk)', severity: 'critical', run: checkLpTokenOracleManipulation },
+  { id: 'SOL684', name: 'Signature Set Fabrication (Wormhole $326M)', severity: 'critical', run: checkSignatureSetFabrication },
+  { id: 'SOL685', name: 'Incinerator NFT Attack (Schrodingers NFT)', severity: 'high', run: checkIncineratorNftAttack },
+  { id: 'SOL686', name: 'Semantic Inconsistency (Stake Pool)', severity: 'high', run: checkSemanticInconsistencyV2 },
+  { id: 'SOL687', name: 'Missing Token Approval Revocation', severity: 'medium', run: checkTokenApprovalRevocation },
+  { id: 'SOL688', name: 'Checked Math Not Used (BlockSec Pattern)', severity: 'high', run: checkCheckedMathNotUsed },
+  { id: 'SOL689', name: 'Missing Oracle Guardrails (Drift Pattern)', severity: 'high', run: checkDriftOracleGuardrailsV2 },
+  { id: 'SOL690', name: 'Mango Markets Price Manipulation ($116M)', severity: 'critical', run: checkMangoMarketsPattern },
+  { id: 'SOL691', name: 'Solend Reserve Config Bypass', severity: 'critical', run: checkSolendReserveBypass },
+  { id: 'SOL692', name: 'Missing Ownership Check (Kudelski)', severity: 'critical', run: checkKudelskiOwnershipPattern },
+  { id: 'SOL693', name: 'Business Logic Flaw (Sec3 38.5%)', severity: 'high', run: checkSec3AuditCommonFindings },
+  { id: 'SOL694', name: 'DeFi Security Anti-Pattern (Trail of Bits)', severity: 'high', run: checkTrailOfBitsDefiPattern },
+  { id: 'SOL695', name: 'Zellic Anchor Vulnerability Pattern', severity: 'high', run: checkZellicAnchorVulnerability },
+  { id: 'SOL696', name: 'OtterSec Audit Pattern Finding', severity: 'medium', run: checkOttersecAuditPattern },
+  
+  // NEW PATTERNS SOL697-SOL716 (Feb 5 2026 4AM - Input Validation & Data Hygiene 25%)
+  { id: 'SOL697', name: 'Input Length Overflow Attack Vector', severity: 'high', run: checkInputLengthOverflow },
+  { id: 'SOL698', name: 'Missing Numeric Range Validation', severity: 'medium', run: checkNumericRangeValidation },
+  { id: 'SOL699', name: 'Pubkey Format Validation Missing', severity: 'medium', run: checkPubkeyFormatValidation },
+  { id: 'SOL700', name: 'Array Index Bounds Not Checked', severity: 'high', run: checkArrayIndexBounds },
+  { id: 'SOL701', name: 'Timestamp Future/Past Validation Missing', severity: 'medium', run: checkTimestampFuturePastValidation },
+  { id: 'SOL702', name: 'Percentage/Basis Points Overflow Risk', severity: 'high', run: checkPercentageOverflow },
+  { id: 'SOL703', name: 'Non-Exhaustive Enum Match', severity: 'medium', run: checkEnumVariantExhaustiveness },
+  { id: 'SOL704', name: 'Merkle Proof Depth Not Limited', severity: 'high', run: checkMerkleProofDepth },
+  { id: 'SOL705', name: 'Missing Program ID Validation in CPI', severity: 'critical', run: checkProgramIdValidationCpi },
+  { id: 'SOL706', name: 'Missing Data Version Field', severity: 'low', run: checkDataVersionMigration },
+  { id: 'SOL707', name: 'Missing Checksum Validation', severity: 'medium', run: checkChecksumValidation },
+  { id: 'SOL708', name: 'Race Condition in State Update', severity: 'high', run: checkRaceConditionStateUpdate },
+  { id: 'SOL709', name: 'Non-Atomic Multi-Account Update', severity: 'high', run: checkAtomicUpdateGuarantee },
+  { id: 'SOL710', name: 'Bit Shift Overflow Risk', severity: 'medium', run: checkBitManipulationCorrectness },
+  { id: 'SOL711', name: 'Compute Unit Exhaustion DoS Risk', severity: 'high', run: checkComputeUnitExhaustionDos },
+  { id: 'SOL712', name: 'Memory Allocation DoS Risk', severity: 'high', run: checkMemoryAllocationDos },
+  { id: 'SOL713', name: 'Stack Overflow via Recursion Risk', severity: 'high', run: checkStackOverflowRecursionV2 },
+  { id: 'SOL714', name: 'Log Spam Attack Vector', severity: 'low', run: checkLogSpamAttackV2 },
+  { id: 'SOL715', name: 'Queue Griefing Attack Risk', severity: 'medium', run: checkQueueGriefingAttackV2 },
+  { id: 'SOL716', name: 'Oracle Liveness Dependency', severity: 'high', run: checkOracleLivenessDependencyV2 },
+  
+  // NEW PATTERNS SOL717-SOL736 (Feb 5 2026 4AM - Access Control & Authorization 19%)
+  { id: 'SOL717', name: 'Missing Role-Based Access Control', severity: 'high', run: checkRoleBasedAccessControl },
+  { id: 'SOL718', name: 'Hardcoded Admin Address', severity: 'medium', run: checkHardcodedAdminAddress },
+  { id: 'SOL719', name: 'Missing Multisig for Critical Operation', severity: 'high', run: checkMissingMultisigCritical },
+  { id: 'SOL720', name: 'Authority Delegation Chain Depth Risk', severity: 'medium', run: checkAuthorityDelegationChainV2 },
+  { id: 'SOL721', name: 'Authority Grant Without Expiry', severity: 'medium', run: checkMissingAuthorityExpiryV2 },
+  { id: 'SOL722', name: 'Signer Check Bypass via CPI', severity: 'high', run: checkSignerBypassCpi },
+  { id: 'SOL723', name: 'Missing Owner Check on PDA', severity: 'critical', run: checkOwnerCheckDerivedAccount },
+  { id: 'SOL724', name: 'Permission Escalation via Reinitialization', severity: 'critical', run: checkPermissionEscalationInit },
+  { id: 'SOL725', name: 'Unprotected Emergency Function', severity: 'critical', run: checkUnprotectedEmergencyFunctions },
+  { id: 'SOL726', name: 'Timelock Bypass via Zero Delay', severity: 'critical', run: checkTimelockBypassParameterV2 },
+  { id: 'SOL727', name: 'Cross-Program Authority Confusion', severity: 'high', run: checkCrossProgramAuthorityConfusion },
+  { id: 'SOL728', name: 'PDA Signer Seeds Validation Missing', severity: 'high', run: checkPdaSignerSeedsMismatch },
+  { id: 'SOL729', name: 'Ownership Transfer Without Confirmation', severity: 'high', run: checkOwnershipTransferConfirmation },
+  { id: 'SOL730', name: 'Incomplete Pause Protection', severity: 'medium', run: checkInsufficientPauseProtection },
+  { id: 'SOL731', name: 'Governance Quorum Manipulation Risk', severity: 'high', run: checkGovernanceQuorumManipulationV2 },
+  { id: 'SOL732', name: 'Missing Instruction Discriminator Validation', severity: 'high', run: checkMissingFunctionSelectorValidation },
+  { id: 'SOL733', name: 'Reentrancy via CPI Before State Update', severity: 'critical', run: checkReentrancyStateUpdateOrder },
+  { id: 'SOL734', name: 'Token Account Authority Not Validated', severity: 'high', run: checkTokenAccountAuthorityValidation },
+  { id: 'SOL735', name: 'Upgrade Authority Not Restricted', severity: 'high', run: checkUpgradeAuthorityRestriction },
+  { id: 'SOL736', name: 'Missing Event on Authority Change', severity: 'medium', run: checkMissingEventAuthorityChange },
 ];
 
 export async function runPatterns(input: PatternInput): Promise<Finding[]> {
