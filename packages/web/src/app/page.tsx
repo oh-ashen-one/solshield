@@ -272,7 +272,6 @@ pub enum VaultError {
           <nav className="hidden md:flex items-center gap-8">
             <Link href="#features" className="text-sm text-zinc-400 hover:text-white transition-colors">Features</Link>
             <Link href="/patterns" className="text-sm text-zinc-400 hover:text-white transition-colors">Patterns</Link>
-            <Link href="/api" className="text-sm text-zinc-400 hover:text-white transition-colors">API</Link>
             <a 
               href="https://github.com/oh-ashen-one/solshield" 
               target="_blank" 
@@ -318,7 +317,7 @@ pub enum VaultError {
           
           <p className="text-xl text-zinc-400 text-center max-w-2xl mx-auto mb-12">
             AI-powered vulnerability detection for Anchor programs. 
-            142 patterns. Instant analysis. Ship secure code.
+            150 patterns. Instant analysis. Ship secure code.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -340,6 +339,31 @@ pub enum VaultError {
               View Source
             </a>
           </div>
+
+          {/* npm Install */}
+          <div className="mt-12 flex flex-col items-center">
+            <p className="text-sm text-zinc-500 mb-3">Or install the SDK</p>
+            <div className="flex items-center gap-3 px-6 py-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+              <code className="text-lg font-mono text-cyan-400">npm install solshield</code>
+              <button 
+                onClick={() => navigator.clipboard.writeText('npm install solshield')}
+                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-white"
+                title="Copy to clipboard"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </div>
+            <a 
+              href="https://www.npmjs.com/package/solshield"
+              target="_blank"
+              rel="noopener noreferrer" 
+              className="mt-3 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              View on npm →
+            </a>
+          </div>
         </div>
       </section>
 
@@ -348,8 +372,8 @@ pub enum VaultError {
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { value: '142', label: 'Vulnerability Patterns', sublabel: 'Based on real exploits' },
-              { value: '$557M+', label: 'Exploits Covered', sublabel: 'Wormhole, Mango, more' },
+              { value: '150', label: 'Vulnerability Patterns', sublabel: 'Based on real exploits' },
+              { value: '$600M+', label: 'Exploits Covered', sublabel: 'Wormhole, Mango, Cashio, more' },
               { value: '17', label: 'CLI Commands', sublabel: 'Full audit toolkit' },
               { value: '<1s', label: 'Analysis Time', sublabel: 'Instant results' },
             ].map((stat, i) => (
@@ -657,7 +681,7 @@ pub enum VaultError {
               href="/patterns"
               className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
             >
-              View all 142 patterns
+              View all 150 patterns
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>

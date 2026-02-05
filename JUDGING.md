@@ -1,12 +1,12 @@
-# 🏆 SolGuard Judging Guide
+# 🏆 SolShield Judging Guide
 
-Quick reference for hackathon judges evaluating SolGuard.
+Quick reference for hackathon judges evaluating SolShield.
 
 ---
 
 ## 30-Second Demo
 
-1. **Click:** [![Open in Codespaces](https://img.shields.io/badge/Open-Codespaces-blue)](https://codespaces.new/oh-ashen-one/solguard?quickstart=1)
+1. **Click:** [![Open in Codespaces](https://img.shields.io/badge/Open-Codespaces-blue)](https://codespaces.new/oh-ashen-one/SolShield?quickstart=1)
 2. **Wait:** ~60 seconds for environment
 3. **Try:** Click "Vulnerable Vault" → "Run Audit"
 4. **See:** Instant vulnerability detection with fixes
@@ -19,8 +19,8 @@ Quick reference for hackathon judges evaluating SolGuard.
 
 | Check | Evidence |
 |-------|----------|
-| Code compiles | [![CI](https://github.com/oh-ashen-one/solguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-ashen-one/solguard/actions) |
-| Tests pass | 19 tests, 100% passing |
+| Code compiles | [![CI](https://github.com/oh-ashen-one/SolShield/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-ashen-one/SolShield/actions) |
+| Tests pass | 31 tests, 100% passing |
 | Demo works | One-click Codespaces |
 | Multiple interfaces | CLI, Web UI, API |
 | Real functionality | 150 working patterns |
@@ -48,14 +48,14 @@ Quick reference for hackathon judges evaluating SolGuard.
 | Small teams can't afford security | Now they can |
 | CI/CD has no security gates | SARIF + GitHub Actions |
 
-**Evidence:** [REAL-WORLD.md](REAL-WORLD.md) — Would have caught **$495M+** in exploits
+**Evidence:** [REAL-WORLD.md](REAL-WORLD.md) — Would have caught **$600M+** in exploits
 
 ---
 
 ## Quick Stats
 
 ```
-📊 SolGuard by the Numbers
+📊 SolShield by the Numbers
 ├── Vulnerability Patterns: 150
 ├── CLI Commands: 7
 ├── Tests: 19 (passing)
@@ -70,10 +70,10 @@ Quick reference for hackathon judges evaluating SolGuard.
 ## File Structure Tour
 
 ```
-solguard/
+SolShield/
 ├── packages/
 │   ├── cli/               ← Main product
-│   │   ├── src/patterns/  ← 130 vulnerability detectors
+│   │   ├── src/patterns/  ← 150 vulnerability detectors
 │   │   └── src/test/      ← Test suite
 │   ├── web/               ← Next.js frontend
 │   └── program/           ← Anchor on-chain program
@@ -84,7 +84,7 @@ solguard/
 ├── docs/                  ← Additional documentation
 ├── DEMO.md                ← Demo walkthrough
 ├── BENCHMARKS.md          ← Performance data
-├── REAL-WORLD.md          ← $495M+ in exploits
+├── REAL-WORLD.md          ← $600M+ in exploits
 └── HACKATHON.md           ← Agent journey
 ```
 
@@ -96,7 +96,7 @@ This project was **100% built by AI agents**:
 
 1. **Research** — Agent studied Solana vulnerabilities
 2. **Architecture** — Agent designed the system
-3. **Implementation** — Agent wrote all 130 patterns
+3. **Implementation** — Agent wrote all 150 patterns
 4. **Testing** — Agent created test suite
 5. **Documentation** — Agent self-documented
 6. **Iteration** — Continuous review/build cycles
@@ -126,4 +126,4 @@ Don't want to run the tool? See pre-generated reports:
 
 ---
 
-*Thank you for evaluating SolGuard! 🛡️*
+*Thank you for evaluating SolShield! 🛡️*

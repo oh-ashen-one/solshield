@@ -1,25 +1,25 @@
-# 🛡️ SolGuard
+# 🛡️ SolShield
 
 ```
-███████╗ ██████╗ ██╗      ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗ 
-██╔════╝██╔═══██╗██║     ██╔════╝ ██║   ██║██╔══██╗██╔══██╗██╔══██╗
-███████╗██║   ██║██║     ██║  ███╗██║   ██║███████║██████╔╝██║  ██║
-╚════██║██║   ██║██║     ██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║
-███████║╚██████╔╝███████╗╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝
-╚══════╝ ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ 
+███████╗ ██████╗ ██╗     ███████╗██╗  ██╗██╗███████╗██╗     ██████╗ 
+██╔════╝██╔═══██╗██║     ██╔════╝██║  ██║██║██╔════╝██║     ██╔══██╗
+███████╗██║   ██║██║     ███████╗███████║██║█████╗  ██║     ██║  ██║
+╚════██║██║   ██║██║     ╚════██║██╔══██║██║██╔══╝  ██║     ██║  ██║
+███████║╚██████╔╝███████╗███████║██║  ██║██║███████╗███████╗██████╔╝
+╚══════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚═════╝ 
                     AI-Powered Smart Contract Auditor
 ```
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![CI](https://github.com/oh-ashen-one/solguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-ashen-one/solguard/actions/workflows/ci.yml)
+[![CI](https://github.com/oh-ashen-one/solshield/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-ashen-one/solshield/actions/workflows/ci.yml)
 [![Patterns](https://img.shields.io/badge/patterns-150-blue.svg)](#vulnerability-patterns)
-[![Commands](https://img.shields.io/badge/CLI%20commands-7-purple.svg)](#cli)
+[![Commands](https://img.shields.io/badge/CLI%20commands-17-purple.svg)](#cli)
 [![Built by AI](https://img.shields.io/badge/Built%20by-AI%20Agent%20🤖-ff69b4.svg)](HACKATHON.md)
 
 ### 🚀 Try It Now (No Setup Required!)
 
-[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-GitHub%20Codespaces-blue?logo=github)](https://codespaces.new/oh-ashen-one/solguard?quickstart=1)
-[![Open in Gitpod](https://img.shields.io/badge/Open%20in-Gitpod-orange?logo=gitpod)](https://gitpod.io/#https://github.com/oh-ashen-one/solguard)
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-GitHub%20Codespaces-blue?logo=github)](https://codespaces.new/oh-ashen-one/solshield?quickstart=1)
+[![Open in Gitpod](https://img.shields.io/badge/Open%20in-Gitpod-orange?logo=gitpod)](https://gitpod.io/#https://github.com/oh-ashen-one/solshield)
 
 > **For Hackathon Judges:** Click either badge above → Web UI opens automatically at port 3000 → Paste code and audit!
 
@@ -27,9 +27,9 @@
 
 > Built 100% by AI agents for the [Solana x OpenClaw Agent Hackathon 2026](https://colosseum.com/agent-hackathon)
 
-## What is SolGuard?
+## What is SolShield?
 
-SolGuard is an autonomous smart contract auditing system that:
+SolShield is an autonomous smart contract auditing system that:
 
 1. **Parses** Anchor IDL + Rust source code
 2. **Detects** vulnerabilities using **150 specialized patterns**
@@ -39,11 +39,11 @@ SolGuard is an autonomous smart contract auditing system that:
 
 **The pitch:** Manual audits cost $10K-$100K and take weeks. We do it in seconds for free (beta).
 
-> 💰 **[Real-world impact](REAL-WORLD.md):** SolGuard's patterns would have caught exploits totaling **$495M+** in losses (Wormhole, Mango, Cashio, and more).
+> 💰 **[Real-world impact](REAL-WORLD.md):** SolShield's patterns would have caught exploits totaling **$600M+** in losses (Wormhole, Mango, Cashio, and more).
 
 ## 🔍 Vulnerability Patterns (130)
 
-> **130 patterns** covering Core Security, CPI, DeFi, NFT, Token, PDA, Anchor, and more.
+> **150 patterns** covering Core Security, CPI, DeFi, NFT, Token, PDA, Anchor, and more.
 > See [patterns page](packages/web/src/app/patterns/page.tsx) for the complete list.
 
 ### Sample Critical Patterns
@@ -102,84 +102,60 @@ SolGuard is an autonomous smart contract auditing system that:
 |----|---------|-------------|
 | SOL028 | Event Emission | Missing events for indexing |
 
-### NEW: DeFi & Protocol-Specific Patterns (SOL131-SOL150)
-| ID | Pattern | Description |
-|----|---------|-------------|
-| SOL131 | Jito Bundle Security | MEV protection, sandwich attacks |
-| SOL132 | Solana Blink/Actions | Action endpoint security |
-| SOL133 | Token-2022 Advanced | Permanent delegate, transfer hooks |
-| SOL134 | Bonding Curve | Pump.fun style curve manipulation |
-| SOL135 | DEX Aggregator | Jupiter/aggregator integration |
-| SOL136 | cNFT Security | Compressed NFT merkle proofs |
-| SOL137 | Stake Pool Advanced | Liquid staking, LST security |
-| SOL138 | Program Migration | Version fields, migration safety |
-| SOL139 | Pyth Integration | Confidence, staleness, expo handling |
-| SOL140 | Permissionless Cranking | Keeper incentives, liquidations |
-| SOL141 | Perpetual DEX | Funding rates, position limits |
-| SOL142 | Restaking | Slashing, AVS validation |
-| SOL143 | Intent-Based | Solver security, execution |
-| SOL144 | Prediction Market | Resolution, dispute mechanisms |
-| SOL145 | Cross-Margin | Portfolio margin, correlation |
-| SOL146 | Yield Aggregator | Vault share inflation, harvests |
-| SOL147 | Real World Assets | RWA custody, compliance |
-| SOL148 | DAO Treasury | Governance, timelock, flash loans |
-| SOL149 | NFT Lending | Floor price, liquidation |
-| SOL150 | SocialFi | Key trading, front-running |
-
 ## 🚀 Quick Start
 
 ### CLI
 
 ```bash
 # Install from source (npm package coming soon)
-git clone https://github.com/oh-ashen-one/solguard.git
-cd solguard/packages/cli
+git clone https://github.com/oh-ashen-one/solshield.git
+cd solshield/packages/cli
 npm install && npm run build && npm link
 
 # Audit a program
-solguard audit ./path/to/program
+solshield audit ./path/to/program
 
 # Audit from GitHub directly
-solguard github coral-xyz/anchor
-solguard github https://github.com/user/repo --pr 123
+solshield github coral-xyz/anchor
+solshield github https://github.com/user/repo --pr 123
 
 # Fetch and audit on-chain programs
-solguard fetch <PROGRAM_ID> --rpc https://api.mainnet-beta.solana.com
+solshield fetch <PROGRAM_ID> --rpc https://api.mainnet-beta.solana.com
 
 # Watch mode for development
-solguard watch ./program
+solshield watch ./program
 
 # Generate audit certificate
-solguard certificate ./program --program-id <PUBKEY>
+solshield certificate ./program --program-id <PUBKEY>
 
 # CI mode for GitHub Actions
-solguard ci . --fail-on high --sarif results.sarif
+solshield ci . --fail-on high --sarif results.sarif
 
 # List all patterns
-solguard list
+solshield list
 
 # Learn about a vulnerability with official Solana docs
-solguard learn SOL001     # Learn about Missing Owner Check
-solguard learn pda        # Learn about PDAs in general
-solguard learn cpi --raw  # Raw markdown for piping to LLMs
+solshield learn SOL001     # Learn about Missing Owner Check
+solshield learn pda        # Learn about PDAs in general
+solshield learn cpi --raw  # Raw markdown for piping to LLMs
 
 # Show stats
-solguard stats
+solshield stats
 ```
 
 ### 📚 LLM-Ready Documentation
 
-SolShield integrates with [Solana's LLM-ready docs](https://x.com/solana_devs/status/2019123339642695783) — just add `.md` to any Solana docs URL to get clean markdown perfect for AI assistants.
+solshield integrates with [Solana's LLM-ready docs](https://x.com/solana_devs/status/2019123339642695783) — just add `.md` to any Solana docs URL to get clean markdown perfect for AI assistants.
 
 ```bash
 # Learn about a specific vulnerability pattern
-solguard learn SOL004  # Fetches PDA validation docs from Solana
+solshield learn SOL004  # Fetches PDA validation docs from Solana
 
 # Get raw markdown to pipe to your AI
-solguard learn cpi --raw | claude "explain this"
+solshield learn cpi --raw | claude "explain this"
 
 # Just show the docs URLs
-solguard learn SOL001 --urls
+solshield learn SOL001 --urls
 ```
 
 Topics: `accounts`, `pda`, `cpi`, `tokens`, `transactions`, `programs`, `fees`, `anchor`, `rust`
@@ -188,7 +164,7 @@ Topics: `accounts`, `pda`, `cpi`, `tokens`, `transactions`, `programs`, `fees`, 
 
 ```yaml
 # .github/workflows/audit.yml
-name: SolGuard Audit
+name: solshield Audit
 on: [push, pull_request]
 
 jobs:
@@ -197,13 +173,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install SolGuard
+      - name: Install solshield
         run: |
-          git clone https://github.com/oh-ashen-one/solguard.git /tmp/solguard
-          cd /tmp/solguard/packages/cli && npm install && npm run build && npm link
+          git clone https://github.com/oh-ashen-one/solshield.git /tmp/solshield
+          cd /tmp/solshield/packages/cli && npm install && npm run build && npm link
         
       - name: Run Security Audit
-        run: solguard ci . --fail-on high --sarif results.sarif
+        run: solshield ci . --fail-on high --sarif results.sarif
         
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
@@ -223,11 +199,11 @@ pnpm dev
 ## 📁 Project Structure
 
 ```
-solguard/
+solshield/
 ├── packages/
 │   ├── cli/              # Command-line auditor
 │   │   └── src/
-│   │       ├── patterns/ # 130 vulnerability detectors
+│   │       ├── patterns/ # 150 vulnerability detectors
 │   │       ├── parsers/  # IDL + Rust parsing
 │   │       └── commands/ # 7 CLI commands
 │   │
@@ -238,7 +214,7 @@ solguard/
 │   │
 │   └── program/          # Anchor on-chain registry
 │       └── programs/
-│           └── solguard/ # Audit storage + verification
+│           └── solshield/ # Audit storage + verification
 │
 ├── examples/
 │   ├── vulnerable/       # Test programs with issues
@@ -268,7 +244,7 @@ solguard/
 ┌─────────────────────────────────────────────────────────────────┐
 │                     DETECTION ENGINE                             │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │              130 VULNERABILITY PATTERNS                   │   │
+│  │              150 vulnerability patterns                   │   │
 │  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐  │   │
 │  │  │ Core   │ │ CPI    │ │ Token  │ │ PDA    │ │ DeFi   │  │   │
 │  │  │Security│ │Security│ │Security│ │Security│ │Patterns│  │   │
@@ -297,7 +273,7 @@ solguard/
 
 ## ⛓️ Solana Integration
 
-SolGuard creates a **composable on-chain audit layer**:
+solshield creates a **composable on-chain audit layer**:
 
 - **Audit Registry PDA** — Keyed by `program_id`, queryable by anyone
 - **Compressed NFT Certificates** — Visual proof with Metaplex cNFTs
@@ -306,7 +282,7 @@ SolGuard creates a **composable on-chain audit layer**:
 
 ```rust
 // Other programs can verify audits via CPI
-let audit_passed = solguard::verify_audit(ctx)?;
+let audit_passed = solshield::verify_audit(ctx)?;
 require!(audit_passed, ErrorCode::NotAudited);
 ```
 
@@ -314,7 +290,7 @@ require!(audit_passed, ErrorCode::NotAudited);
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  🛡️ SOLGUARD AUDIT REPORT
+  🛡️ solshield AUDIT REPORT
   ./examples/vulnerable/defi-vault
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -369,21 +345,21 @@ require!(audit_passed, ErrorCode::NotAudited);
   [SOL018] Oracle Manipulation — Price feed has no staleness check
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Scanned with 130 patterns in 0.34s
-  Run `solguard audit --verbose` for full details
+  Scanned with 150 patterns in 0.34s
+  Run `solshield audit --verbose` for full details
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## 🏆 What We Built
 
-- [x] **130 vulnerability patterns** (SOL001-SOL130) covering all major Solana security risks
+- [x] **150 vulnerability patterns** (SOL001-SOL150) covering all major Solana security risks
 - [x] **7 CLI commands** (audit, fetch, github, watch, ci, stats, list)
 - [x] **GitHub integration** — audit repos and PRs directly
 - [x] **CI mode** — GitHub Actions with SARIF code scanning
 - [x] **Web UI** with paste-to-audit, search/filter, example code
 - [x] **On-chain audit registry** — full Anchor program with disputes, history
 - [x] **API endpoint** — REST API for programmatic audits
-- [x] **19 tests** — all passing, CI/CD pipeline
+- [x] **31 tests** — all passing, CI/CD pipeline
 
 ### 🚀 Roadmap (Post-Hackathon)
 - [ ] Deploy Anchor program to devnet/mainnet ([deployment guide](DEPLOYMENT.md))
@@ -410,7 +386,7 @@ require!(audit_passed, ErrorCode::NotAudited);
 
 ---
 
-**Repo:** https://github.com/oh-ashen-one/solguard
+**Repo:** https://github.com/oh-ashen-one/solshield
 
 ## 📜 License
 

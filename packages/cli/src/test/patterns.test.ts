@@ -65,10 +65,10 @@ describe('Vulnerability Patterns', () => {
   });
 
   describe('Pattern Coverage', () => {
-    it('has 65 registered patterns', async () => {
+    it('has 150 registered patterns', async () => {
       const { listPatterns } = await import('../patterns/index.js');
       const patterns = listPatterns();
-      expect(patterns.length).toBe(130);
+      expect(patterns.length).toBe(150);
     });
 
     it('patterns have required fields', async () => {

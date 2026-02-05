@@ -283,4 +283,19 @@ program
     console.log(chalk.dim(`  ${summary.total} findings | ${duration}ms`));
   });
 
+// Simple 'scan' alias for vibe coders
+program
+  .command('scan')
+  .description('Scan your code for vulnerabilities (alias for audit)')
+  .argument('[path]', 'Path to scan', '.')
+  .option('-q, --quick', 'Quick scan (skip AI explanations)')
+  .option('-o, --output <format>', 'Output format: terminal, json, markdown', 'terminal')
+  .action(async (path: string, options: any) => {
+    await auditCommand(path, {
+      output: options.output,
+      ai: !options.quick,
+      verbose: false,
+    });
+  });
+
 program.parse();

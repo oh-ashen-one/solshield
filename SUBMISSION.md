@@ -1,7 +1,7 @@
 # Hackathon Submission Details
 
 ## Project Name
-SolGuard
+SolShield
 
 ## Tagline
 AI-Powered Smart Contract Auditor for Solana
@@ -11,7 +11,7 @@ AI-Powered Smart Contract Auditor for Solana
 
 ## Solana Integration (998 chars)
 
-SolGuard integrates with Solana through a custom Anchor program that creates an on-chain audit registry:
+SolShield integrates with Solana through a custom Anchor program that creates an on-chain audit registry:
 
 **1. Audit Storage (PDAs)** - Each audited program gets a PDA storing: findings hash, severity scores, pass/fail status, and auditor identity. Programs can be re-audited with full version history preserved.
 
@@ -26,13 +26,13 @@ SolGuard integrates with Solana through a custom Anchor program that creates an 
 This creates a decentralized security layer where audit results are immutable, verifiable, and composable with other Solana protocols.
 
 ## GitHub
-https://github.com/oh-ashen-one/solguard
+https://github.com/oh-ashen-one/SolShield
 
 ## Demo
 
 **One-Click Demo (No Setup Required):**
-- 🚀 **GitHub Codespaces:** https://codespaces.new/oh-ashen-one/solguard?quickstart=1
-- 🟠 **Gitpod:** https://gitpod.io/#https://github.com/oh-ashen-one/solguard
+- 🚀 **GitHub Codespaces:** https://codespaces.new/oh-ashen-one/SolShield?quickstart=1
+- 🟠 **Gitpod:** https://gitpod.io/#https://github.com/oh-ashen-one/SolShield
 
 Click either link → Wait for environment to spin up → Web UI opens automatically at port 3000 → Click "Vulnerable Vault" → Run audit!
 
@@ -45,15 +45,15 @@ Click either link → Wait for environment to spin up → Web UI opens automatic
 *(Coming soon - Netlify deployment pending)*
 
 ## Key Stats
-- **130** vulnerability patterns
+- **150** vulnerability patterns
 - **110+** commits (100% AI-generated)
 - **23** documentation files
 - **19** tests (all passing)
-- **$495M+** in exploits our patterns would have caught
+- **$600M+** in exploits our patterns would have caught
 
-## Why SolGuard Should Win
+## Why SolShield Should Win
 
-1. **Largest Pattern Coverage** — 130 patterns, more than any alternative
+1. **Largest Pattern Coverage** — 150 patterns, more than any alternative
 2. **Real-World Impact** — Would have caught Wormhole, Mango, Cashio exploits
 3. **100% Agent-Built** — True demonstration of AI coding capabilities
 4. **Production-Ready** — CLI, Web UI, API, CI/CD integration

@@ -1,34 +1,34 @@
-# ❓ SolGuard FAQ
+# ❓ SolShield FAQ
 
-Frequently asked questions about SolGuard.
+Frequently asked questions about SolShield.
 
 ---
 
 ## General
 
-### What is SolGuard?
-An AI-powered smart contract auditor for Solana that detects 130 vulnerability patterns in seconds.
+### What is SolShield?
+An AI-powered smart contract auditor for Solana that detects 150 vulnerability patterns in seconds.
 
 ### How is it different from manual audits?
-| Aspect | Manual Audit | SolGuard |
+| Aspect | Manual Audit | SolShield |
 |--------|--------------|----------|
 | Time | 1-4 weeks | < 1 second |
 | Cost | $10K-$100K | Free (beta) |
-| Coverage | Varies | 130 patterns |
+| Coverage | Varies | 150 patterns |
 | Consistency | Human-dependent | Deterministic |
 
 ### Is it free?
 Yes, currently in free beta. Future pricing TBD.
 
 ### Can I trust it for production?
-SolGuard is a first line of defense. For high-value protocols (>$10M TVL), we recommend combining SolGuard with professional audits. SolGuard catches the easy stuff so auditors can focus on complex logic.
+SolShield is a first line of defense. For high-value protocols (>$10M TVL), we recommend combining SolShield with professional audits. SolShield catches the easy stuff so auditors can focus on complex logic.
 
 ---
 
 ## Technical
 
 ### What patterns does it detect?
-130 patterns covering:
+150 patterns covering:
 - Core Security (ownership, signers, initialization)
 - CPI Security (arbitrary CPI, reentrancy)
 - Arithmetic (overflow, rounding, precision)
@@ -38,7 +38,7 @@ SolGuard is a first line of defense. For high-value protocols (>$10M TVL), we re
 - NFT Patterns (Metaplex security)
 - And more...
 
-See full list: `solguard list`
+See full list: `SolShield list`
 
 ### Does it support native Solana (non-Anchor)?
 Currently optimized for Anchor programs. Native Solana support is on the roadmap.
@@ -64,24 +64,24 @@ Other programs can verify audit status via CPI before interacting with unaudited
 ```bash
 # Install
 # From source (npm package coming soon)
-git clone https://github.com/oh-ashen-one/solguard.git
-cd solguard/packages/cli && npm install && npm run build && npm link
+git clone https://github.com/oh-ashen-one/SolShield.git
+cd SolShield/packages/cli && npm install && npm run build && npm link
 
 # Audit
-solguard audit ./path/to/program
+SolShield audit ./path/to/program
 ```
 
 ### Can I audit from GitHub?
 Yes!
 ```bash
-solguard github owner/repo
-solguard github owner/repo --pr 123
+SolShield github owner/repo
+SolShield github owner/repo --pr 123
 ```
 
 ### Can I audit on-chain programs?
 Yes, by program ID:
 ```bash
-solguard fetch <PROGRAM_ID> --rpc https://api.mainnet-beta.solana.com
+SolShield fetch <PROGRAM_ID> --rpc https://api.mainnet-beta.solana.com
 ```
 
 ### How do I integrate with CI/CD?
@@ -102,14 +102,14 @@ We continuously improve pattern accuracy.
 ### Was this really built by an AI agent?
 Yes, 100%. Every line of code was written by Midir (an AI agent on Clawdbot). See [HACKATHON.md](HACKATHON.md) for the full story.
 
-### Why 130 patterns?
+### Why 150 patterns?
 Agents don't get tired. We researched every known Solana vulnerability class, audit reports, and post-mortems, then implemented detection for each.
 
 ### Is the on-chain program deployed?
 Code is complete in `packages/program/`. Deployment to devnet is in progress. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### How can I try it?
-Click: [![Open in Codespaces](https://img.shields.io/badge/Open-Codespaces-blue)](https://codespaces.new/oh-ashen-one/solguard?quickstart=1)
+Click: [![Open in Codespaces](https://img.shields.io/badge/Open-Codespaces-blue)](https://codespaces.new/oh-ashen-one/SolShield?quickstart=1)
 
 ---
 
@@ -120,11 +120,11 @@ Click: [![Open in Codespaces](https://img.shields.io/badge/Open-Codespaces-blue)
 - **Web UI:** Code is sent to the API for processing, not stored
 - **GitHub audit:** Fetches from public GitHub, processed server-side
 
-### Can SolGuard have vulnerabilities?
+### Can SolShield have vulnerabilities?
 Yes, it's software. Report security issues per [SECURITY.md](SECURITY.md).
 
-### Does SolGuard guarantee my code is safe?
-No. SolGuard catches known vulnerability patterns. Novel attacks, business logic errors, and complex interactions may not be detected. Always conduct thorough testing.
+### Does SolShield guarantee my code is safe?
+No. SolShield catches known vulnerability patterns. Novel attacks, business logic errors, and complex interactions may not be detected. Always conduct thorough testing.
 
 ---
 
@@ -150,7 +150,7 @@ Yes! Patterns are modular TypeScript files. See `packages/cli/src/patterns/` for
 | Benchmarks | [BENCHMARKS.md](BENCHMARKS.md) |
 | Comparisons | [COMPARISON.md](COMPARISON.md) |
 | Integration | [INTEGRATIONS.md](INTEGRATIONS.md) |
-| Bug reports | [GitHub Issues](https://github.com/oh-ashen-one/solguard/issues) |
+| Bug reports | [GitHub Issues](https://github.com/oh-ashen-one/SolShield/issues) |
 
 ---
 

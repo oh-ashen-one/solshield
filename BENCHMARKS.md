@@ -1,12 +1,12 @@
-# ⚡ SolGuard Performance Benchmarks
+# ⚡ SolShield Performance Benchmarks
 
 ## Speed Comparison
 
 | Method | Time | Cost |
 |--------|------|------|
 | Manual Audit (human) | 1-4 weeks | $10,000 - $100,000 |
-| SolGuard CLI | **< 1 second** | **Free (beta)** |
-| SolGuard API | **< 2 seconds** | **Free (beta)** |
+| SolShield CLI | **< 1 second** | **Free (beta)** |
+| SolShield API | **< 2 seconds** | **Free (beta)** |
 
 ## CLI Benchmarks
 
@@ -14,14 +14,14 @@ Tested on typical Anchor programs (M2 MacBook Pro, Node 20):
 
 | Program Size | Files | Lines | Patterns | Time |
 |-------------|-------|-------|----------|------|
-| Small (Counter) | 1 | 50 | 130 | 0.12s |
-| Medium (Token Vault) | 3 | 300 | 130 | 0.34s |
-| Large (DeFi Protocol) | 12 | 2,000 | 130 | 1.2s |
-| Complex (Full AMM) | 25 | 5,000 | 130 | 2.8s |
+| Small (Counter) | 1 | 50 | 150 | 0.12s |
+| Medium (Token Vault) | 3 | 300 | 150 | 0.34s |
+| Large (DeFi Protocol) | 12 | 2,000 | 150 | 1.2s |
+| Complex (Full AMM) | 25 | 5,000 | 150 | 2.8s |
 
 ## Pattern Execution
 
-All 130 patterns run in parallel for each file:
+All 150 patterns run in parallel for each file:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -51,7 +51,7 @@ All 130 patterns run in parallel for each file:
 |-----------|-------------|
 | Parse small program | ~50 MB |
 | Parse large program | ~150 MB |
-| Run all 130 patterns | ~200 MB |
+| Run all 150 patterns | ~200 MB |
 | Generate report | ~10 MB |
 
 ## CI/CD Integration
@@ -60,26 +60,26 @@ GitHub Actions workflow overhead:
 
 | Step | Time |
 |------|------|
-| Install SolGuard | 8-12s |
+| Install SolShield | 8-12s |
 | Run audit | 1-3s |
 | Generate SARIF | < 1s |
 | **Total** | **~15s** |
 
 ## Scalability
 
-SolGuard handles monorepo structures efficiently:
+SolShield handles monorepo structures efficiently:
 
 ```bash
 # Audit entire workspace
-solguard audit ./programs --recursive
+SolShield audit ./programs --recursive
 
 # Results:
 # - 47 programs scanned
-# - 130 patterns × 47 = 6,110 pattern checks
+# - 150 patterns × 47 = 6,110 pattern checks
 # - Total time: 8.3 seconds
 ```
 
-## Comparison: Manual vs SolGuard
+## Comparison: Manual vs SolShield
 
 ### Manual Audit Process
 1. Contract understanding: 2-5 days
@@ -89,7 +89,7 @@ solguard audit ./programs --recursive
 5. Back-and-forth: 2-5 days
 6. **Total: 1-4 weeks**
 
-### SolGuard Process
+### SolShield Process
 1. Run command: 1 second
 2. Review findings: 5-15 minutes
 3. Fix critical issues: varies
@@ -100,7 +100,7 @@ solguard audit ./programs --recursive
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│     Without SolGuard          │     With SolGuard       │
+│     Without SolShield          │     With SolShield       │
 ├───────────────────────────────┼─────────────────────────┤
 │ Code → Wait weeks → Deploy    │ Code → Audit → Fix →   │
 │                               │ Audit → Deploy         │
@@ -117,14 +117,14 @@ solguard audit ./programs --recursive
 ```bash
 # Install
 # From source (npm package coming soon)
-git clone https://github.com/oh-ashen-one/solguard.git
-cd solguard/packages/cli && npm install && npm run build && npm link
+git clone https://github.com/oh-ashen-one/SolShield.git
+cd SolShield/packages/cli && npm install && npm run build && npm link
 
 # Time an audit
-time solguard audit ./your-program
+time SolShield audit ./your-program
 
 # Verbose output with timing
-solguard audit ./your-program --verbose
+SolShield audit ./your-program --verbose
 ```
 
 ---

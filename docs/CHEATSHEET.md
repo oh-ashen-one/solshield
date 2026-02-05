@@ -1,37 +1,37 @@
-# SolGuard Cheat Sheet
+# SolShield Cheat Sheet
 
 ## Quick Commands
 
 ```bash
 # Audit local program
-solguard audit ./my-program
+SolShield audit ./my-program
 
 # Audit from GitHub
-solguard github coral-xyz/anchor
-solguard github user/repo --pr 123
+SolShield github coral-xyz/anchor
+SolShield github user/repo --pr 123
 
 # Watch mode for development
-solguard watch ./program
+SolShield watch ./program
 
 # CI mode with SARIF
-solguard ci . --fail-on high --sarif results.sarif
+SolShield ci . --fail-on high --sarif results.sarif
 
-# List all 130 patterns
-solguard list
+# List all 150 patterns
+SolShield list
 
 # Show audit stats
-solguard stats
+SolShield stats
 ```
 
 ## Output Formats
 
 ```bash
-solguard audit . --output terminal  # Default (colored)
-solguard audit . --output json      # Machine-readable
-solguard audit . --output markdown  # Documentation
+SolShield audit . --output terminal  # Default (colored)
+SolShield audit . --output json      # Machine-readable
+SolShield audit . --output markdown  # Documentation
 ```
 
-## 130 Vulnerability Patterns
+## 150 Vulnerability Patterns
 
 ### By Category
 
@@ -94,7 +94,7 @@ chmod +x .git/hooks/pre-push
 ## GitHub Actions
 
 ```yaml
-name: SolGuard Audit
+name: SolShield Audit
 on: [push, pull_request]
 
 jobs:
@@ -102,8 +102,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm install -g @solguard/cli
-      - run: solguard ci . --fail-on high --sarif results.sarif
+      - run: npm install -g @SolShield/cli
+      - run: SolShield ci . --fail-on high --sarif results.sarif
       - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
@@ -113,16 +113,16 @@ jobs:
 
 ```bash
 # Health check
-curl https://solguard.dev/api/v1/audit
+curl https://SolShield.dev/api/v1/audit
 
 # Audit code
-curl -X POST https://solguard.dev/api/v1/audit \
+curl -X POST https://SolShield.dev/api/v1/audit \
   -H "Content-Type: application/json" \
   -d '{"code": "use anchor_lang::prelude::*; ..."}'
 ```
 
 ## Links
 
-- **GitHub:** https://github.com/oh-ashen-one/solguard
+- **GitHub:** https://github.com/oh-ashen-one/solshield
 - **Patterns:** See web UI for full searchable list
 - **API Docs:** /api page in web UI
