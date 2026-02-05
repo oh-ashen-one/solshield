@@ -350,6 +350,12 @@ import { checkMissingRBAC, checkHardcodedAuthorityAddress, checkMissingMultisigR
 // New patterns SOL633-SOL652 (Feb 5 2026 2:30AM - Data Integrity & DoS from Sec3 Report)
 import { checkUncheckedDivisionRemainder, checkMissingDataVersionCheck, checkInconsistentSerialization, checkMissingChecksumValidation, checkRaceConditionParallelUpdates, checkMissingAtomicUpdate, checkIncorrectBitManipulation, checkMissingDataMigration, checkComputeUnitExhaustion, checkAccountCreationDos, checkLogSpamAttack, checkMemoryAllocationDos, checkStackOverflowRecursion, checkBlockingOperationCriticalPath, checkQueueGriefingAttack, checkOracleLivenessDependency, checkInsufficientGasReserve, checkSignatureVerificationDos, checkIntegerUnderflowUnsigned, checkHashCollisionRisk } from './solana-batched-patterns-20.js';
 
+// NEW PATTERNS SOL653-SOL656 (Feb 5 2026 3AM - Recent 2025 Exploits)
+import { checkStepFinanceExploit } from './step-finance-exploit.js';
+import { checkPhishingAccountTransfer } from './phishing-account-transfer.js';
+import { checkLoopscaleAdminExploit } from './loopscale-admin-exploit.js';
+import { checkNpmSupplyChain2025 } from './npm-supply-chain-2025.js';
+
 export interface PatternInput {
   idl: ParsedIdl | null;
   rust: ParsedRust | null;
@@ -2604,6 +2610,12 @@ const patterns: Pattern[] = [
   { id: 'SOL650', name: 'Signature Verification DoS', severity: 'high', run: checkSignatureVerificationDos },
   { id: 'SOL651', name: 'Integer Underflow on Unsigned', severity: 'critical', run: checkIntegerUnderflowUnsigned },
   { id: 'SOL652', name: 'Hash Collision Risk', severity: 'medium', run: checkHashCollisionRisk },
+  
+  // NEW PATTERNS SOL653-SOL656 (Feb 5 2026 3AM - Recent 2025 Exploits)
+  { id: 'SOL653', name: 'Step Finance Treasury Exploit (Jan 2025)', severity: 'critical', run: checkStepFinanceExploit },
+  { id: 'SOL654', name: 'Phishing Account Transfer Attack', severity: 'critical', run: checkPhishingAccountTransfer },
+  { id: 'SOL655', name: 'Loopscale Admin Wallet Exploit (Apr 2025)', severity: 'critical', run: checkLoopscaleAdminExploit },
+  { id: 'SOL656', name: 'NPM Supply Chain Attack 2025', severity: 'high', run: checkNpmSupplyChain2025 },
 ];
 
 export async function runPatterns(input: PatternInput): Promise<Finding[]> {
