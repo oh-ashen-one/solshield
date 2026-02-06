@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 8400+ security patterns for Solana smart contract auditing
- * Updated: Feb 6, 2026 11:00 AM - Added Batch 104-105 (Solsec Deep Research + Armani Sealevel + Audit Firm PoCs + Protocol-Specific + 2026 Emerging Threats)
+ * 8500+ security patterns for Solana smart contract auditing
+ * Updated: Feb 6, 2026 11:30 AM - Added Batch 106 (Response Evolution + Helius Updated + 2026 Emerging + arXiv + Sec3 Final + Supply Chain)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -161,6 +161,9 @@ import { checkBatch104Patterns } from './solana-batched-patterns-104.js';
 
 // Import Batch 105 patterns (Feb 6, 2026 11:00 AM) - Protocol-Specific Audit Findings + 2026 Emerging Threats (SOL6701-SOL6800)
 import { checkBatch105Patterns } from './solana-batched-patterns-105.js';
+
+// Import Batch 106 patterns (Feb 6, 2026 11:30 AM) - Response Evolution + Helius Updated + 2026 Emerging + arXiv + Sec3 Final + Supply Chain (SOL6801-SOL6900)
+import { checkBatch106Patterns } from './solana-batched-patterns-106.js';
 
 export interface Finding {
   id: string;
@@ -1081,6 +1084,14 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     findings.push(...batch105Results);
   } catch (error) {
     // Skip if Batch 105 patterns fail
+  }
+  
+  // Run Batch 106 patterns (100 patterns: Response Evolution + Helius Updated + 2026 Emerging + arXiv + Sec3 Final + Supply Chain - SOL6801-SOL6900)
+  try {
+    const batch106Results = checkBatch106Patterns(input);
+    findings.push(...batch106Results);
+  } catch (error) {
+    // Skip if Batch 106 patterns fail
   }
   
   // Deduplicate by ID + line
