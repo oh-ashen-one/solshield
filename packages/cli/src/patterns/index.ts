@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 5300+ security patterns for Solana smart contract auditing
- * Updated: Feb 5, 2026 11:00 PM - Added Batch 72 Solsec Deep Dive + Audit Methodology (SOL3276-SOL3375)
+ * 5400+ security patterns for Solana smart contract auditing
+ * Updated: Feb 5, 2026 11:15 PM - Added Batch 73 DeFi + Cross-Chain (SOL3376-SOL3475)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -62,6 +62,9 @@ import { checkBatch71Patterns } from './solana-batched-patterns-71.js';
 
 // Import Batch 72 patterns (Feb 5, 2026 11:00 PM) - Solsec Deep Dive + Audit Methodology Patterns (SOL3276-SOL3375)
 import { checkBatch72Patterns } from './solana-batched-patterns-72.js';
+
+// Import Batch 73 patterns (Feb 5, 2026 11:15 PM) - DeFi Protocol Deep Dive + Cross-Chain Security (SOL3376-SOL3475)
+import { checkBatch73Patterns } from './solana-batched-patterns-73.js';
 
 export interface Finding {
   id: string;
@@ -723,6 +726,13 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     findings.push(...checkBatch72Patterns(input));
   } catch (error) {
     // Skip if Batch 72 patterns fail
+  }
+  
+  // Run Batch 73 patterns (100 patterns: DeFi Protocol Deep Dive + Cross-Chain - SOL3376-SOL3475)
+  try {
+    findings.push(...checkBatch73Patterns(input));
+  } catch (error) {
+    // Skip if Batch 73 patterns fail
   }
   
   // Deduplicate by ID + line
