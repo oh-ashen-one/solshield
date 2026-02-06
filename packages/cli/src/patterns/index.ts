@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 7900+ security patterns for Solana smart contract auditing
- * Updated: Feb 6, 2026 8:00 AM - Added Batches 96-97 (Helius Complete + Sec3 2025 Final + Solsec PoC + Protocol Deep Dives)
+ * 8000+ security patterns for Solana smart contract auditing
+ * Updated: Feb 6, 2026 8:30 AM - Added Batch 98 (Helius Complete History Deep Dive + Response Evolution + 38 Verified Incidents)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -137,6 +137,9 @@ import { checkBatch96Patterns } from './solana-batched-patterns-96.js';
 
 // Import Batch 97 patterns (Feb 6, 2026 8:00 AM) - Solsec PoC + Armani Sealevel + OtterSec/Kudelski Audits + Protocol Deep Dives (SOL5901-SOL6000)
 import { checkBatch97Patterns } from './solana-batched-patterns-97.js';
+
+// Import Batch 98 patterns (Feb 6, 2026 8:30 AM) - Helius Complete History Deep Dive + Response Evolution (SOL6001-SOL6100)
+import { checkBatch98Patterns } from './solana-batched-patterns-98.js';
 
 export interface Finding {
   id: string;
@@ -993,6 +996,14 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     findings.push(...batch97Results);
   } catch (error) {
     // Skip if Batch 97 patterns fail
+  }
+  
+  // Run Batch 98 patterns (100 patterns: Helius Complete History Deep Dive + Response Evolution - SOL6001-SOL6100)
+  try {
+    const batch98Results = checkBatch98Patterns(input);
+    findings.push(...batch98Results);
+  } catch (error) {
+    // Skip if Batch 98 patterns fail
   }
   
   // Deduplicate by ID + line
