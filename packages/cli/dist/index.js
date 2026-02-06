@@ -7453,6 +7453,852 @@ function checkBatch62Patterns(input) {
 }
 var BATCH_62_PATTERN_COUNT = ALL_BATCH_62_PATTERNS.length;
 
+// src/patterns/solana-batched-patterns-63.ts
+var RATEX_VALUATION_PATTERNS = [
+  {
+    id: "SOL2701",
+    name: "PT Token Valuation Without Maturity Check",
+    severity: "critical",
+    pattern: /pt[\s_]?token[\s\S]{0,100}(value|price|worth)(?![\s\S]{0,100}maturity)/i,
+    description: "Principal Token (PT) valuation without maturity consideration. Loopscale lost $5.8M from this.",
+    recommendation: "PT tokens must be valued based on time-to-maturity and underlying redemption value."
+  },
+  {
+    id: "SOL2702",
+    name: "Yield Token Redemption Without Rate Validation",
+    severity: "high",
+    pattern: /yt[\s_]?token[\s\S]{0,100}redeem(?![\s\S]{0,100}(rate|yield|check))/i,
+    description: "Yield Token redemption without validating underlying yield rate.",
+    recommendation: "Validate yield rate from trusted oracle before allowing redemptions."
+  },
+  {
+    id: "SOL2703",
+    name: "Fixed Rate Protocol Manipulation",
+    severity: "critical",
+    pattern: /fixed[\s_]?rate[\s\S]{0,50}(set|update|change)(?![\s\S]{0,100}(authority|admin|owner))/i,
+    description: "Fixed rate can be changed without authority check.",
+    recommendation: "Only authorized accounts should modify fixed rates with timelock."
+  },
+  {
+    id: "SOL2704",
+    name: "Tokenized Asset Circular Collateral",
+    severity: "critical",
+    pattern: /(deposit|collateral)[\s\S]{0,50}(pt|yt|synthetic)[\s\S]{0,100}(borrow|mint)/i,
+    description: "Circular collateral: synthetic/tokenized asset used as collateral for itself.",
+    recommendation: "Prevent using derivative tokens as collateral for their underlying."
+  },
+  {
+    id: "SOL2705",
+    name: "Principal Token Redemption Before Maturity",
+    severity: "high",
+    pattern: /pt[\s_]?(token)?[\s\S]{0,50}redeem(?![\s\S]{0,100}(maturity|timestamp|clock))/i,
+    description: "PT redemption without maturity date check allows early redemption exploit.",
+    recommendation: "Check Clock::get() timestamp against maturity before allowing redemption."
+  },
+  {
+    id: "SOL2706",
+    name: "Yield Stripping Without Balance Verification",
+    severity: "high",
+    pattern: /strip[\s_]?yield[\s\S]{0,100}transfer(?![\s\S]{0,100}balance)/i,
+    description: "Yield stripping without verifying sufficient underlying balance.",
+    recommendation: "Verify underlying token balance before stripping yield."
+  },
+  {
+    id: "SOL2707",
+    name: "Tokenized Position Value Cache Stale",
+    severity: "high",
+    pattern: /position[\s_]?value[\s\S]{0,30}cache(?![\s\S]{0,100}(refresh|update|recalculate))/i,
+    description: "Cached position values can become stale and exploitable.",
+    recommendation: "Recalculate position values on each use or use staleness check."
+  },
+  {
+    id: "SOL2708",
+    name: "Synthetic Token Backing Ratio Unchecked",
+    severity: "critical",
+    pattern: /synthetic[\s\S]{0,50}(mint|create)(?![\s\S]{0,100}(backing|collateral|ratio))/i,
+    description: "Synthetic token minting without verifying backing ratio.",
+    recommendation: "Enforce minimum backing ratio before minting synthetic tokens."
+  }
+];
+var DEXX_KEY_EXPOSURE_PATTERNS = [
+  {
+    id: "SOL2721",
+    name: "Private Key in Request Body",
+    severity: "critical",
+    pattern: /(post|put|send)[\s\S]{0,100}(private[\s_]?key|secret[\s_]?key|keypair)/i,
+    description: "Private key transmitted over network. DEXX lost $30M from key leakage.",
+    recommendation: "Never transmit private keys. Use client-side signing only."
+  },
+  {
+    id: "SOL2722",
+    name: "Centralized Key Storage",
+    severity: "critical",
+    pattern: /(database|db|storage)[\s\S]{0,50}(private[\s_]?key|secret|seed)/i,
+    description: "Private keys stored in centralized database - single point of failure.",
+    recommendation: "Use HSM, MPC, or client-side key management. Never store user keys."
+  },
+  {
+    id: "SOL2723",
+    name: "Seed Phrase in Logs",
+    severity: "critical",
+    pattern: /(log|print|debug|console)[\s\S]{0,50}(seed|mnemonic|phrase)/i,
+    description: "Seed phrases logged. Slope Wallet exploit exposed $8M through logging.",
+    recommendation: "Never log any key material. Implement secure logging policies."
+  },
+  {
+    id: "SOL2724",
+    name: "Key Material in Error Messages",
+    severity: "critical",
+    pattern: /(error|err|exception)[\s\S]{0,50}(key|secret|seed|private)/i,
+    description: "Key material exposed in error messages.",
+    recommendation: "Sanitize error messages to exclude any sensitive data."
+  },
+  {
+    id: "SOL2725",
+    name: "Unencrypted Key in Memory",
+    severity: "high",
+    pattern: /String[\s\S]{0,20}(private_key|secret_key|seed_phrase)/i,
+    description: "Keys stored as regular strings remain in memory longer.",
+    recommendation: "Use secure memory types like Zeroizing<> that clear on drop."
+  },
+  {
+    id: "SOL2726",
+    name: "Trading Bot Custodial Keys",
+    severity: "critical",
+    pattern: /bot[\s\S]{0,50}(custody|hold|store)[\s\S]{0,50}key/i,
+    description: "Trading bot holds user keys. Solareum lost $1.4M from insider theft.",
+    recommendation: "Use non-custodial design with delegated authority instead."
+  },
+  {
+    id: "SOL2727",
+    name: "Third-Party Service Key Access",
+    severity: "high",
+    pattern: /(mongo|redis|postgres|external)[\s\S]{0,50}(key|secret|credential)/i,
+    description: "Keys accessible to third-party services. Thunder Terminal lost $240K via MongoDB.",
+    recommendation: "Isolate key management from all third-party integrations."
+  }
+];
+var INSIDER_THREAT_PATTERNS = [
+  {
+    id: "SOL2741",
+    name: "Single Admin Key No Multisig",
+    severity: "critical",
+    pattern: /admin[\s\S]{0,30}(authority|key|signer)(?![\s\S]{0,100}multisig)/i,
+    description: "Single admin key without multisig. Insider can drain protocol.",
+    recommendation: "Require multisig (e.g., 3/5) for all admin operations."
+  },
+  {
+    id: "SOL2742",
+    name: "Employee Access to Production Keys",
+    severity: "critical",
+    pattern: /(employee|dev|team)[\s\S]{0,50}(access|key|authority)/i,
+    description: "Employee access to production signing keys. Pump.fun lost $1.9M.",
+    recommendation: "Use hardware wallets and segregated duties for production keys."
+  },
+  {
+    id: "SOL2743",
+    name: "DAO 1-of-N Multisig",
+    severity: "critical",
+    pattern: /multisig[\s\S]{0,30}(1[\s_]?of|1\/)/i,
+    description: "1-of-N multisig provides no security. Saga DAO lost $60K.",
+    recommendation: "Require at least 2/3 or 3/5 threshold for treasury multisig."
+  },
+  {
+    id: "SOL2744",
+    name: "Withdrawal Authority No Timelock",
+    severity: "high",
+    pattern: /withdraw[\s\S]{0,50}authority(?![\s\S]{0,100}timelock)/i,
+    description: "Withdrawal authority without timelock. Instant rug possible.",
+    recommendation: "Add 24-48 hour timelock on large withdrawals."
+  },
+  {
+    id: "SOL2745",
+    name: "Treasury Access No Event Emission",
+    severity: "medium",
+    pattern: /treasury[\s\S]{0,50}(transfer|withdraw)(?![\s\S]{0,100}(emit|event|log))/i,
+    description: "Treasury operations without event emission. Hard to detect theft.",
+    recommendation: "Emit events for all treasury movements for monitoring."
+  },
+  {
+    id: "SOL2746",
+    name: "Team Token Unlock No Vesting",
+    severity: "high",
+    pattern: /team[\s_]?token[\s\S]{0,50}(unlock|release)(?![\s\S]{0,100}vest)/i,
+    description: "Team tokens unlockable without vesting schedule.",
+    recommendation: "Implement proper vesting with cliff and linear release."
+  },
+  {
+    id: "SOL2747",
+    name: "Upgrade Authority Single Key",
+    severity: "critical",
+    pattern: /upgrade[\s_]?authority[\s\S]{0,30}(pubkey|key)(?![\s\S]{0,100}multisig)/i,
+    description: "Program upgrade controlled by single key. Full protocol takeover risk.",
+    recommendation: "Transfer upgrade authority to multisig or make immutable."
+  }
+];
+var GOVERNANCE_ATTACK_PATTERNS = [
+  {
+    id: "SOL2761",
+    name: "Governance Proposal No Delay",
+    severity: "critical",
+    pattern: /proposal[\s\S]{0,50}execute(?![\s\S]{0,100}(delay|timelock|wait))/i,
+    description: "Proposals execute immediately. Audius lost $6.1M to instant execution.",
+    recommendation: "Add 24-72 hour delay between approval and execution."
+  },
+  {
+    id: "SOL2762",
+    name: "Low Quorum for Critical Actions",
+    severity: "high",
+    pattern: /quorum[\s\S]{0,20}(1|5|10)[\s_]?%/i,
+    description: "Very low quorum allows attackers to pass proposals unnoticed.",
+    recommendation: "Set quorum to at least 10-20% of circulating supply."
+  },
+  {
+    id: "SOL2763",
+    name: "Proposal Voting During Creation",
+    severity: "high",
+    pattern: /proposal[\s\S]{0,30}(create|new)[\s\S]{0,50}vote/i,
+    description: "Same transaction creates and votes on proposal. No community review.",
+    recommendation: "Separate proposal creation and voting period by at least 24 hours."
+  },
+  {
+    id: "SOL2764",
+    name: "Token-Weighted Voting Flash Loan Vulnerable",
+    severity: "critical",
+    pattern: /voting[\s_]?power[\s\S]{0,30}(balance|amount)(?![\s\S]{0,100}snapshot)/i,
+    description: "Voting power from current balance. Attackable via flash loan.",
+    recommendation: "Use snapshot-based voting power from past block."
+  },
+  {
+    id: "SOL2765",
+    name: "Inactive DAO No Notification",
+    severity: "high",
+    pattern: /dao[\s\S]{0,50}proposal(?![\s\S]{0,100}(notify|alert|event))/i,
+    description: "No notifications for proposals in inactive DAO. Synthetify lost $230K.",
+    recommendation: "Implement proposal alerts and require active monitoring."
+  },
+  {
+    id: "SOL2766",
+    name: "Governance Bypass via Direct Call",
+    severity: "critical",
+    pattern: /(admin|treasury)[\s\S]{0,30}(pub|public)[\s\S]{0,30}fn(?![\s\S]{0,100}governance)/i,
+    description: "Critical functions callable directly, bypassing governance.",
+    recommendation: "Gate all admin functions through governance proposal execution."
+  },
+  {
+    id: "SOL2767",
+    name: "No Veto Council",
+    severity: "medium",
+    pattern: /governance[\s\S]{0,100}(?!veto|guardian|emergency)/i,
+    description: "No veto mechanism for malicious proposals.",
+    recommendation: "Add guardian/veto council for emergency proposal rejection."
+  },
+  {
+    id: "SOL2768",
+    name: "Proposal Data Not Validated",
+    severity: "critical",
+    pattern: /proposal[\s\S]{0,30}data[\s\S]{0,50}execute(?![\s\S]{0,100}(validate|verify|check))/i,
+    description: "Proposal instruction data executed without validation.",
+    recommendation: "Validate proposal instructions against allowed operations."
+  }
+];
+var ADVANCED_DEFI_PATTERNS = [
+  {
+    id: "SOL2781",
+    name: "Bonding Curve Flash Loan Exploitable",
+    severity: "critical",
+    pattern: /bonding[\s_]?curve[\s\S]{0,100}(buy|sell|swap)(?![\s\S]{0,100}(block|lock|delay))/i,
+    description: "Bonding curve exploitable via flash loan. Nirvana lost $3.5M.",
+    recommendation: "Add per-block limits or time delays on large curve operations."
+  },
+  {
+    id: "SOL2782",
+    name: "AMM Constant Product Unprotected",
+    severity: "high",
+    pattern: /x[\s]*\*[\s]*y[\s]*=[\s]*k(?![\s\S]{0,100}(slippage|check|guard))/i,
+    description: "Constant product formula without slippage protection.",
+    recommendation: "Enforce minimum output amounts for all swaps."
+  },
+  {
+    id: "SOL2783",
+    name: "Liquidity Mining Infinite Emission",
+    severity: "high",
+    pattern: /emission[\s_]?(rate|per)(?![\s\S]{0,100}(cap|max|limit|halving))/i,
+    description: "Uncapped token emissions dilute value indefinitely.",
+    recommendation: "Implement emission caps, halvings, or decay schedules."
+  },
+  {
+    id: "SOL2784",
+    name: "Staking Rewards Calculator Overflow",
+    severity: "high",
+    pattern: /reward[\s\S]{0,30}(accumulated|total)[\s\S]{0,30}\*/i,
+    description: "Reward calculation multiplication without overflow check.",
+    recommendation: "Use checked_mul for all reward calculations."
+  },
+  {
+    id: "SOL2785",
+    name: "Bridge Guardian Set Too Small",
+    severity: "critical",
+    pattern: /guardian[\s\S]{0,30}(count|len|size)[\s\S]{0,10}(3|4|5)(?![\s_]?of)/i,
+    description: "Small guardian set easier to compromise. Wormhole had 19.",
+    recommendation: "Use at least 13 guardians with 2/3 threshold."
+  },
+  {
+    id: "SOL2786",
+    name: "Cross-Chain Message Replay",
+    severity: "critical",
+    pattern: /message[\s\S]{0,30}(verify|validate)(?![\s\S]{0,100}(nonce|sequence|used))/i,
+    description: "Cross-chain messages without replay protection.",
+    recommendation: "Track processed message nonces to prevent replay."
+  },
+  {
+    id: "SOL2787",
+    name: "Liquidation No Dust Protection",
+    severity: "medium",
+    pattern: /liquidat[\s\S]{0,50}(amount|value)(?![\s\S]{0,100}(min|dust|threshold))/i,
+    description: "Dust amounts can be liquidated profitably via gas subsidies.",
+    recommendation: "Set minimum liquidation amount above dust threshold."
+  },
+  {
+    id: "SOL2788",
+    name: "Vault Deposit No Slippage",
+    severity: "high",
+    pattern: /vault[\s\S]{0,30}deposit(?![\s\S]{0,100}(min|slippage|expected))/i,
+    description: "Vault deposits without minimum shares protection.",
+    recommendation: "Require minimum shares parameter for sandwich protection."
+  },
+  {
+    id: "SOL2789",
+    name: "Oracle TWAP Period Too Short",
+    severity: "high",
+    pattern: /twap[\s\S]{0,30}(period|window)[\s\S]{0,10}(1|5|10)[\s_]?(min|minute)/i,
+    description: "TWAP period under 15 min is manipulatable.",
+    recommendation: "Use TWAP period of at least 15-30 minutes."
+  },
+  {
+    id: "SOL2790",
+    name: "LP Token Calculation Before Fee",
+    severity: "high",
+    pattern: /lp[\s_]?(token|share)[\s\S]{0,50}(amount|calc)[\s\S]{0,50}fee/i,
+    description: "LP shares calculated before fee deduction. Fee avoidance possible.",
+    recommendation: "Calculate LP shares after deducting all fees."
+  },
+  {
+    id: "SOL2791",
+    name: "Yield Aggregator Strategy No Validation",
+    severity: "critical",
+    pattern: /strategy[\s\S]{0,30}(add|register)(?![\s\S]{0,100}(validate|whitelist|verify))/i,
+    description: "Strategies can be added without validation. Tulip-style risk.",
+    recommendation: "Whitelist and audit all strategies before deployment."
+  },
+  {
+    id: "SOL2792",
+    name: "Perpetual Funding Rate Manipulation",
+    severity: "high",
+    pattern: /funding[\s_]?rate[\s\S]{0,50}(calc|compute)(?![\s\S]{0,100}(cap|clamp|limit))/i,
+    description: "Uncapped funding rates can drain positions.",
+    recommendation: "Cap funding rates at reasonable bounds (e.g., \xB10.1% per hour)."
+  },
+  {
+    id: "SOL2793",
+    name: "Insurance Fund Drain No Limit",
+    severity: "high",
+    pattern: /insurance[\s_]?fund[\s\S]{0,50}(use|withdraw|drain)(?![\s\S]{0,100}(limit|cap|max))/i,
+    description: "Insurance fund can be fully drained in single event.",
+    recommendation: "Limit insurance fund usage per event to preserve solvency."
+  },
+  {
+    id: "SOL2794",
+    name: "Leverage Without Margin Call",
+    severity: "critical",
+    pattern: /leverage[\s\S]{0,50}(position|trade)(?![\s\S]{0,100}(margin|liquidat|health))/i,
+    description: "Leveraged positions without margin call mechanism.",
+    recommendation: "Implement continuous margin monitoring and liquidation."
+  },
+  {
+    id: "SOL2795",
+    name: "Stablecoin Depeg No Emergency",
+    severity: "critical",
+    pattern: /stable[\s_]?coin[\s\S]{0,100}(?!(emergency|depeg|circuit|pause))/i,
+    description: "No emergency mechanism for depeg scenario. Cashio collapsed.",
+    recommendation: "Implement circuit breakers and emergency redemption at par."
+  }
+];
+function checkBatch63Patterns(input) {
+  const findings = [];
+  if (!input.rust?.content) {
+    return findings;
+  }
+  const content = input.rust.content;
+  const lines = content.split("\n");
+  const allPatterns = [
+    ...RATEX_VALUATION_PATTERNS,
+    ...DEXX_KEY_EXPOSURE_PATTERNS,
+    ...INSIDER_THREAT_PATTERNS,
+    ...GOVERNANCE_ATTACK_PATTERNS,
+    ...ADVANCED_DEFI_PATTERNS
+  ];
+  for (const pattern of allPatterns) {
+    const match = pattern.pattern.exec(content);
+    if (match) {
+      const lineNumber = content.substring(0, match.index).split("\n").length;
+      findings.push({
+        id: pattern.id,
+        title: pattern.name,
+        severity: pattern.severity,
+        description: pattern.description,
+        location: { file: input.path, line: lineNumber },
+        recommendation: pattern.recommendation
+      });
+    }
+  }
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const context = lines.slice(Math.max(0, i - 10), Math.min(lines.length, i + 10)).join("\n");
+    if ((line.includes("Clock::get") || line.includes("unix_timestamp")) && (context.includes("random") || context.includes("lottery") || context.includes("raffle"))) {
+      findings.push({
+        id: "SOL2796",
+        title: "Timestamp Used for Randomness",
+        severity: "critical",
+        description: "Timestamps are predictable and manipulatable. Not suitable for randomness.",
+        location: { file: input.path, line: i + 1 },
+        recommendation: "Use VRF (Switchboard/Chainlink) for on-chain randomness."
+      });
+    }
+    if (line.includes("/") && !line.includes("//") && !line.includes("/*") && !context.includes("checked_div") && !context.includes("!= 0") && !context.includes("> 0") && context.includes("fn ")) {
+      if (line.match(/\w+\s*\/\s*\w+/)) {
+        findings.push({
+          id: "SOL2797",
+          title: "Potential Division by Zero",
+          severity: "high",
+          description: "Division without checking divisor is non-zero.",
+          location: { file: input.path, line: i + 1 },
+          recommendation: "Use checked_div or verify divisor > 0 before division."
+        });
+      }
+    }
+    if (line.match(/\b\d{7,}\b/) && !line.includes("_")) {
+      findings.push({
+        id: "SOL2798",
+        title: "Large Number Without Underscore Separator",
+        severity: "low",
+        description: "Large numbers without underscores are error-prone (e.g., 1000000 vs 100000).",
+        location: { file: input.path, line: i + 1 },
+        recommendation: "Use underscores: 1_000_000 instead of 1000000."
+      });
+    }
+    if ((line.includes("invoke") || line.includes("invoke_signed") || line.includes("CpiContext")) && context.includes("for ") && context.includes("in ")) {
+      findings.push({
+        id: "SOL2799",
+        title: "CPI Call Inside Loop",
+        severity: "high",
+        description: "External program calls in loops are expensive and may hit compute limits.",
+        location: { file: input.path, line: i + 1 },
+        recommendation: "Batch operations or limit loop iterations with compute budget."
+      });
+    }
+    if ((line.includes("close") || line.includes("Close")) && line.includes("account") && !context.includes("lamport")) {
+      findings.push({
+        id: "SOL2800",
+        title: "Account Close Without Final Lamport Check",
+        severity: "medium",
+        description: "Closing accounts should verify final lamport balance transfer.",
+        location: { file: input.path, line: i + 1 },
+        recommendation: "Verify lamports transferred to destination equals account balance."
+      });
+    }
+  }
+  return findings;
+}
+
+// src/patterns/solana-batched-patterns-64.ts
+var SUPPLY_CHAIN_PATTERNS = [
+  {
+    id: "SOL2801",
+    name: "NPM Package Exact Version Not Pinned",
+    severity: "high",
+    pattern: /"@solana\/web3\.js"\s*:\s*"\^/i,
+    description: "Using caret version allows auto-update to compromised versions. Web3.js 1.95.5-1.95.7 were malicious.",
+    recommendation: 'Pin exact versions: "@solana/web3.js": "1.95.4" (no caret).'
+  },
+  {
+    id: "SOL2802",
+    name: "Package Lock File Missing",
+    severity: "high",
+    pattern: /npm\s+install(?![\s\S]{0,50}--package-lock)/i,
+    description: "Installing without lockfile can pull malicious versions.",
+    recommendation: "Always commit package-lock.json and use npm ci in CI/CD."
+  },
+  {
+    id: "SOL2803",
+    name: "Postinstall Script Not Reviewed",
+    severity: "medium",
+    pattern: /"postinstall"\s*:\s*"/i,
+    description: "Postinstall scripts can execute malicious code during install.",
+    recommendation: "Review all postinstall scripts. Use --ignore-scripts if needed."
+  },
+  {
+    id: "SOL2804",
+    name: "Environment Variable Key Exposure",
+    severity: "critical",
+    pattern: /process\.env\.(PRIVATE_KEY|SECRET_KEY|MNEMONIC)/i,
+    description: "Malicious packages can read environment variables with keys.",
+    recommendation: "Never store keys in env vars. Use hardware signers or KMS."
+  },
+  {
+    id: "SOL2805",
+    name: "Dependency Confusion Attack Vector",
+    severity: "high",
+    pattern: /@(internal|private|company)\//i,
+    description: "Private package names can be hijacked on public registry.",
+    recommendation: "Use scoped packages with organization ownership verification."
+  },
+  {
+    id: "SOL2806",
+    name: "Transitive Dependency Not Audited",
+    severity: "medium",
+    pattern: /"dependencies"\s*:\s*\{[\s\S]*\}/i,
+    description: "Transitive dependencies can introduce vulnerabilities.",
+    recommendation: "Run npm audit regularly and review deep dependency tree."
+  },
+  {
+    id: "SOL2807",
+    name: "GitHub Action Workflow Injection",
+    severity: "high",
+    pattern: /\$\{\{\s*github\.event\.[\s\S]*\}\}/i,
+    description: "Unsanitized GitHub context in workflows enables code injection.",
+    recommendation: "Never use github.event directly in run commands."
+  },
+  {
+    id: "SOL2808",
+    name: "CI/CD Secret Exposure",
+    severity: "critical",
+    pattern: /echo[\s\S]*\$\{\{\s*secrets\./i,
+    description: "Secrets printed in CI logs can be captured.",
+    recommendation: "Never echo secrets. Use secret masking in CI/CD."
+  }
+];
+var RACE_CONDITION_PATTERNS = [
+  {
+    id: "SOL2821",
+    name: "Off-Chain Balance Without Lock",
+    severity: "critical",
+    pattern: /(balance|amount)[\s\S]{0,50}(increment|add|update)(?![\s\S]{0,100}(lock|mutex|transaction))/i,
+    description: "Balance updates without locking enable race condition exploits. Aurory lost $830K.",
+    recommendation: "Use database transactions with row-level locking for balance updates."
+  },
+  {
+    id: "SOL2822",
+    name: "Parallel Request No Deduplication",
+    severity: "critical",
+    pattern: /(buy|sell|transfer|withdraw)[\s\S]{0,50}(handler|endpoint)(?![\s\S]{0,100}(dedupe|idempotent|nonce))/i,
+    description: "Parallel requests can be replayed. Use idempotency keys.",
+    recommendation: "Require unique idempotency key per request with deduplication."
+  },
+  {
+    id: "SOL2823",
+    name: "Read-Modify-Write Without Atomic",
+    severity: "high",
+    pattern: /(get|read|fetch)[\s\S]{0,30}(balance|amount)[\s\S]{0,50}(set|update|save)/i,
+    description: "Non-atomic read-modify-write sequence has race window.",
+    recommendation: "Use atomic operations: UPDATE balance = balance + x WHERE..."
+  },
+  {
+    id: "SOL2824",
+    name: "Hybrid On-Off Chain State Mismatch",
+    severity: "critical",
+    pattern: /(sync|bridge|transfer)[\s\S]{0,50}(chain|on.?chain)[\s\S]{0,50}(off.?chain|database)/i,
+    description: "State synchronization between on-chain and off-chain can desync.",
+    recommendation: "Implement two-phase commit or use on-chain as source of truth."
+  },
+  {
+    id: "SOL2825",
+    name: "Event Ordering Not Guaranteed",
+    severity: "high",
+    pattern: /event[\s\S]{0,30}(process|handle)(?![\s\S]{0,100}(sequence|order|serial))/i,
+    description: "Out-of-order event processing can corrupt state.",
+    recommendation: "Process events sequentially using sequence numbers."
+  },
+  {
+    id: "SOL2826",
+    name: "Optimistic Update Without Rollback",
+    severity: "high",
+    pattern: /optimistic[\s\S]{0,50}(update|write)(?![\s\S]{0,100}(rollback|revert|compensate))/i,
+    description: "Optimistic updates without rollback capability lose consistency.",
+    recommendation: "Implement compensating transactions for failed operations."
+  }
+];
+var DEPIN_SECURITY_PATTERNS = [
+  {
+    id: "SOL2841",
+    name: "Worker Registration No Verification",
+    severity: "critical",
+    pattern: /worker[\s\S]{0,30}(register|add)(?![\s\S]{0,100}(verify|proof|attestation))/i,
+    description: "Workers can register with fake capabilities. io.net had 400K spoofed GPUs.",
+    recommendation: "Require hardware attestation or proof-of-work for worker registration."
+  },
+  {
+    id: "SOL2842",
+    name: "Resource Metadata Unverified",
+    severity: "high",
+    pattern: /metadata[\s\S]{0,30}(gpu|cpu|memory|storage)(?![\s\S]{0,100}(verify|check|validate))/i,
+    description: "Self-reported metadata can be spoofed.",
+    recommendation: "Verify resource claims through benchmark tests or attestation."
+  },
+  {
+    id: "SOL2843",
+    name: "Sybil Attack No Prevention",
+    severity: "critical",
+    pattern: /(node|worker|peer)[\s\S]{0,30}(join|register)(?![\s\S]{0,100}(stake|identity|proof))/i,
+    description: "No cost to create nodes enables Sybil attacks.",
+    recommendation: "Require stake, verified identity, or proof-of-resource."
+  },
+  {
+    id: "SOL2844",
+    name: "Decentralized Network Eclipse Attack",
+    severity: "high",
+    pattern: /peer[\s\S]{0,30}(select|connect)(?![\s\S]{0,100}(random|diverse|limit))/i,
+    description: "Biased peer selection enables eclipse attacks.",
+    recommendation: "Use random peer selection with diversity requirements."
+  },
+  {
+    id: "SOL2845",
+    name: "Reward Distribution Gameable",
+    severity: "high",
+    pattern: /reward[\s\S]{0,30}(distribute|calculate)[\s\S]{0,50}(uptime|availability)/i,
+    description: "Uptime-based rewards can be gamed with minimal actual contribution.",
+    recommendation: "Base rewards on verified work output, not just availability."
+  }
+];
+var FRONTEND_SECURITY_PATTERNS = [
+  {
+    id: "SOL2861",
+    name: "Transaction Preview Missing",
+    severity: "critical",
+    pattern: /sign(Transaction|AllTransactions)(?![\s\S]{0,100}(preview|confirm|display))/i,
+    description: "No transaction preview before signing. Users sign blind.",
+    recommendation: "Always show human-readable transaction preview before signing."
+  },
+  {
+    id: "SOL2862",
+    name: "Address Comparison Case Sensitive",
+    severity: "high",
+    pattern: /address[\s\S]{0,20}(==|===)[\s\S]{0,20}(address|pubkey)/i,
+    description: "Case-sensitive address comparison can be bypassed.",
+    recommendation: "Normalize addresses before comparison (lowercase or base58 canonical)."
+  },
+  {
+    id: "SOL2863",
+    name: "Domain Verification Missing",
+    severity: "critical",
+    pattern: /(wallet[\s_]?connect|sign)(?![\s\S]{0,100}(domain|origin|verify))/i,
+    description: "No domain verification for wallet connections. Enables phishing.",
+    recommendation: "Verify domain against whitelist before wallet interaction."
+  },
+  {
+    id: "SOL2864",
+    name: "CDN Resource Without SRI",
+    severity: "medium",
+    pattern: /<script[\s\S]*src=["']https?:\/\/[\s\S]*(?!integrity)/i,
+    description: "External scripts without Subresource Integrity can be hijacked.",
+    recommendation: "Add integrity attribute with SHA-384/512 hash for CDN resources."
+  },
+  {
+    id: "SOL2865",
+    name: "Local Storage for Sensitive Data",
+    severity: "high",
+    pattern: /localStorage\.(setItem|getItem)[\s\S]{0,50}(key|secret|token)/i,
+    description: "Sensitive data in localStorage is accessible to any script.",
+    recommendation: "Never store keys in localStorage. Use session storage or memory only."
+  },
+  {
+    id: "SOL2866",
+    name: "CORS Wildcard Origin",
+    severity: "high",
+    pattern: /Access-Control-Allow-Origin[\s\S]{0,10}\*/i,
+    description: "Wildcard CORS allows any site to make requests.",
+    recommendation: "Specify allowed origins explicitly, never use wildcard."
+  },
+  {
+    id: "SOL2867",
+    name: "Unsigned WebSocket Messages",
+    severity: "high",
+    pattern: /websocket[\s\S]{0,50}(message|send)(?![\s\S]{0,100}(sign|verify|auth))/i,
+    description: "Unsigned WebSocket messages can be spoofed or tampered.",
+    recommendation: "Sign all WebSocket messages and verify on receipt."
+  }
+];
+var CORE_PROTOCOL_PATTERNS = [
+  {
+    id: "SOL2881",
+    name: "BPF Loader Upgrade Without Guard",
+    severity: "critical",
+    pattern: /bpf_loader[\s\S]{0,30}upgrade(?![\s\S]{0,100}(guard|verify|auth))/i,
+    description: "BPF program upgrade without proper authority verification.",
+    recommendation: "Always verify upgrade authority before allowing program upgrades."
+  },
+  {
+    id: "SOL2882",
+    name: "Compute Unit Estimation Wrong",
+    severity: "medium",
+    pattern: /compute[\s_]?unit[\s\S]{0,30}(set|request)[\s\S]{0,20}\d{3,5}(?!\d)/i,
+    description: "Fixed compute units may be insufficient for complex transactions.",
+    recommendation: "Use simulation to estimate compute units, add buffer for variance."
+  },
+  {
+    id: "SOL2883",
+    name: "Priority Fee Zero",
+    severity: "low",
+    pattern: /priority[\s_]?fee[\s\S]{0,10}(=|:)[\s\S]{0,5}0/i,
+    description: "Zero priority fee may cause transaction delays in congestion.",
+    recommendation: "Set dynamic priority fees based on network conditions."
+  },
+  {
+    id: "SOL2884",
+    name: "Durable Nonce Without Advance",
+    severity: "high",
+    pattern: /nonce[\s_]?account(?![\s\S]{0,100}advance)/i,
+    description: "Durable nonce without advance instruction. JIT cache bug affected this.",
+    recommendation: "Always include NonceAdvance as first instruction."
+  },
+  {
+    id: "SOL2885",
+    name: "Blockhash Caching Too Long",
+    severity: "medium",
+    pattern: /blockhash[\s\S]{0,30}(cache|store)[\s\S]{0,50}(minute|hour|day)/i,
+    description: "Blockhashes expire after ~2 minutes. Caching causes failures.",
+    recommendation: "Fetch fresh blockhash for each transaction or use durable nonces."
+  },
+  {
+    id: "SOL2886",
+    name: "Transaction Size Unbounded",
+    severity: "high",
+    pattern: /instruction[\s\S]{0,30}(push|add)(?![\s\S]{0,100}(size|len|limit))/i,
+    description: "Transaction size limit is 1232 bytes. Unbounded adds fail.",
+    recommendation: "Check transaction size before adding instructions."
+  },
+  {
+    id: "SOL2887",
+    name: "Account Realloc Without Rent",
+    severity: "high",
+    pattern: /realloc[\s\S]{0,50}(increase|grow)(?![\s\S]{0,100}rent)/i,
+    description: "Account reallocation needs rent top-up for larger size.",
+    recommendation: "Calculate and transfer additional rent on realloc."
+  },
+  {
+    id: "SOL2888",
+    name: "Lookup Table Stale Reference",
+    severity: "medium",
+    pattern: /lookup[\s_]?table[\s\S]{0,30}(use|get)(?![\s\S]{0,100}(fresh|reload|verify))/i,
+    description: "Stale address lookup table can cause transaction failures.",
+    recommendation: "Refresh lookup table state before critical transactions."
+  },
+  {
+    id: "SOL2889",
+    name: "Versioned Transaction Compatibility",
+    severity: "medium",
+    pattern: /Transaction[\s\S]{0,20}::new(?![\s\S]{0,100}Version)/i,
+    description: "Legacy transactions dont support lookup tables.",
+    recommendation: "Use VersionedTransaction for modern features."
+  },
+  {
+    id: "SOL2890",
+    name: "CPI Depth Limit Exceeded",
+    severity: "high",
+    pattern: /invoke[\s\S]{0,50}invoke[\s\S]{0,50}invoke[\s\S]{0,50}invoke/i,
+    description: "CPI depth limit is 4. Deep nesting fails.",
+    recommendation: "Flatten CPI chains or use different architectural approach."
+  }
+];
+function checkBatch64Patterns(input) {
+  const findings = [];
+  if (!input.rust?.content) {
+    return findings;
+  }
+  const content = input.rust.content;
+  const lines = content.split("\n");
+  const allPatterns = [
+    ...SUPPLY_CHAIN_PATTERNS,
+    ...RACE_CONDITION_PATTERNS,
+    ...DEPIN_SECURITY_PATTERNS,
+    ...FRONTEND_SECURITY_PATTERNS,
+    ...CORE_PROTOCOL_PATTERNS
+  ];
+  for (const pattern of allPatterns) {
+    const match = pattern.pattern.exec(content);
+    if (match) {
+      const lineNumber = content.substring(0, match.index).split("\n").length;
+      findings.push({
+        id: pattern.id,
+        title: pattern.name,
+        severity: pattern.severity,
+        description: pattern.description,
+        location: { file: input.path, line: lineNumber },
+        recommendation: pattern.recommendation
+      });
+    }
+  }
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const context = lines.slice(Math.max(0, i - 10), Math.min(lines.length, i + 10)).join("\n");
+    if (line.includes("msg!") && (line.includes("{}") || line.includes("{:?}"))) {
+      if (context.includes("input") || context.includes("user") || context.includes("data")) {
+        findings.push({
+          id: "SOL2891",
+          title: "User Input in Error Message",
+          severity: "low",
+          description: "User-controlled data in error messages can leak information.",
+          location: { file: input.path, line: i + 1 },
+          recommendation: "Sanitize or redact user input in error messages."
+        });
+      }
+    }
+    if (line.match(/Pubkey::from_str\(["'][A-HJ-NP-Za-km-z1-9]{32,44}["']\)/)) {
+      findings.push({
+        id: "SOL2892",
+        title: "Hardcoded Public Key",
+        severity: "medium",
+        description: "Hardcoded addresses reduce flexibility and can be deployment issues.",
+        location: { file: input.path, line: i + 1 },
+        recommendation: "Use configurable addresses or derive from seeds."
+      });
+    }
+    if (line.match(/\[\s*\d+\s*\]/) && !context.includes("len()") && !context.includes(".get(")) {
+      if (!line.includes("[0]") && !line.includes("// safe")) {
+        findings.push({
+          id: "SOL2893",
+          title: "Unchecked Array Index Access",
+          severity: "high",
+          description: "Direct array index without bounds check can panic.",
+          location: { file: input.path, line: i + 1 },
+          recommendation: "Use .get() with proper error handling instead."
+        });
+      }
+    }
+    if ((line.includes("f32") || line.includes("f64")) && (context.includes("price") || context.includes("amount") || context.includes("fee"))) {
+      findings.push({
+        id: "SOL2894",
+        title: "Floating Point in Financial Calculation",
+        severity: "high",
+        description: "Floating point has precision issues. Use fixed-point for money.",
+        location: { file: input.path, line: i + 1 },
+        recommendation: "Use u64/u128 with fixed decimal places for financial math."
+      });
+    }
+    if ((line.includes("format!") || line.includes("to_string()")) && context.includes("fn process") || context.includes("#[instruction]")) {
+      findings.push({
+        id: "SOL2895",
+        title: "String Allocation in Hot Path",
+        severity: "medium",
+        description: "String operations consume significant compute units.",
+        location: { file: input.path, line: i + 1 },
+        recommendation: "Avoid string ops in instruction handlers. Use msg! directly."
+      });
+    }
+  }
+  return findings;
+}
+
 // src/patterns/index.ts
 var CORE_PATTERNS = [
   {
@@ -7953,6 +8799,14 @@ async function runPatterns(input) {
     findings.push(...checkBatch62Patterns(input));
   } catch (error) {
   }
+  try {
+    findings.push(...checkBatch63Patterns(input));
+  } catch (error) {
+  }
+  try {
+    findings.push(...checkBatch64Patterns(input));
+  } catch (error) {
+  }
   const seen = /* @__PURE__ */ new Set();
   const deduped = findings.filter((f) => {
     const key = `${f.id}-${f.location.line}`;
@@ -7996,7 +8850,7 @@ function listPatterns() {
     // Placeholder
   }));
 }
-var PATTERN_COUNT = ALL_PATTERNS.length + 4605;
+var PATTERN_COUNT = ALL_PATTERNS.length + 4805;
 
 // src/sdk.ts
 import { existsSync, readdirSync, statSync } from "fs";
