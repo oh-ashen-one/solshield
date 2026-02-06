@@ -12940,6 +12940,1001 @@ function findRustFiles(path) {
   return files;
 }
 
+// src/swarm/orchestrator.ts
+import { execSync } from "child_process";
+import { readFileSync as readFileSync3, existsSync as existsSync3, writeFileSync, mkdirSync } from "fs";
+import { join as join3, basename as basename2 } from "path";
+
+// src/swarm/agents.ts
+var BASE_SECURITY_CONTEXT = `You are a security auditor specializing in Solana and Anchor programs.
+
+## Solana Security Context
+- Solana uses a single-threaded runtime - no traditional reentrancy
+- BUT cross-program invocations (CPIs) can cause reentrancy-like bugs
+- All accounts must be validated: ownership, signer, PDA derivation
+- Integer arithmetic can overflow/underflow silently in release builds
+- Oracles can be manipulated via flash loans or low liquidity
+
+## Output Format
+Return findings as JSON array:
+\`\`\`json
+[
+  {
+    "id": "SWARM-001",
+    "severity": "critical|high|medium|low|info",
+    "title": "Brief title",
+    "description": "Detailed explanation",
+    "location": {"file": "path", "line": 123},
+    "code": "relevant code snippet",
+    "suggestion": "How to fix",
+    "references": ["link1", "link2"]
+  }
+]
+\`\`\`
+
+Focus ONLY on your specialty. Be thorough but precise - no false positives.`;
+var SpecialistAgent = class {
+  config;
+  constructor(config) {
+    this.config = config;
+  }
+  /**
+   * Generate the full prompt for analyzing code
+   */
+  getAnalysisPrompt(code, filePath) {
+    return `${this.config.systemPrompt}
+
+## File to Analyze
+Path: ${filePath}
+
+\`\`\`rust
+${code}
+\`\`\`
+
+Analyze this code for ${this.config.name.toLowerCase()} vulnerabilities.
+Return your findings as a JSON array. If no issues found, return empty array: []`;
+  }
+  /**
+   * Parse agent response into structured findings
+   */
+  parseResponse(response) {
+    const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/) || response.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if (!jsonMatch) {
+      try {
+        const direct = JSON.parse(response);
+        if (Array.isArray(direct)) return direct;
+      } catch {
+        return [];
+      }
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+};
+function createAgent(config) {
+  return new SpecialistAgent({
+    ...config,
+    systemPrompt: `${BASE_SECURITY_CONTEXT}
+
+${config.systemPrompt}`
+  });
+}
+
+// src/swarm/specialists.ts
+var REENTRANCY_SPECIALIST = {
+  id: "reentrancy",
+  name: "Reentrancy & CPI Specialist",
+  description: "Detects cross-program invocation state bugs and reentrancy-like patterns",
+  patterns: [
+    "cross-program-reentrancy",
+    "cpi-check",
+    "cpi-guard",
+    "cpi-return-data",
+    "cross-program-invocation-check",
+    "cross-program-state"
+  ],
+  systemPrompt: `## Your Specialty: Reentrancy & Cross-Program Invocation (CPI) Bugs
+
+You are an expert in Solana's CPI mechanics and the unique reentrancy-like bugs
+that can occur despite the single-threaded runtime.
+
+### Key Vulnerability Patterns
+
+1. **State Changes After CPI** (CRITICAL)
+   - State modified after invoke()/invoke_signed()
+   - Pattern: CPI \u2192 state change (should be: state change \u2192 CPI)
+   - Fix: Apply checks-effects-interactions pattern
+
+2. **CPI Return Data Manipulation**
+   - External program can return malicious data
+   - Unchecked return values from CPI calls
+   
+3. **Account State Assumptions After CPI**
+   - Reading account data that CPI might have modified
+   - Assuming balances unchanged after transfer CPI
+
+4. **Missing CPI Guard**
+   - Anchor's #[account(cpi_guard)] attribute not used
+   - Allows unexpected CPIs to modify accounts
+
+5. **Recursive CPI Attacks**
+   - Callback loops through intermediary programs
+   - Stack depth exploitation
+
+### What to Look For
+
+\`\`\`rust
+// DANGEROUS: State change after CPI
+invoke(&ix, &accounts)?;
+account.balance = new_balance;  // Should be BEFORE invoke
+
+// DANGEROUS: Reading account after CPI
+invoke(&transfer_ix, &accounts)?;
+let balance = token_account.amount;  // May have changed!
+
+// SAFE: Checks-Effects-Interactions
+account.balance = new_balance;  // Effect first
+invoke(&ix, &accounts)?;         // Interaction last
+\`\`\`
+
+Report ONLY CPI/reentrancy related issues. Be precise about the attack vector.`
+};
+var ACCESS_CONTROL_SPECIALIST = {
+  id: "access-control",
+  name: "Access Control Specialist",
+  description: "Detects permission, ownership, and authority validation bugs",
+  patterns: [
+    "access-control",
+    "account-ownership",
+    "authority-scope",
+    "authority-transfer",
+    "admin-authentication-bypass",
+    "privilege-escalation",
+    "program-signer"
+  ],
+  systemPrompt: `## Your Specialty: Access Control & Authorization Bugs
+
+You are an expert in Solana account ownership, signer requirements, and
+authorization patterns in Anchor programs.
+
+### Key Vulnerability Patterns
+
+1. **Missing Owner Check** (CRITICAL)
+   - Account not validated to be owned by expected program
+   - Attacker can pass arbitrary account with crafted data
+   
+2. **Missing Signer Requirement** (CRITICAL)  
+   - Privileged function without signer validation
+   - #[account(signer)] or Signer<'info> missing
+   
+3. **Authority Not Verified**
+   - Admin/owner field exists but never checked
+   - has_one constraint missing
+   
+4. **Improper PDA Validation**
+   - Seeds not properly validated in constraints
+   - Bump not stored or checked
+   
+5. **Authority Transfer Without Protection**
+   - Single-step authority transfer (should be two-step)
+   - No timelock on sensitive operations
+
+### What to Look For
+
+\`\`\`rust
+// DANGEROUS: No owner check
+pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
+    // Who owns vault_account? Not checked!
+    let vault = &ctx.accounts.vault_account;
+    
+// DANGEROUS: Missing signer
+pub admin: AccountInfo<'info>,  // Should be Signer<'info>
+
+// DANGEROUS: Authority stored but not checked
+#[account]
+pub struct Config {
+    pub admin: Pubkey,  // Never used in constraints!
+}
+
+// SAFE: Proper constraints
+#[account(
+    has_one = admin,
+    constraint = admin.key() == config.admin
+)]
+\`\`\`
+
+Report ONLY access control related issues. Focus on authorization gaps.`
+};
+var ARITHMETIC_SPECIALIST = {
+  id: "arithmetic",
+  name: "Arithmetic & Math Specialist",
+  description: "Detects overflow, underflow, precision loss, and unsafe calculations",
+  patterns: [
+    "unsafe-math",
+    "checked-math-required",
+    "checked-math-validation",
+    "arithmetic-precision",
+    "calculation-precision",
+    "division-before-multiplication",
+    "integer-truncation",
+    "rounding",
+    "rounding-direction-attack"
+  ],
+  systemPrompt: `## Your Specialty: Arithmetic Vulnerabilities
+
+You are an expert in integer math vulnerabilities in Solana programs.
+Rust's release builds do NOT panic on overflow - they wrap silently!
+
+### Key Vulnerability Patterns
+
+1. **Integer Overflow/Underflow** (CRITICAL)
+   - Using +, -, * without checked_ or saturating_
+   - u64 overflow wraps to 0 in release mode
+   
+2. **Division by Zero**
+   - Missing zero check before division
+   - checked_div not used
+   
+3. **Precision Loss** (HIGH)
+   - Division before multiplication
+   - (a / 100) * b loses precision vs (a * b) / 100
+   
+4. **Lossy Type Casts**
+   - Casting u128 to u64 without bounds check
+   - "as" casts truncate silently
+   
+5. **Rounding Direction Attacks**
+   - Consistent rounding in attacker's favor
+   - Fee calculations that round down
+
+### What to Look For
+
+\`\`\`rust
+// DANGEROUS: Can overflow
+let total = amount + fee;
+let shares = deposit * total_shares / total_supply;
+
+// DANGEROUS: Division by zero
+let price = amount / supply;  // supply could be 0!
+
+// DANGEROUS: Precision loss
+let fee = amount / 10000 * rate;  // Wrong order!
+
+// DANGEROUS: Truncation
+let small: u32 = big_u64 as u32;  // Silently truncates!
+
+// SAFE: Checked arithmetic
+let total = amount.checked_add(fee).ok_or(ErrorCode::Overflow)?;
+let price = amount.checked_div(supply).ok_or(ErrorCode::DivByZero)?;
+\`\`\`
+
+Report ONLY arithmetic vulnerabilities. Include the exact calculation that's unsafe.`
+};
+var ORACLE_SPECIALIST = {
+  id: "oracle",
+  name: "Oracle Security Specialist",
+  description: "Detects oracle manipulation, staleness, and price feed vulnerabilities",
+  patterns: [
+    "oracle-manipulation",
+    "oracle-safety",
+    "oracle-twap-manipulation",
+    "pyth-integration",
+    "price-oracle-twap",
+    "drift-oracle-guardrails",
+    "mango-oracle-exploit"
+  ],
+  systemPrompt: `## Your Specialty: Oracle Security
+
+You are an expert in price oracle integration and manipulation attacks
+targeting Solana DeFi protocols.
+
+### Key Vulnerability Patterns
+
+1. **Missing Staleness Check** (CRITICAL)
+   - Using price without checking last_update_time
+   - Stale prices enable arbitrage attacks
+   
+2. **Single-Point Price** (HIGH)
+   - No TWAP, just spot price
+   - Susceptible to flash loan manipulation
+   
+3. **Missing Confidence Interval** (Pyth)
+   - Not checking conf field from Pyth
+   - Wide confidence = unreliable price
+   
+4. **Oracle Account Not Validated**
+   - Not verifying oracle is official Pyth/Switchboard
+   - Attacker can pass fake oracle account
+   
+5. **Decimal Handling**
+   - Not accounting for oracle's price exponent
+   - Mixing decimals incorrectly
+
+### What to Look For
+
+\`\`\`rust
+// DANGEROUS: No staleness check
+let price = pyth_account.price;  // Could be hours old!
+
+// DANGEROUS: No confidence check
+let price = feed.get_price_unchecked();  // May be very uncertain
+
+// DANGEROUS: No oracle validation
+pub price_feed: AccountInfo<'info>,  // Could be any account!
+
+// SAFE: Full validation
+let price_data = price_feed.get_price_no_older_than(
+    &Clock::get()?,
+    MAX_STALENESS_SECONDS
+)?;
+require!(
+    price_data.conf < MAX_CONFIDENCE,
+    ErrorCode::PriceUncertain
+);
+\`\`\`
+
+Report ONLY oracle-related vulnerabilities. Focus on manipulation vectors.`
+};
+var COMPREHENSIVE_SPECIALIST = {
+  id: "comprehensive",
+  name: "Comprehensive Security Auditor",
+  description: "Full-spectrum security analysis covering all vulnerability categories",
+  patterns: ["*"],
+  systemPrompt: `## Your Role: Comprehensive Security Auditor
+
+You are a senior Solana security auditor performing a full-spectrum analysis.
+Cover ALL vulnerability categories:
+
+1. **Access Control**: Ownership, signers, authorities, PDAs
+2. **Arithmetic**: Overflow, underflow, precision, division by zero
+3. **CPI/Reentrancy**: State changes after CPIs, callback attacks
+4. **Oracles**: Staleness, manipulation, validation
+5. **Account Validation**: Discriminators, data matching, initialization
+6. **Token Security**: Mint authority, freeze, approvals, decimals
+7. **Logic Bugs**: Edge cases, off-by-one, state transitions
+
+Prioritize by severity:
+- CRITICAL: Direct fund theft, complete privilege bypass
+- HIGH: Significant fund loss, major DoS, auth bypass
+- MEDIUM: Limited loss, protocol manipulation, minor DoS
+- LOW: Best practice violations, optimization issues
+- INFO: Style, documentation, maintainability
+
+Be thorough but avoid false positives. Each finding must have a clear attack path.`
+};
+var ALL_SPECIALISTS = [
+  REENTRANCY_SPECIALIST,
+  ACCESS_CONTROL_SPECIALIST,
+  ARITHMETIC_SPECIALIST,
+  ORACLE_SPECIALIST
+];
+function getSpecialist(id) {
+  const specialist = ALL_SPECIALISTS.find((s) => s.id === id);
+  if (specialist) return specialist;
+  if (id === "comprehensive") return COMPREHENSIVE_SPECIALIST;
+  throw new Error(`Unknown specialist: ${id}`);
+}
+
+// src/swarm/synthesizer.ts
+async function synthesizeFindings(findings, code, filePath) {
+  const deduplicated = deduplicateFindings(findings);
+  const crossReferences = findCrossReferences(deduplicated);
+  const byFile = groupByFile(deduplicated);
+  const bySeverity = groupBySeverity(deduplicated);
+  const byAgent = groupByAgent(deduplicated);
+  const summary = generateSummary(deduplicated, crossReferences);
+  return {
+    originalCount: findings.length,
+    deduplicatedCount: deduplicated.length,
+    deduplicatedFindings: deduplicated,
+    byFile,
+    bySeverity,
+    byAgent,
+    summary,
+    crossReferences
+  };
+}
+function deduplicateFindings(findings) {
+  const seen = /* @__PURE__ */ new Map();
+  for (const finding of findings) {
+    const fingerprint = createFingerprint(finding);
+    if (seen.has(fingerprint)) {
+      const existing = seen.get(fingerprint);
+      mergeFinding(existing, finding);
+    } else {
+      seen.set(fingerprint, { ...finding });
+    }
+  }
+  return Array.from(seen.values());
+}
+function createFingerprint(finding) {
+  const parts = [
+    finding.location.file,
+    finding.location.line?.toString() || "unknown",
+    finding.severity,
+    // Normalize title for comparison
+    normalizeTitle(finding.title)
+  ];
+  return parts.join("::");
+}
+function normalizeTitle(title) {
+  return title.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 50);
+}
+function mergeFinding(existing, incoming) {
+  const severityOrder = ["critical", "high", "medium", "low", "info"];
+  if (severityOrder.indexOf(incoming.severity) < severityOrder.indexOf(existing.severity)) {
+    existing.severity = incoming.severity;
+  }
+  if (incoming.description && !existing.description.includes(incoming.description) && incoming.description.length > existing.description.length) {
+    existing.description = incoming.description;
+  }
+  if (incoming.suggestion && !existing.suggestion?.includes(incoming.suggestion)) {
+    existing.suggestion = existing.suggestion ? `${existing.suggestion}
+
+Alternative: ${incoming.suggestion}` : incoming.suggestion;
+  }
+  if (incoming.agent && existing.agent !== incoming.agent) {
+    existing.foundBy = existing.foundBy || [existing.agent];
+    if (!existing.foundBy.includes(incoming.agent)) {
+      existing.foundBy.push(incoming.agent);
+    }
+  }
+}
+function findCrossReferences(findings) {
+  const crossRefs = [];
+  const byLocation = /* @__PURE__ */ new Map();
+  for (const f of findings) {
+    const loc = `${f.location.file}:${f.location.line || 0}`;
+    if (!byLocation.has(loc)) byLocation.set(loc, []);
+    byLocation.get(loc).push(f);
+  }
+  for (const [loc, group] of byLocation) {
+    if (group.length > 1) {
+      crossRefs.push({
+        findingIds: group.map((f) => f.id),
+        relationship: "related",
+        description: `Multiple issues at ${loc}`
+      });
+    }
+  }
+  const severityOrder = ["critical", "high", "medium", "low", "info"];
+  const criticalHighFindings = findings.filter(
+    (f) => ["critical", "high"].includes(f.severity)
+  );
+  for (const critical of criticalHighFindings) {
+    const related = findings.filter(
+      (f) => f !== critical && f.location.file === critical.location.file && Math.abs((f.location.line || 0) - (critical.location.line || 0)) < 20
+    );
+    if (related.length > 0) {
+      crossRefs.push({
+        findingIds: [critical.id, ...related.map((r) => r.id)],
+        relationship: "cascading",
+        description: `Issues near critical finding "${critical.title}"`
+      });
+    }
+  }
+  return crossRefs;
+}
+function groupByFile(findings) {
+  const groups = {};
+  for (const f of findings) {
+    const file = f.location.file;
+    if (!groups[file]) groups[file] = [];
+    groups[file].push(f);
+  }
+  return groups;
+}
+function groupBySeverity(findings) {
+  const groups = {
+    critical: [],
+    high: [],
+    medium: [],
+    low: [],
+    info: []
+  };
+  for (const f of findings) {
+    groups[f.severity].push(f);
+  }
+  return groups;
+}
+function groupByAgent(findings) {
+  const groups = {};
+  for (const f of findings) {
+    const agent = f.agent || "unknown";
+    if (!groups[agent]) groups[agent] = [];
+    groups[agent].push(f);
+  }
+  return groups;
+}
+function generateSummary(findings, crossRefs) {
+  const severity = {
+    critical: findings.filter((f) => f.severity === "critical").length,
+    high: findings.filter((f) => f.severity === "high").length,
+    medium: findings.filter((f) => f.severity === "medium").length,
+    low: findings.filter((f) => f.severity === "low").length,
+    info: findings.filter((f) => f.severity === "info").length
+  };
+  const topRisks = [];
+  const criticalFindings = findings.filter((f) => f.severity === "critical");
+  const highFindings = findings.filter((f) => f.severity === "high");
+  if (criticalFindings.length > 0) {
+    topRisks.push(...criticalFindings.slice(0, 3).map((f) => f.title));
+  }
+  if (topRisks.length < 3 && highFindings.length > 0) {
+    topRisks.push(...highFindings.slice(0, 3 - topRisks.length).map((f) => f.title));
+  }
+  const recommendations = [];
+  if (severity.critical > 0) {
+    recommendations.push("URGENT: Address all critical vulnerabilities before deployment");
+  }
+  if (severity.high > 0) {
+    recommendations.push("Fix high-severity issues in the next release");
+  }
+  const hasAccessControl = findings.some(
+    (f) => f.agent === "access-control" || f.title.toLowerCase().includes("access")
+  );
+  if (hasAccessControl) {
+    recommendations.push("Conduct thorough access control review");
+  }
+  const hasArithmetic = findings.some(
+    (f) => f.agent === "arithmetic" || f.title.toLowerCase().includes("overflow")
+  );
+  if (hasArithmetic) {
+    recommendations.push("Implement checked arithmetic throughout codebase");
+  }
+  if (crossRefs.some((r) => r.relationship === "cascading")) {
+    recommendations.push("Investigate cascading vulnerability chains");
+  }
+  if (recommendations.length === 0) {
+    recommendations.push("Continue monitoring for emerging vulnerability patterns");
+  }
+  return {
+    ...severity,
+    total: findings.length,
+    topRisks,
+    recommendations
+  };
+}
+function formatSynthesisAsMarkdown(result) {
+  const lines = [];
+  lines.push("# SolGuard Multi-Agent Security Audit Report\n");
+  lines.push(`Generated: ${(/* @__PURE__ */ new Date()).toISOString()}
+`);
+  lines.push("## Executive Summary\n");
+  lines.push(`| Severity | Count |`);
+  lines.push(`|----------|-------|`);
+  lines.push(`| Critical | ${result.summary.critical} |`);
+  lines.push(`| High | ${result.summary.high} |`);
+  lines.push(`| Medium | ${result.summary.medium} |`);
+  lines.push(`| Low | ${result.summary.low} |`);
+  lines.push(`| Info | ${result.summary.info} |`);
+  lines.push(`| **Total** | **${result.summary.total}** |`);
+  lines.push("");
+  if (result.summary.topRisks.length > 0) {
+    lines.push("### Top Risks\n");
+    for (const risk of result.summary.topRisks) {
+      lines.push(`- ${risk}`);
+    }
+    lines.push("");
+  }
+  if (result.summary.recommendations.length > 0) {
+    lines.push("### Recommendations\n");
+    for (const rec of result.summary.recommendations) {
+      lines.push(`- ${rec}`);
+    }
+    lines.push("");
+  }
+  lines.push("## Findings\n");
+  for (const severity of ["critical", "high", "medium", "low", "info"]) {
+    const findings = result.bySeverity[severity];
+    if (findings.length === 0) continue;
+    lines.push(`### ${severity.charAt(0).toUpperCase() + severity.slice(1)} (${findings.length})
+`);
+    for (const f of findings) {
+      lines.push(`#### ${f.id}: ${f.title}
+`);
+      lines.push(`- **Location**: ${f.location.file}:${f.location.line || "?"}`);
+      lines.push(`- **Agent**: ${f.agent || "unknown"}`);
+      lines.push(`- **Description**: ${f.description}`);
+      if (f.code) {
+        lines.push("\n```rust");
+        lines.push(f.code);
+        lines.push("```\n");
+      }
+      if (f.suggestion) {
+        lines.push(`- **Suggestion**: ${f.suggestion}`);
+      }
+      lines.push("");
+    }
+  }
+  if (result.crossReferences.length > 0) {
+    lines.push("## Related Findings\n");
+    for (const ref of result.crossReferences) {
+      lines.push(`- **${ref.relationship}**: ${ref.description}`);
+      lines.push(`  - Findings: ${ref.findingIds.join(", ")}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+// src/swarm/orchestrator.ts
+function isAgentTeamsAvailable() {
+  const envEnabled = process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === "1";
+  const insideClaudeCode = !!process.env.CLAUDE_CODE_AGENT_ID;
+  return envEnabled || insideClaudeCode;
+}
+function isClaudeCliAvailable() {
+  try {
+    execSync("claude --version", { stdio: "pipe" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+function isApiAvailable() {
+  return !!process.env.ANTHROPIC_API_KEY;
+}
+function detectMode(config) {
+  if (config.mode !== "auto") {
+    return config.mode;
+  }
+  if (isAgentTeamsAvailable()) return "agent-teams";
+  if (isApiAvailable()) return "api";
+  if (isClaudeCliAvailable()) return "subprocess";
+  throw new Error(
+    "No Claude execution method available. Enable one of:\n  1. Set CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 for Agent Teams\n  2. Set ANTHROPIC_API_KEY for direct API calls\n  3. Install Claude CLI for subprocess mode"
+  );
+}
+var SwarmOrchestrator = class {
+  config;
+  agents;
+  constructor(config) {
+    this.config = {
+      mode: config.mode || "auto",
+      specialists: config.specialists || ALL_SPECIALISTS.map((s) => s.id),
+      model: config.model || "claude-sonnet-4-20250514",
+      maxParallel: config.maxParallel || 4,
+      timeout: config.timeout || 12e4,
+      // 2 minutes
+      teamName: config.teamName || `solguard-audit-${Date.now()}`,
+      useSynthesis: config.useSynthesis ?? true,
+      outputDir: config.outputDir || "./solguard-reports",
+      verbose: config.verbose || false
+    };
+    this.agents = this.config.specialists.map(
+      (id) => createAgent(getSpecialist(id))
+    );
+  }
+  /**
+   * Run the swarm audit on a file or directory
+   */
+  async audit(targetPath) {
+    const startTime = Date.now();
+    const errors = [];
+    let mode;
+    try {
+      mode = detectMode(this.config);
+    } catch (e) {
+      return {
+        success: false,
+        mode: "none",
+        duration: 0,
+        findings: [],
+        agentResults: [],
+        errors: [e.message]
+      };
+    }
+    this.log(`Starting swarm audit in ${mode} mode`);
+    this.log(`Target: ${targetPath}`);
+    this.log(`Specialists: ${this.agents.map((a) => a.config.name).join(", ")}`);
+    const code = this.readCode(targetPath);
+    if (!code) {
+      return {
+        success: false,
+        mode,
+        duration: Date.now() - startTime,
+        findings: [],
+        agentResults: [],
+        errors: [`Failed to read code from: ${targetPath}`]
+      };
+    }
+    let agentResults;
+    switch (mode) {
+      case "agent-teams":
+        agentResults = await this.runWithAgentTeams(code, targetPath);
+        break;
+      case "api":
+        agentResults = await this.runWithApi(code, targetPath);
+        break;
+      case "subprocess":
+        agentResults = await this.runWithSubprocess(code, targetPath);
+        break;
+    }
+    const allFindings = agentResults.flatMap((r) => r.findings);
+    let synthesis;
+    if (this.config.useSynthesis && allFindings.length > 0) {
+      try {
+        synthesis = await synthesizeFindings(allFindings, code, targetPath);
+      } catch (e) {
+        errors.push(`Synthesis failed: ${e.message}`);
+      }
+    }
+    for (const result of agentResults) {
+      if (result.error) {
+        errors.push(`${result.agentName}: ${result.error}`);
+      }
+    }
+    const duration = Date.now() - startTime;
+    this.log(`Audit complete in ${duration}ms. Found ${allFindings.length} issues.`);
+    if (this.config.outputDir) {
+      this.saveReport({
+        targetPath,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        mode,
+        duration,
+        findings: allFindings,
+        agentResults,
+        synthesis
+      });
+    }
+    return {
+      success: errors.length === 0,
+      mode,
+      duration,
+      findings: synthesis?.deduplicatedFindings || allFindings,
+      agentResults,
+      synthesis,
+      errors: errors.length > 0 ? errors : void 0
+    };
+  }
+  /**
+   * Read code from file or directory
+   */
+  readCode(targetPath) {
+    try {
+      if (!existsSync3(targetPath)) {
+        return null;
+      }
+      const content = readFileSync3(targetPath, "utf-8");
+      return content;
+    } catch {
+      return null;
+    }
+  }
+  /**
+   * Run with Claude Code Agent Teams (TeammateTool)
+   * 
+   * This generates instructions for the TeammateTool - in practice,
+   * this would be called from within Claude Code with access to the tool.
+   */
+  async runWithAgentTeams(code, filePath) {
+    this.log("Agent Teams mode: Generating team configuration...");
+    const teamConfig = this.generateTeamConfig(code, filePath);
+    this.log("Team config generated. In live usage, spawn via TeammateTool.");
+    if (isApiAvailable()) {
+      this.log("Falling back to API mode for execution...");
+      return this.runWithApi(code, filePath);
+    }
+    return this.agents.map((agent) => ({
+      agentId: agent.config.id,
+      agentName: agent.config.name,
+      success: false,
+      findings: [],
+      duration: 0,
+      error: "Agent Teams mode requires running inside Claude Code. See team config in output."
+    }));
+  }
+  /**
+   * Generate Team configuration for Agent Teams mode
+   */
+  generateTeamConfig(code, filePath) {
+    return {
+      teamName: this.config.teamName,
+      description: `Security audit of ${basename2(filePath)}`,
+      teammates: this.agents.map((agent) => ({
+        name: agent.config.id,
+        type: "security-specialist",
+        prompt: agent.getAnalysisPrompt(code, filePath),
+        model: this.config.model,
+        runInBackground: true
+      })),
+      // TeammateTool operations needed:
+      operations: [
+        { operation: "spawnTeam", team_name: this.config.teamName },
+        ...this.agents.map((agent) => ({
+          operation: "Task",
+          team_name: this.config.teamName,
+          name: agent.config.id,
+          prompt: agent.getAnalysisPrompt(code, filePath),
+          run_in_background: true
+        }))
+      ]
+    };
+  }
+  /**
+   * Run with direct Claude API calls
+   */
+  async runWithApi(code, filePath) {
+    this.log("Running with Claude API...");
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error("ANTHROPIC_API_KEY not set");
+    }
+    const results = [];
+    const chunks = this.chunkArray(this.agents, this.config.maxParallel);
+    for (const chunk of chunks) {
+      const chunkResults = await Promise.all(
+        chunk.map((agent) => this.callApiForAgent(agent, code, filePath, apiKey))
+      );
+      results.push(...chunkResults);
+    }
+    return results;
+  }
+  /**
+   * Call Claude API for a single agent
+   */
+  async callApiForAgent(agent, code, filePath, apiKey) {
+    const startTime = Date.now();
+    const prompt = agent.getAnalysisPrompt(code, filePath);
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01"
+        },
+        body: JSON.stringify({
+          model: this.config.model,
+          max_tokens: 4096,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      const content = data.content?.[0]?.text || "";
+      const findings = agent.parseResponse(content).map((f) => ({
+        ...f,
+        agent: agent.config.id
+      }));
+      return {
+        agentId: agent.config.id,
+        agentName: agent.config.name,
+        success: true,
+        findings,
+        duration: Date.now() - startTime
+      };
+    } catch (e) {
+      return {
+        agentId: agent.config.id,
+        agentName: agent.config.name,
+        success: false,
+        findings: [],
+        duration: Date.now() - startTime,
+        error: e.message
+      };
+    }
+  }
+  /**
+   * Run with Claude CLI subprocess
+   */
+  async runWithSubprocess(code, filePath) {
+    this.log("Running with Claude CLI subprocess...");
+    const results = [];
+    for (const agent of this.agents) {
+      const result = await this.callCliForAgent(agent, code, filePath);
+      results.push(result);
+    }
+    return results;
+  }
+  /**
+   * Call Claude CLI for a single agent
+   */
+  callCliForAgent(agent, code, filePath) {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      const prompt = agent.getAnalysisPrompt(code, filePath);
+      try {
+        const tempDir = join3(this.config.outputDir, ".temp");
+        if (!existsSync3(tempDir)) mkdirSync(tempDir, { recursive: true });
+        const promptFile = join3(tempDir, `${agent.config.id}-prompt.txt`);
+        writeFileSync(promptFile, prompt);
+        const result = execSync(
+          `claude --print --model ${this.config.model} < "${promptFile}"`,
+          {
+            timeout: this.config.timeout,
+            encoding: "utf-8",
+            stdio: ["pipe", "pipe", "pipe"]
+          }
+        );
+        const findings = agent.parseResponse(result).map((f) => ({
+          ...f,
+          agent: agent.config.id
+        }));
+        resolve({
+          agentId: agent.config.id,
+          agentName: agent.config.name,
+          success: true,
+          findings,
+          duration: Date.now() - startTime
+        });
+      } catch (e) {
+        resolve({
+          agentId: agent.config.id,
+          agentName: agent.config.name,
+          success: false,
+          findings: [],
+          duration: Date.now() - startTime,
+          error: e.message
+        });
+      }
+    });
+  }
+  /**
+   * Save report to output directory
+   */
+  saveReport(report) {
+    try {
+      if (!existsSync3(this.config.outputDir)) {
+        mkdirSync(this.config.outputDir, { recursive: true });
+      }
+      const filename = `swarm-audit-${Date.now()}.json`;
+      const reportPath = join3(this.config.outputDir, filename);
+      writeFileSync(reportPath, JSON.stringify(report, null, 2));
+      this.log(`Report saved to: ${reportPath}`);
+    } catch (e) {
+      this.log(`Failed to save report: ${e.message}`);
+    }
+  }
+  /**
+   * Utility: chunk array for parallel processing
+   */
+  chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+  /**
+   * Logging utility
+   */
+  log(message) {
+    if (this.config.verbose) {
+      console.log(`[SolGuard Swarm] ${message}`);
+    }
+  }
+};
+
+// src/swarm/audit.ts
+async function swarmAudit(options) {
+  const config = {
+    mode: options.mode || "auto",
+    specialists: options.specialists,
+    model: options.model,
+    outputDir: options.outputDir,
+    verbose: options.verbose,
+    useSynthesis: true
+  };
+  const orchestrator = new SwarmOrchestrator(config);
+  const result = await orchestrator.audit(options.target);
+  let markdownReport;
+  if (options.markdown && result.synthesis) {
+    markdownReport = formatSynthesisAsMarkdown(result.synthesis);
+  }
+  return {
+    ...result,
+    markdownReport
+  };
+}
+
 // src/index.ts
 import chalk from "chalk";
 var program = new Command();
@@ -13026,6 +14021,53 @@ Medium (${bySeverity.medium.length}):`));
 Low (${bySeverity.low.length}):`));
     bySeverity.low.slice(0, 5).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
     if (bySeverity.low.length > 5) console.log(chalk.gray(`  ... and ${bySeverity.low.length - 5} more`));
+  }
+});
+program.command("swarm").description("Run multi-agent security audit with specialized AI agents").argument("<path>", "Path to program directory or Rust file").option("--mode <mode>", "Execution mode (api|agent-teams|subprocess|auto)", "auto").option("--specialists <list>", "Comma-separated specialists (reentrancy,access-control,arithmetic,oracle)", "").option("-v, --verbose", "Verbose output").option("--markdown", "Output as markdown report").action(async (path, options) => {
+  try {
+    console.log(chalk.blue("\u{1F916} SolGuard Multi-Agent Security Swarm"));
+    console.log(chalk.gray(`Target: ${path}`));
+    console.log(chalk.gray(`Mode: ${options.mode}
+`));
+    const specialists = options.specialists ? options.specialists.split(",").map((s) => s.trim()) : void 0;
+    const result = await swarmAudit({
+      target: path,
+      mode: options.mode,
+      specialists,
+      verbose: options.verbose,
+      markdown: options.markdown
+    });
+    if (result.markdownReport) {
+      console.log(result.markdownReport);
+    } else {
+      console.log(chalk.bold(`
+\u2705 Swarm Audit Complete`));
+      console.log(chalk.gray(`  Mode: ${result.mode}`));
+      console.log(chalk.gray(`  Duration: ${result.duration}ms`));
+      console.log(chalk.gray(`  Agents: ${result.agentResults.length}`));
+      if (result.synthesis) {
+        const s = result.synthesis.summary;
+        console.log(chalk.bold("\n\u{1F4CA} Findings Summary:"));
+        console.log(`  ${chalk.red("Critical:")} ${s.critical}`);
+        console.log(`  ${chalk.yellow("High:")} ${s.high}`);
+        console.log(`  ${chalk.cyan("Medium:")} ${s.medium}`);
+        console.log(`  ${chalk.gray("Low:")} ${s.low}`);
+        console.log(`  ${chalk.blue("Total:")} ${result.findings.length}`);
+      }
+      if (result.errors && result.errors.length > 0) {
+        console.log(chalk.yellow("\n\u26A0\uFE0F  Warnings:"));
+        result.errors.forEach((err) => console.log(chalk.gray(`  - ${err}`)));
+      }
+    }
+    if (result.synthesis && result.synthesis.summary.critical > 0) {
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error(chalk.red(`Error: ${error.message}`));
+    if (options.verbose && error.stack) {
+      console.error(chalk.gray(error.stack));
+    }
+    process.exit(2);
   }
 });
 program.command("version").description("Show version").action(() => {

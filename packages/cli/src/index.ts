@@ -14,6 +14,7 @@ import { Command } from 'commander';
 import { scan, type ScanOptions } from './sdk.js';
 import { checkCommand } from './commands/check.js';
 import { listPatterns } from './patterns/index.js';
+import { swarmAudit } from './swarm/audit.js';
 import chalk from 'chalk';
 
 const program = new Command();
@@ -139,6 +140,70 @@ program
       console.log(chalk.gray(`\nLow (${bySeverity.low.length}):`));
       bySeverity.low.slice(0, 5).forEach(p => console.log(`  ${p.id}: ${p.name}`));
       if (bySeverity.low.length > 5) console.log(chalk.gray(`  ... and ${bySeverity.low.length - 5} more`));
+    }
+  });
+
+// Swarm command (multi-agent audit)
+program
+  .command('swarm')
+  .description('Run multi-agent security audit with specialized AI agents')
+  .argument('<path>', 'Path to program directory or Rust file')
+  .option('--mode <mode>', 'Execution mode (api|agent-teams|subprocess|auto)', 'auto')
+  .option('--specialists <list>', 'Comma-separated specialists (reentrancy,access-control,arithmetic,oracle)', '')
+  .option('-v, --verbose', 'Verbose output')
+  .option('--markdown', 'Output as markdown report')
+  .action(async (path: string, options: any) => {
+    try {
+      console.log(chalk.blue('🤖 SolGuard Multi-Agent Security Swarm'));
+      console.log(chalk.gray(`Target: ${path}`));
+      console.log(chalk.gray(`Mode: ${options.mode}\n`));
+      
+      const specialists = options.specialists 
+        ? options.specialists.split(',').map((s: string) => s.trim())
+        : undefined;
+      
+      const result = await swarmAudit({
+        target: path,
+        mode: options.mode,
+        specialists,
+        verbose: options.verbose,
+        markdown: options.markdown,
+      });
+      
+      if (result.markdownReport) {
+        console.log(result.markdownReport);
+      } else {
+        console.log(chalk.bold(`\n✅ Swarm Audit Complete`));
+        console.log(chalk.gray(`  Mode: ${result.mode}`));
+        console.log(chalk.gray(`  Duration: ${result.duration}ms`));
+        console.log(chalk.gray(`  Agents: ${result.agentResults.length}`));
+        
+        if (result.synthesis) {
+          const s = result.synthesis.summary;
+          console.log(chalk.bold('\n📊 Findings Summary:'));
+          console.log(`  ${chalk.red('Critical:')} ${s.critical}`);
+          console.log(`  ${chalk.yellow('High:')} ${s.high}`);
+          console.log(`  ${chalk.cyan('Medium:')} ${s.medium}`);
+          console.log(`  ${chalk.gray('Low:')} ${s.low}`);
+          console.log(`  ${chalk.blue('Total:')} ${result.findings.length}`);
+        }
+        
+        if (result.errors && result.errors.length > 0) {
+          console.log(chalk.yellow('\n⚠️  Warnings:'));
+          result.errors.forEach(err => console.log(chalk.gray(`  - ${err}`)));
+        }
+      }
+      
+      // Exit with error if critical findings
+      if (result.synthesis && result.synthesis.summary.critical > 0) {
+        process.exit(1);
+      }
+    } catch (error: any) {
+      console.error(chalk.red(`Error: ${error.message}`));
+      if (options.verbose && error.stack) {
+        console.error(chalk.gray(error.stack));
+      }
+      process.exit(2);
     }
   });
 
