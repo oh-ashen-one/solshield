@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 5200+ security patterns for Solana smart contract auditing
- * Updated: Feb 5, 2026 10:30 PM - Added Batch 71 DEV.to Critical Vulns, Step Finance Details, CertiK 2026 Stats (SOL3201-SOL3275)
+ * 5300+ security patterns for Solana smart contract auditing
+ * Updated: Feb 5, 2026 11:00 PM - Added Batch 72 Solsec Deep Dive + Audit Methodology (SOL3276-SOL3375)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -59,6 +59,9 @@ import { checkBatch70Patterns } from './solana-batched-patterns-70.js';
 
 // Import Batch 71 patterns (Feb 5, 2026 10:30 PM) - DEV.to 15 Critical Vulns, Step Finance Details, CertiK Jan 2026 Stats (SOL3201-SOL3275)
 import { checkBatch71Patterns } from './solana-batched-patterns-71.js';
+
+// Import Batch 72 patterns (Feb 5, 2026 11:00 PM) - Solsec Deep Dive + Audit Methodology Patterns (SOL3276-SOL3375)
+import { checkBatch72Patterns } from './solana-batched-patterns-72.js';
 
 export interface Finding {
   id: string;
@@ -713,6 +716,13 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     findings.push(...checkBatch71Patterns(input));
   } catch (error) {
     // Skip if Batch 71 patterns fail
+  }
+  
+  // Run Batch 72 patterns (100 patterns: Solsec Deep Dive + Audit Methodology - SOL3276-SOL3375)
+  try {
+    findings.push(...checkBatch72Patterns(input));
+  } catch (error) {
+    // Skip if Batch 72 patterns fail
   }
   
   // Deduplicate by ID + line
