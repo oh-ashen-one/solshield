@@ -8850,7 +8850,7 @@ function listPatterns() {
     // Placeholder
   }));
 }
-var PATTERN_COUNT = ALL_PATTERNS.length + 4805;
+var PATTERN_COUNT = ALL_PATTERNS.length + 4905;
 
 // src/sdk.ts
 import { existsSync, readdirSync, statSync } from "fs";
