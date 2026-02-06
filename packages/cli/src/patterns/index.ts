@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 7400+ security patterns for Solana smart contract auditing
- * Updated: Feb 6, 2026 5:30 AM - Added Batch 91 (arXiv Deep Dive + Sec3 Categories + Helius 38 Incidents + ThreeSigma + Certora)
+ * 7500+ security patterns for Solana smart contract auditing
+ * Updated: Feb 6, 2026 6:00 AM - Added Batch 92 (Solsec Deep Dive + PoC Exploits + Cope Roulette + Jet Protocol + Neodyme $2.6B)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -119,6 +119,9 @@ import { checkBatch90Patterns } from './solana-batched-patterns-90.js';
 
 // Import Batch 91 patterns (Feb 6, 2026 5:30 AM) - arXiv Deep Dive + Sec3 Final Categories + Helius 38 Incidents + ThreeSigma + Certora Lulo (SOL5101-SOL5200)
 import { checkBatch91Patterns } from './solana-batched-patterns-91.js';
+
+// Import Batch 92 patterns (Feb 6, 2026 6:00 AM) - Solsec Deep Dive + PoC Exploits + Cope Roulette + Jet Protocol + Neodyme $2.6B (SOL5201-SOL5280)
+import { checkBatch92Patterns } from './solana-batched-patterns-92.js';
 
 export interface Finding {
   id: string;
@@ -913,6 +916,13 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     findings.push(...checkBatch91Patterns(input));
   } catch (error) {
     // Skip if Batch 91 patterns fail
+  }
+  
+  // Run Batch 92 patterns (80 patterns: Solsec Deep Dive + PoC Exploits + Cope Roulette + Jet Protocol + Neodyme $2.6B - SOL5201-SOL5280)
+  try {
+    findings.push(...checkBatch92Patterns(input));
+  } catch (error) {
+    // Skip if Batch 92 patterns fail
   }
   
   // Deduplicate by ID + line
