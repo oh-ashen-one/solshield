@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 4515+ security patterns for Solana smart contract auditing
- * Updated: Feb 5, 2026 6:30 PM - Added Batch 59-60 Latest Exploits + Protocol-Specific (SOL2421-SOL2560)
+ * 4655+ security patterns for Solana smart contract auditing
+ * Updated: Feb 5, 2026 7:00 PM - Added Batch 61-62 Advanced 2025-2026 + Protocol-Specific (SOL2561-SOL2700)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -32,6 +32,10 @@ import { checkBatch58Patterns } from './solana-batched-patterns-58.js';
 // Import Batch 59-60 patterns (Feb 5, 2026 6:30 PM) - 2025 Latest Exploits + Protocol-Specific Deep Dives
 import { checkBatch59Patterns } from './solana-batched-patterns-59.js';
 import { checkBatch60Patterns } from './solana-batched-patterns-60.js';
+
+// Import Batch 61-62 patterns (Feb 5, 2026 7:00 PM) - Advanced 2025-2026 + Protocol-Specific + Economic Security
+import { checkBatch61Patterns } from './solana-batched-patterns-61.js';
+import { checkBatch62Patterns } from './solana-batched-patterns-62.js';
 
 export interface Finding {
   id: string;
@@ -612,6 +616,20 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 60 patterns fail
   }
   
+  // Run Batch 61 patterns (70 patterns: Advanced 2025-2026 Attack Vectors - Oracle, Referral, Withdrawal, Access Control, Memory Safety)
+  try {
+    findings.push(...checkBatch61Patterns(input));
+  } catch (error) {
+    // Skip if Batch 61 patterns fail
+  }
+  
+  // Run Batch 62 patterns (70 patterns: Protocol-Specific & Economic Security - Lending, DEX/AMM, Staking, Token Security)
+  try {
+    findings.push(...checkBatch62Patterns(input));
+  } catch (error) {
+    // Skip if Batch 62 patterns fail
+  }
+  
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -669,7 +687,7 @@ export function listPatterns(): Pattern[] {
 }
 
 // Export total pattern count (including dynamic imports when available)
-// Updated: Feb 5, 2026 6:30 PM - Added SOL2421-SOL2560 Latest Exploits + Protocol-Specific (140 new)
+// Updated: Feb 5, 2026 7:00 PM - Added SOL2561-SOL2700 Advanced 2025-2026 + Protocol-Specific + Economic Security (140 new)
 // New batches: 
 //   - solana-batched-patterns-41.ts (SOL1161-SOL1230): CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance
 //   - solana-batched-patterns-42.ts (SOL1231-SOL1300): DeFi (AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming)
@@ -692,6 +710,8 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-58.ts (SOL2351-SOL2420): 2025-2026 Latest Exploits + Infrastructure + MEV + Token-2022 + cNFT
 //   - solana-batched-patterns-59.ts (SOL2421-SOL2490): 2025 Latest Exploits (Loopscale $5.8M, Thunder Terminal, Banana Gun, NoOnes, Aurory, Saga DAO)
 //   - solana-batched-patterns-60.ts (SOL2491-SOL2560): Real-World Exploit Deep Analysis (Wormhole, Mango, Cashio, Crema, Slope, Nirvana, etc.)
-// Categories: CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain, Helius Complete History, Wallet Security, Insider Threats, Token-2022, Compression, Blink Actions, Lookup Tables, Program Closure, Signature Bypass, Mint Validation, Tick Spoofing, arXiv Academic, Sealevel Attacks, PoC Framework, Protocol-Specific, Kudelski Audits, Neodyme Audits, OtterSec Audits, Bramah Audits, Halborn Audits, Jito MEV, cNFT Bubblegum, Loopscale, Thunder Terminal, Banana Gun, NoOnes, Aurory, Saga DAO, Pump.fun, Solareum, Supply Chain
-// 61 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 4515+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 4465; // 4515+ total with all batched patterns
+//   - solana-batched-patterns-61.ts (SOL2561-SOL2630): Advanced 2025-2026 Attack Vectors (Oracle, Referral Fee, Withdrawal, Access Control, Memory Safety)
+//   - solana-batched-patterns-62.ts (SOL2631-SOL2700): Protocol-Specific & Economic Security (Lending, DEX/AMM, Staking, Token Security)
+// Categories: CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain, Helius Complete History, Wallet Security, Insider Threats, Token-2022, Compression, Blink Actions, Lookup Tables, Program Closure, Signature Bypass, Mint Validation, Tick Spoofing, arXiv Academic, Sealevel Attacks, PoC Framework, Protocol-Specific, Kudelski Audits, Neodyme Audits, OtterSec Audits, Bramah Audits, Halborn Audits, Jito MEV, cNFT Bubblegum, Loopscale, Thunder Terminal, Banana Gun, NoOnes, Aurory, Saga DAO, Pump.fun, Solareum, Supply Chain, Certora Audit, Memory Safety, Rust Safety, Economic Security
+// 63 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 4655+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 4605; // 4655+ total with all batched patterns

@@ -6216,6 +6216,1243 @@ function checkBatch60Patterns(input) {
 }
 var BATCH_60_COUNT = BATCH_60_PATTERNS.length;
 
+// src/patterns/solana-batched-patterns-61.ts
+var ORACLE_ADVANCED_PATTERNS = [
+  {
+    id: "SOL2561",
+    name: "Oracle Update Failure Silent Pass",
+    severity: "critical",
+    pattern: /get_price|fetch_price|oracle\.price(?![\s\S]{0,100}(stale|fresh|valid|check|error|fail|none|some))/i,
+    description: "Oracle price fetch without handling update failures. From Certora Lulo audit - oracle updates can fail silently.",
+    recommendation: "Handle oracle update failures explicitly and fail gracefully or use fallback prices."
+  },
+  {
+    id: "SOL2562",
+    name: "Pyth Confidence Interval Ignored",
+    severity: "high",
+    pattern: /pyth[\s\S]{0,50}price(?![\s\S]{0,100}conf|confidence)/i,
+    description: "Pyth oracle used without checking confidence interval. High confidence intervals indicate unreliable prices.",
+    recommendation: "Check price.conf and reject prices where conf/price ratio exceeds threshold (e.g., 1%)."
+  },
+  {
+    id: "SOL2563",
+    name: "Switchboard Staleness Unchecked",
+    severity: "high",
+    pattern: /switchboard[\s\S]{0,50}(result|feed)(?![\s\S]{0,100}timestamp|staleness|max_age)/i,
+    description: "Switchboard feed used without staleness validation.",
+    recommendation: "Verify feed timestamp is within acceptable age (e.g., <30 seconds for volatile assets)."
+  },
+  {
+    id: "SOL2564",
+    name: "TWAP Window Too Short",
+    severity: "medium",
+    pattern: /twap[\s\S]{0,50}(window|period)[\s\S]{0,20}(60|30|15|10|5)\b/i,
+    description: "TWAP window shorter than 5 minutes is vulnerable to manipulation.",
+    recommendation: "Use TWAP windows of at least 15-30 minutes for critical price feeds."
+  },
+  {
+    id: "SOL2565",
+    name: "Single Oracle Source Dependency",
+    severity: "high",
+    pattern: /oracle[\s\S]{0,100}price(?![\s\S]{0,200}(fallback|backup|secondary|aggregate))/i,
+    description: "Single oracle dependency without fallback. Oracle downtime = protocol halt.",
+    recommendation: "Implement fallback oracles or use aggregated price feeds from multiple sources."
+  },
+  {
+    id: "SOL2566",
+    name: "Price Deviation Unchecked Between Oracles",
+    severity: "high",
+    pattern: /(oracle_a|oracle_1|primary)[\s\S]{0,100}(oracle_b|oracle_2|secondary)(?![\s\S]{0,100}deviation|diff|delta)/i,
+    description: "Multiple oracles used without checking deviation between them.",
+    recommendation: "Reject transactions when oracle prices deviate more than threshold (e.g., 5%)."
+  },
+  {
+    id: "SOL2567",
+    name: "Market Price vs Oracle Price Arbitrage",
+    severity: "critical",
+    pattern: /(swap|trade|exchange)[\s\S]{0,200}oracle[\s\S]{0,100}price(?![\s\S]{0,100}bound|limit|deviation)/i,
+    description: "No bounds checking between market execution and oracle price. Enables oracle arbitrage.",
+    recommendation: "Enforce maximum deviation between oracle and execution price."
+  },
+  {
+    id: "SOL2568",
+    name: "Liquidation Oracle Manipulation Window",
+    severity: "critical",
+    pattern: /liquidat[\s\S]{0,100}(price|oracle)(?![\s\S]{0,100}delay|twap|average)/i,
+    description: "Liquidations using spot price without delay or averaging. From Mango exploit.",
+    recommendation: "Use time-delayed or TWAP prices for liquidation to prevent manipulation."
+  },
+  {
+    id: "SOL2569",
+    name: "Oracle Decimal Mismatch",
+    severity: "high",
+    pattern: /oracle[\s\S]{0,100}(price|value)[\s\S]{0,50}(decimals|scale|exponent)(?![\s\S]{0,50}(normalize|adjust|convert))/i,
+    description: "Oracle price decimals not normalized. Different oracles use different decimal scales.",
+    recommendation: "Always normalize oracle prices to a consistent decimal scale before use."
+  },
+  {
+    id: "SOL2570",
+    name: "LP Token Oracle Price Manipulation",
+    severity: "critical",
+    pattern: /lp_token[\s\S]{0,100}(price|value)(?![\s\S]{0,100}(fair|underlying|reserve))/i,
+    description: 'LP token priced without fair value calculation. From OtterSec "$200M Bluff" research.',
+    recommendation: "Calculate LP token fair value from underlying reserves, not AMM spot price."
+  },
+  {
+    id: "SOL2571",
+    name: "Flash Loan Oracle Attack Window",
+    severity: "critical",
+    pattern: /flash[\s\S]{0,50}(loan|borrow)[\s\S]{0,200}oracle[\s\S]{0,100}price/i,
+    description: "Oracle read susceptible to same-transaction flash loan manipulation.",
+    recommendation: "Use TWAP, previous block price, or multiple confirmation prices for critical operations."
+  },
+  {
+    id: "SOL2572",
+    name: "Oracle Heartbeat Check Missing",
+    severity: "medium",
+    pattern: /oracle[\s\S]{0,100}(feed|source)(?![\s\S]{0,100}(heartbeat|alive|active|status))/i,
+    description: "Oracle used without checking if feed is actively updating.",
+    recommendation: "Verify oracle heartbeat/update frequency before trusting prices."
+  },
+  {
+    id: "SOL2573",
+    name: "Negative Price Not Handled",
+    severity: "high",
+    pattern: /price[\s\S]{0,30}(i64|i128|signed)(?![\s\S]{0,50}(abs|positive|unsigned|check))/i,
+    description: "Signed price type without negative value handling. Some assets can have negative prices.",
+    recommendation: "Handle negative prices appropriately or reject if unexpected."
+  },
+  {
+    id: "SOL2574",
+    name: "Price Impact Not Calculated",
+    severity: "high",
+    pattern: /(swap|trade|exchange)[\s\S]{0,100}amount(?![\s\S]{0,100}(impact|slippage|price_impact))/i,
+    description: "Trade execution without calculating price impact for large orders.",
+    recommendation: "Calculate and display price impact, reject if exceeds user-defined threshold."
+  },
+  {
+    id: "SOL2575",
+    name: "Stale Oracle Causes Liquidation Cascade",
+    severity: "critical",
+    pattern: /liquidat[\s\S]{0,100}(health|ratio|factor)[\s\S]{0,100}oracle(?![\s\S]{0,100}fresh)/i,
+    description: "Liquidation using potentially stale oracle data can cause cascade liquidations.",
+    recommendation: "Verify oracle freshness before any liquidation, use conservative staleness thresholds."
+  }
+];
+var REFERRAL_FEE_PATTERNS = [
+  {
+    id: "SOL2576",
+    name: "Self-Referral Fee Extraction",
+    severity: "high",
+    pattern: /referr(al|er)[\s\S]{0,100}fee(?![\s\S]{0,100}(self|same|user|owner))/i,
+    description: "Referral system without self-referral prevention. From Certora Lulo audit.",
+    recommendation: "Prevent users from referring themselves to extract fees."
+  },
+  {
+    id: "SOL2577",
+    name: "Referral Fee Unbounded",
+    severity: "high",
+    pattern: /referr(al|er)[\s\S]{0,50}(fee|percent|bps)(?![\s\S]{0,50}(max|cap|limit|bound))/i,
+    description: "Referral fee percentage not bounded. Could be set to 100%.",
+    recommendation: "Cap referral fees at reasonable maximum (e.g., 50% of protocol fee)."
+  },
+  {
+    id: "SOL2578",
+    name: "Fee Precision Loss Attack",
+    severity: "medium",
+    pattern: /fee[\s\S]{0,50}(amount|value)[\s\S]{0,30}\/[\s\S]{0,30}(100|1000|10000)(?![\s\S]{0,50}checked)/i,
+    description: "Fee calculation with potential precision loss in division.",
+    recommendation: "Calculate fees with sufficient precision, consider using fixed-point math."
+  },
+  {
+    id: "SOL2579",
+    name: "Protocol Fee Bypass via Routing",
+    severity: "high",
+    pattern: /(route|path|hop)[\s\S]{0,100}(fee|swap)(?![\s\S]{0,100}aggregate_fee)/i,
+    description: "Multi-hop routing that could bypass protocol fees.",
+    recommendation: "Ensure fees are collected on each hop or aggregated correctly."
+  },
+  {
+    id: "SOL2580",
+    name: "Fee-on-Transfer Token Handling",
+    severity: "high",
+    pattern: /transfer[\s\S]{0,100}(amount|value)(?![\s\S]{0,100}(actual|received|post_fee))/i,
+    description: "Token transfers without accounting for fee-on-transfer tokens.",
+    recommendation: "Check actual received amount vs expected for fee-on-transfer tokens."
+  },
+  {
+    id: "SOL2581",
+    name: "Treasury Fee Drain via Dust",
+    severity: "medium",
+    pattern: /treasury[\s\S]{0,100}(withdraw|claim|collect)(?![\s\S]{0,100}minimum)/i,
+    description: "Treasury withdrawal without minimum amount could drain via dust attacks.",
+    recommendation: "Enforce minimum withdrawal amounts to prevent dust drain attacks."
+  },
+  {
+    id: "SOL2582",
+    name: "Fee Accrual Without Claim Limit",
+    severity: "medium",
+    pattern: /(accru|earn|collect)[\s\S]{0,50}fee(?![\s\S]{0,100}(rate_limit|cooldown|max))/i,
+    description: "Fee accrual without rate limiting could be gamed.",
+    recommendation: "Rate limit fee claims or implement fair distribution mechanism."
+  },
+  {
+    id: "SOL2583",
+    name: "Dynamic Fee Manipulation",
+    severity: "high",
+    pattern: /(dynamic|variable)[\s\S]{0,30}fee(?![\s\S]{0,100}(bound|range|admin_only))/i,
+    description: "Dynamic fees without bounds could be manipulated.",
+    recommendation: "Bound dynamic fees within reasonable range and protect update authority."
+  },
+  {
+    id: "SOL2584",
+    name: "Flash Loan Fee Evasion",
+    severity: "high",
+    pattern: /flash[\s\S]{0,50}(loan|borrow)[\s\S]{0,100}fee(?![\s\S]{0,100}(minimum|floor))/i,
+    description: "Flash loan fee could be evaded through minimum amount manipulation.",
+    recommendation: "Set minimum flash loan fee floor to prevent evasion."
+  },
+  {
+    id: "SOL2585",
+    name: "Withdrawal Fee Frontrun",
+    severity: "medium",
+    pattern: /withdraw[\s\S]{0,50}fee[\s\S]{0,50}(update|change|set)(?![\s\S]{0,100}timelock)/i,
+    description: "Withdrawal fee changes without timelock enable frontrunning users.",
+    recommendation: "Add timelock to fee changes so users can withdraw before increase."
+  },
+  {
+    id: "SOL2586",
+    name: "Performance Fee Timing Attack",
+    severity: "high",
+    pattern: /performance[\s\S]{0,50}fee[\s\S]{0,100}(calculate|collect)(?![\s\S]{0,100}highwater)/i,
+    description: "Performance fee without high-water mark enables timing attacks.",
+    recommendation: "Implement high-water mark for performance fee calculation."
+  },
+  {
+    id: "SOL2587",
+    name: "Management Fee Compounding Error",
+    severity: "medium",
+    pattern: /management[\s\S]{0,50}fee[\s\S]{0,50}(annual|yearly)(?![\s\S]{0,100}pro_rat)/i,
+    description: "Annual management fee not pro-rated could be gamed.",
+    recommendation: "Pro-rate management fees based on actual time elapsed."
+  },
+  {
+    id: "SOL2588",
+    name: "Swap Fee Rounding Exploit",
+    severity: "medium",
+    pattern: /swap[\s\S]{0,50}fee[\s\S]{0,50}(round|truncat)(?![\s\S]{0,100}favor_protocol)/i,
+    description: "Swap fee rounding direction favors user over protocol.",
+    recommendation: "Round fees in favor of protocol to prevent dust extraction."
+  },
+  {
+    id: "SOL2589",
+    name: "Liquidation Fee Manipulation",
+    severity: "high",
+    pattern: /liquidat[\s\S]{0,50}(bonus|fee|reward)(?![\s\S]{0,100}(cap|max|limit))/i,
+    description: "Unbounded liquidation bonus enables excessive extraction.",
+    recommendation: "Cap liquidation bonus at reasonable maximum (e.g., 15%)."
+  },
+  {
+    id: "SOL2590",
+    name: "Cross-Program Fee Bypass",
+    severity: "high",
+    pattern: /invoke[\s\S]{0,100}(swap|transfer)(?![\s\S]{0,100}fee_check)/i,
+    description: "CPI to external program may bypass fee collection.",
+    recommendation: "Verify fees are collected regardless of execution path."
+  }
+];
+var WITHDRAWAL_DEPOSIT_PATTERNS = [
+  {
+    id: "SOL2591",
+    name: "Withdrawal Amount Manipulation",
+    severity: "critical",
+    pattern: /withdraw[\s\S]{0,100}(amount|value)(?![\s\S]{0,100}(balance|available|check))/i,
+    description: "Withdrawal amount not validated against actual balance. From Certora Lulo audit.",
+    recommendation: "Always verify withdrawal amount against available balance before transfer."
+  },
+  {
+    id: "SOL2592",
+    name: "First Depositor Vault Attack",
+    severity: "critical",
+    pattern: /deposit[\s\S]{0,100}(shares|mint)[\s\S]{0,50}(total_supply|supply)\s*==\s*0/i,
+    description: "First depositor can manipulate share price. Classic vault attack vector.",
+    recommendation: "Seed vault with initial deposit or use virtual offset for share calculation."
+  },
+  {
+    id: "SOL2593",
+    name: "Share Inflation via Donation",
+    severity: "critical",
+    pattern: /shares[\s\S]{0,50}(assets|balance)[\s\S]{0,50}total(?![\s\S]{0,100}(virtual|offset))/i,
+    description: "Direct asset donation can inflate share price and grief small depositors.",
+    recommendation: "Use virtual offset or minimum deposit to prevent share inflation attack."
+  },
+  {
+    id: "SOL2594",
+    name: "Withdrawal Queue Jump",
+    severity: "high",
+    pattern: /withdraw[\s\S]{0,50}queue(?![\s\S]{0,100}(order|fifo|priority))/i,
+    description: "Withdrawal queue without ordering enables queue jumping.",
+    recommendation: "Enforce FIFO or priority-based queue processing."
+  },
+  {
+    id: "SOL2595",
+    name: "Deposit During Pause",
+    severity: "medium",
+    pattern: /paused[\s\S]{0,100}deposit(?![\s\S]{0,100}require.*!paused)/i,
+    description: "Deposits may be possible during pause state.",
+    recommendation: "Block both deposits and withdrawals during paused state."
+  },
+  {
+    id: "SOL2596",
+    name: "Withdrawal Minimum Not Enforced",
+    severity: "low",
+    pattern: /withdraw[\s\S]{0,50}(amount|value)(?![\s\S]{0,100}(minimum|min_amount))/i,
+    description: "No minimum withdrawal amount enables dust attacks.",
+    recommendation: "Enforce minimum withdrawal to prevent state bloat and dust attacks."
+  },
+  {
+    id: "SOL2597",
+    name: "Deposit Cap Bypass via Multiple Transactions",
+    severity: "medium",
+    pattern: /deposit[\s\S]{0,50}(cap|limit|max)(?![\s\S]{0,100}(user|total|cumulative))/i,
+    description: "Deposit cap only checks single transaction, not cumulative.",
+    recommendation: "Track cumulative deposits per user and enforce cap accordingly."
+  },
+  {
+    id: "SOL2598",
+    name: "Withdrawal Delay Bypass",
+    severity: "high",
+    pattern: /withdraw[\s\S]{0,50}(delay|cooldown|lock)(?![\s\S]{0,100}(enforce|check|verify))/i,
+    description: "Withdrawal delay declared but not enforced in execution.",
+    recommendation: "Verify delay period has elapsed before processing withdrawal."
+  },
+  {
+    id: "SOL2599",
+    name: "Instant Withdrawal During Emergency",
+    severity: "high",
+    pattern: /emergency[\s\S]{0,50}withdraw(?![\s\S]{0,100}(partial|limit|delay))/i,
+    description: "Emergency withdrawal without rate limit enables bank run.",
+    recommendation: "Even emergency withdrawals should have rate limits to prevent total drain."
+  },
+  {
+    id: "SOL2600",
+    name: "Deposit Deadline Not Checked",
+    severity: "medium",
+    pattern: /deposit[\s\S]{0,100}deadline(?![\s\S]{0,100}(check|require|verify))/i,
+    description: "Deposit deadline parameter ignored in validation.",
+    recommendation: "Reject deposits after specified deadline to prevent stale transactions."
+  },
+  {
+    id: "SOL2601",
+    name: "Asset Decimal Mismatch in Deposit",
+    severity: "high",
+    pattern: /deposit[\s\S]{0,100}(mint|token)(?![\s\S]{0,100}decimals)/i,
+    description: "Deposit amount not adjusted for token decimals.",
+    recommendation: "Normalize amounts based on token decimals before calculation."
+  },
+  {
+    id: "SOL2602",
+    name: "Withdrawal Rounding Favor Attacker",
+    severity: "medium",
+    pattern: /withdraw[\s\S]{0,50}(amount|shares)[\s\S]{0,30}(round|floor|ceil)/i,
+    description: "Withdrawal rounding direction may favor attacker over protocol.",
+    recommendation: "Round withdrawals down (floor) to favor protocol."
+  },
+  {
+    id: "SOL2603",
+    name: "Deposit Slippage Check Missing",
+    severity: "high",
+    pattern: /deposit[\s\S]{0,100}(shares|mint)(?![\s\S]{0,100}(min_shares|slippage))/i,
+    description: "Deposit returns shares without minimum shares check.",
+    recommendation: "Allow users to specify minimum shares expected from deposit."
+  },
+  {
+    id: "SOL2604",
+    name: "Withdrawal Max Slippage Unbounded",
+    severity: "high",
+    pattern: /withdraw[\s\S]{0,100}slippage(?![\s\S]{0,100}(max|cap|bound))/i,
+    description: "Withdrawal slippage not bounded could result in near-zero returns.",
+    recommendation: "Enforce maximum slippage tolerance for withdrawals."
+  },
+  {
+    id: "SOL2605",
+    name: "Locked Funds Recovery Missing",
+    severity: "medium",
+    pattern: /(stuck|lock|trap)[\s\S]{0,50}(fund|token|asset)(?![\s\S]{0,100}recover)/i,
+    description: "No mechanism to recover stuck funds from edge cases.",
+    recommendation: "Implement admin recovery function with appropriate safeguards."
+  }
+];
+var ACCESS_CONTROL_ADVANCED_PATTERNS = [
+  {
+    id: "SOL2606",
+    name: "Admin Key Single Point of Failure",
+    severity: "critical",
+    pattern: /admin[\s\S]{0,50}(pubkey|authority|key)(?![\s\S]{0,100}(multisig|threshold|quorum))/i,
+    description: "Single admin key controls critical functions. From Accretion audit findings.",
+    recommendation: "Use multisig or threshold signatures for admin operations."
+  },
+  {
+    id: "SOL2607",
+    name: "Privilege Escalation via Upgrade",
+    severity: "critical",
+    pattern: /upgrade[\s\S]{0,50}(authority|program)(?![\s\S]{0,100}timelock)/i,
+    description: "Program upgrade without timelock enables immediate privilege escalation.",
+    recommendation: "Implement upgrade timelock with governance oversight."
+  },
+  {
+    id: "SOL2608",
+    name: "Role Assignment Without Revocation",
+    severity: "high",
+    pattern: /role[\s\S]{0,50}(assign|grant|add)(?![\s\S]{0,200}(revoke|remove|delete))/i,
+    description: "Role assignment exists but revocation mechanism missing.",
+    recommendation: "Always implement role revocation alongside assignment."
+  },
+  {
+    id: "SOL2609",
+    name: "Emergency Admin Backdoor",
+    severity: "critical",
+    pattern: /emergency[\s\S]{0,50}(admin|owner|authority)(?![\s\S]{0,100}(timelock|multisig))/i,
+    description: "Emergency admin functions without additional safeguards.",
+    recommendation: "Even emergency functions need timelock or multisig for non-emergency use."
+  },
+  {
+    id: "SOL2610",
+    name: "Authority Transfer Without 2-Step",
+    severity: "high",
+    pattern: /authority[\s\S]{0,30}=[\s\S]{0,30}new_authority(?![\s\S]{0,100}(pending|accept))/i,
+    description: "Authority transfer immediate without 2-step process.",
+    recommendation: "Use 2-step transfer: propose then accept, to prevent accidental loss."
+  },
+  {
+    id: "SOL2611",
+    name: "Guardian Set Update Without Delay",
+    severity: "critical",
+    pattern: /guardian[\s\S]{0,50}(set|update|change)(?![\s\S]{0,100}delay)/i,
+    description: "Guardian set can be changed immediately. From Wormhole analysis.",
+    recommendation: "Guardian changes should have significant delay (24-72 hours)."
+  },
+  {
+    id: "SOL2612",
+    name: "Pauser Role Without Unpauser",
+    severity: "high",
+    pattern: /pause[\s\S]{0,50}(only|require)(?![\s\S]{0,200}unpause)/i,
+    description: "Pause functionality exists but unpause may be missing or restricted.",
+    recommendation: "Ensure unpause mechanism exists and is properly controlled."
+  },
+  {
+    id: "SOL2613",
+    name: "Config Update Without Bounds",
+    severity: "high",
+    pattern: /config[\s\S]{0,30}(update|set)[\s\S]{0,50}(param|value)(?![\s\S]{0,100}(valid|bound|range))/i,
+    description: "Configuration parameters can be set to arbitrary values.",
+    recommendation: "Validate config parameters against acceptable bounds."
+  },
+  {
+    id: "SOL2614",
+    name: "CPI Authority Leak",
+    severity: "critical",
+    pattern: /invoke_signed[\s\S]{0,100}(signer|authority)(?![\s\S]{0,100}scope_check)/i,
+    description: "PDA signing authority may be used beyond intended scope via CPI.",
+    recommendation: "Verify CPI operations are within intended authority scope."
+  },
+  {
+    id: "SOL2615",
+    name: "Operator Privilege Creep",
+    severity: "high",
+    pattern: /operator[\s\S]{0,50}(can|allow|permit)(?![\s\S]{0,100}(only|specific|limited))/i,
+    description: "Operator role has more privileges than necessary.",
+    recommendation: "Minimize operator privileges to only required operations."
+  },
+  {
+    id: "SOL2616",
+    name: "Treasury Access Without Multi-Approval",
+    severity: "critical",
+    pattern: /treasury[\s\S]{0,50}(withdraw|transfer|spend)(?![\s\S]{0,100}(multisig|quorum|threshold))/i,
+    description: "Treasury access with single signature. From real-world DAO attacks.",
+    recommendation: "Require multi-approval for treasury operations."
+  },
+  {
+    id: "SOL2617",
+    name: "Time-Based Access Not UTC",
+    severity: "medium",
+    pattern: /(start_time|end_time|deadline)[\s\S]{0,50}(check|compare)(?![\s\S]{0,100}utc)/i,
+    description: "Time-based access control may use inconsistent time zones.",
+    recommendation: "Always use UTC timestamps for time-based access control."
+  },
+  {
+    id: "SOL2618",
+    name: "Access Control Log Missing",
+    severity: "low",
+    pattern: /(admin|owner|authority)[\s\S]{0,50}(action|call)(?![\s\S]{0,200}(emit|log|event))/i,
+    description: "Privileged actions not logged for audit trail.",
+    recommendation: "Emit events for all privileged operations for forensics."
+  },
+  {
+    id: "SOL2619",
+    name: "Rate Limit Per User Missing",
+    severity: "medium",
+    pattern: /rate_limit[\s\S]{0,50}(global|total)(?![\s\S]{0,100}(per_user|individual))/i,
+    description: "Global rate limit but no per-user limit enables single user to consume quota.",
+    recommendation: "Implement both global and per-user rate limits."
+  },
+  {
+    id: "SOL2620",
+    name: "Cross-Program Authority Confusion",
+    severity: "high",
+    pattern: /invoke[\s\S]{0,100}(authority|signer)[\s\S]{0,100}(different|external)_program/i,
+    description: "Authority from one program used to sign for different program.",
+    recommendation: "Verify authority context matches expected program."
+  }
+];
+var MEMORY_SAFETY_PATTERNS = [
+  {
+    id: "SOL2621",
+    name: "Unsafe Block Without Justification",
+    severity: "high",
+    pattern: /unsafe\s*\{[\s\S]{0,200}(?!\/\/\s*(SAFETY|JUSTIFICATION|REASON))/i,
+    description: "Unsafe Rust block without safety justification comment.",
+    recommendation: "Document why unsafe is necessary and why it is safe in this context."
+  },
+  {
+    id: "SOL2622",
+    name: "Zero-Copy Aliasing Risk",
+    severity: "critical",
+    pattern: /zero_copy[\s\S]{0,100}(borrow|ref)[\s\S]{0,100}(mut|mutable)/i,
+    description: "Zero-copy account with mutable borrow may cause aliasing. From Three Sigma research.",
+    recommendation: "Avoid mutable borrows with zero-copy accounts or use RefCell carefully."
+  },
+  {
+    id: "SOL2623",
+    name: "Raw Pointer Dereference",
+    severity: "critical",
+    pattern: /\*\s*(const|mut)\s*\w+[\s\S]{0,50}as\s*\*(?![\s\S]{0,50}null_check)/i,
+    description: "Raw pointer dereference without null check.",
+    recommendation: "Always verify pointer is non-null before dereferencing."
+  },
+  {
+    id: "SOL2624",
+    name: "Uninitialized Memory Read",
+    severity: "critical",
+    pattern: /MaybeUninit[\s\S]{0,50}assume_init(?![\s\S]{0,100}(after|once|when).*init)/i,
+    description: "Assuming memory is initialized without verification.",
+    recommendation: "Only call assume_init after provably initializing all bytes."
+  },
+  {
+    id: "SOL2625",
+    name: "Transmute Type Size Mismatch",
+    severity: "critical",
+    pattern: /transmute[\s\S]{0,50}<[\s\S]{0,50},[\s\S]{0,50}>(?![\s\S]{0,100}size_of.*==)/i,
+    description: "Type transmutation without size verification.",
+    recommendation: "Verify source and destination types have identical size before transmute."
+  },
+  {
+    id: "SOL2626",
+    name: "Slice Index Without Bounds",
+    severity: "high",
+    pattern: /\[\s*\w+\s*\](?![\s\S]{0,30}(get|get_unchecked|\.len\(\)))/i,
+    description: "Array/slice indexing without bounds check.",
+    recommendation: "Use .get() or verify index is within bounds before indexing."
+  },
+  {
+    id: "SOL2627",
+    name: "Iterator Invalidation",
+    severity: "high",
+    pattern: /for[\s\S]{0,50}in[\s\S]{0,50}\.iter\(\)[\s\S]{0,100}(push|remove|insert)/i,
+    description: "Modifying collection while iterating over it.",
+    recommendation: "Collect modifications and apply after iteration completes."
+  },
+  {
+    id: "SOL2628",
+    name: "Stack Overflow from Deep Recursion",
+    severity: "high",
+    pattern: /fn\s+\w+[\s\S]{0,100}\1\s*\((?![\s\S]{0,100}depth.*limit)/i,
+    description: "Recursive function without depth limit.",
+    recommendation: "Add recursion depth limit or convert to iterative approach."
+  },
+  {
+    id: "SOL2629",
+    name: "Data Race in Parallel Processing",
+    severity: "critical",
+    pattern: /(rayon|parallel|thread)[\s\S]{0,100}(mut|write)[\s\S]{0,50}shared(?![\s\S]{0,100}(mutex|lock|atomic))/i,
+    description: "Shared mutable state in parallel code without synchronization.",
+    recommendation: "Use Mutex, RwLock, or atomic types for shared mutable state."
+  },
+  {
+    id: "SOL2630",
+    name: "Integer Cast Overflow in Size Calculation",
+    severity: "high",
+    pattern: /(size|len|count)[\s\S]{0,30}as\s*(u32|u16|u8)(?![\s\S]{0,50}try_into)/i,
+    description: "Casting larger integer to smaller type for size may overflow.",
+    recommendation: "Use try_into() for safe casting or verify value fits in target type."
+  }
+];
+var ALL_BATCH_61_PATTERNS = [
+  ...ORACLE_ADVANCED_PATTERNS,
+  ...REFERRAL_FEE_PATTERNS,
+  ...WITHDRAWAL_DEPOSIT_PATTERNS,
+  ...ACCESS_CONTROL_ADVANCED_PATTERNS,
+  ...MEMORY_SAFETY_PATTERNS
+];
+function checkBatch61Patterns(input) {
+  const findings = [];
+  const content = input.rust?.content || "";
+  const fileName = input.path || input.rust?.filePath || "unknown";
+  if (!content) return findings;
+  const lines = content.split("\n");
+  for (const pattern of ALL_BATCH_61_PATTERNS) {
+    try {
+      const flags = pattern.pattern.flags.includes("g") ? pattern.pattern.flags : pattern.pattern.flags + "g";
+      const regex = new RegExp(pattern.pattern.source, flags);
+      const matches = [...content.matchAll(regex)];
+      for (const match of matches) {
+        const matchIndex = match.index || 0;
+        let lineNum = 1;
+        let charCount = 0;
+        for (let i = 0; i < lines.length; i++) {
+          charCount += lines[i].length + 1;
+          if (charCount > matchIndex) {
+            lineNum = i + 1;
+            break;
+          }
+        }
+        const startLine = Math.max(0, lineNum - 2);
+        const endLine = Math.min(lines.length, lineNum + 2);
+        const snippet = lines.slice(startLine, endLine).join("\n");
+        findings.push({
+          id: pattern.id,
+          title: pattern.name,
+          severity: pattern.severity,
+          description: pattern.description,
+          location: { file: fileName, line: lineNum },
+          recommendation: pattern.recommendation,
+          code: snippet.substring(0, 200)
+        });
+      }
+    } catch (error) {
+    }
+  }
+  return findings;
+}
+var BATCH_61_PATTERN_COUNT = ALL_BATCH_61_PATTERNS.length;
+
+// src/patterns/solana-batched-patterns-62.ts
+var LENDING_PROTOCOL_PATTERNS = [
+  {
+    id: "SOL2631",
+    name: "Borrow Without Collateral Ratio Check",
+    severity: "critical",
+    pattern: /borrow[\s\S]{0,100}(amount|value)(?![\s\S]{0,100}(collateral|health|ratio))/i,
+    description: "Borrow operation without collateral ratio verification.",
+    recommendation: "Always verify collateral ratio before allowing borrows."
+  },
+  {
+    id: "SOL2632",
+    name: "Liquidation Threshold Same as Collateral Factor",
+    severity: "high",
+    pattern: /liquidation_threshold[\s\S]{0,30}==[\s\S]{0,30}collateral_factor/i,
+    description: "No buffer between borrow limit and liquidation. Users instantly liquidatable.",
+    recommendation: "Set liquidation threshold higher than collateral factor (e.g., 82.5% vs 80%)."
+  },
+  {
+    id: "SOL2633",
+    name: "Interest Rate Model Kink Missing",
+    severity: "medium",
+    pattern: /interest_rate[\s\S]{0,100}(utilization|usage)(?![\s\S]{0,100}kink)/i,
+    description: "Linear interest rate model without utilization kink.",
+    recommendation: "Use kinked model: low rates until optimal utilization, then steep increase."
+  },
+  {
+    id: "SOL2634",
+    name: "Bad Debt Socialization Missing",
+    severity: "high",
+    pattern: /liquidat[\s\S]{0,100}(shortfall|bad_debt|loss)(?![\s\S]{0,100}(socialize|distribute|reserve))/i,
+    description: "No mechanism to handle bad debt from underwater positions.",
+    recommendation: "Implement bad debt socialization or insurance fund mechanism."
+  },
+  {
+    id: "SOL2635",
+    name: "Reserve Factor Zero",
+    severity: "medium",
+    pattern: /reserve_factor[\s\S]{0,10}=[\s\S]{0,10}0(?![\s\S]{0,30}\d)/i,
+    description: "Zero reserve factor means no protocol revenue or insurance.",
+    recommendation: "Set reserve factor > 0 for protocol sustainability and insurance."
+  },
+  {
+    id: "SOL2636",
+    name: "Liquidation Close Factor 100%",
+    severity: "high",
+    pattern: /close_factor[\s\S]{0,10}=[\s\S]{0,10}(100|10000|1\.0)/i,
+    description: "Full liquidation allowed. Users lose entire position unfairly.",
+    recommendation: "Limit close factor to 50% to allow partial recovery."
+  },
+  {
+    id: "SOL2637",
+    name: "Stale Borrow Index",
+    severity: "high",
+    pattern: /borrow_index[\s\S]{0,50}(get|fetch)(?![\s\S]{0,100}(update|accrue|refresh))/i,
+    description: "Using borrow index without accruing interest first.",
+    recommendation: "Always accrue interest before using borrow index."
+  },
+  {
+    id: "SOL2638",
+    name: "Supply Cap Not Per-Token",
+    severity: "medium",
+    pattern: /supply_cap[\s\S]{0,30}(global|total)(?![\s\S]{0,100}per_token)/i,
+    description: "Global supply cap but no per-token limit. Single token can dominate.",
+    recommendation: "Implement per-token supply caps based on liquidity."
+  },
+  {
+    id: "SOL2639",
+    name: "Borrow Cap Not Enforced",
+    severity: "high",
+    pattern: /borrow[\s\S]{0,100}(amount|value)(?![\s\S]{0,100}(cap|limit|max))/i,
+    description: "No borrow cap allows unlimited borrowing of scarce assets.",
+    recommendation: "Enforce borrow caps based on available liquidity."
+  },
+  {
+    id: "SOL2640",
+    name: "Repay More Than Owed",
+    severity: "medium",
+    pattern: /repay[\s\S]{0,100}amount(?![\s\S]{0,100}(min|cap|owed|debt))/i,
+    description: "Repayment amount not capped at debt owed.",
+    recommendation: "Cap repayment at outstanding debt to prevent overpayment."
+  },
+  {
+    id: "SOL2641",
+    name: "Interest Accrual Timestamp Manipulation",
+    severity: "high",
+    pattern: /interest[\s\S]{0,50}(accrue|calculate)[\s\S]{0,50}timestamp(?![\s\S]{0,100}slot)/i,
+    description: "Interest based on timestamp instead of slot. Slot is harder to manipulate.",
+    recommendation: "Use slot-based time for interest calculations when possible."
+  },
+  {
+    id: "SOL2642",
+    name: "Collateral Withdraw During Borrow",
+    severity: "critical",
+    pattern: /withdraw[\s\S]{0,100}collateral(?![\s\S]{0,100}(borrow|debt|health).*check)/i,
+    description: "Collateral withdrawal without checking outstanding borrows.",
+    recommendation: "Always verify health factor remains safe after collateral withdrawal."
+  },
+  {
+    id: "SOL2643",
+    name: "Flash Loan Without Same-Transaction Repay",
+    severity: "critical",
+    pattern: /flash[\s\S]{0,50}loan[\s\S]{0,100}(?![\s\S]{0,200}(same|within|this).*transaction)/i,
+    description: "Flash loan mechanism may not enforce same-transaction repayment.",
+    recommendation: "Verify repayment occurs within same transaction using instruction introspection."
+  },
+  {
+    id: "SOL2644",
+    name: "Liquidator Bonus From Depositors",
+    severity: "high",
+    pattern: /liquidat[\s\S]{0,50}(bonus|discount)(?![\s\S]{0,100}(reserve|protocol))/i,
+    description: "Liquidation bonus comes from depositors, not protocol.",
+    recommendation: "Fund liquidation incentives from reserve to protect depositors."
+  },
+  {
+    id: "SOL2645",
+    name: "No Liquidation Protection Period",
+    severity: "medium",
+    pattern: /liquidat[\s\S]{0,100}(check|trigger)(?![\s\S]{0,100}(grace|delay|protection))/i,
+    description: "Users liquidated immediately without chance to add collateral.",
+    recommendation: "Consider grace period before liquidation is allowed."
+  },
+  {
+    id: "SOL2646",
+    name: "Isolated Asset Not Actually Isolated",
+    severity: "high",
+    pattern: /isolated[\s\S]{0,50}(asset|collateral)(?![\s\S]{0,100}(only|single|exclusive))/i,
+    description: "Isolated collateral mode may still allow cross-collateralization.",
+    recommendation: "Verify isolated assets truly cannot cross-collateralize."
+  },
+  {
+    id: "SOL2647",
+    name: "E-Mode Configuration Incorrect",
+    severity: "high",
+    pattern: /e_mode|efficiency_mode[\s\S]{0,100}(ltv|threshold)(?![\s\S]{0,100}validate)/i,
+    description: "E-mode parameters not validated for correlated assets.",
+    recommendation: "Validate e-mode assets are actually correlated before higher LTV."
+  },
+  {
+    id: "SOL2648",
+    name: "Debt Ceiling Per Asset Missing",
+    severity: "medium",
+    pattern: /debt[\s\S]{0,50}(cap|limit|ceiling)(?![\s\S]{0,100}per_(asset|token))/i,
+    description: "Global debt ceiling but no per-asset limits.",
+    recommendation: "Set per-asset debt ceilings based on risk assessment."
+  },
+  {
+    id: "SOL2649",
+    name: "Oracle Price Bounds Not Set",
+    severity: "high",
+    pattern: /oracle[\s\S]{0,50}price(?![\s\S]{0,100}(min_price|max_price|bound))/i,
+    description: "No minimum/maximum bounds on oracle prices.",
+    recommendation: "Set price bounds to prevent extreme oracle failures."
+  },
+  {
+    id: "SOL2650",
+    name: "Liquidation Reward Exceeds Debt",
+    severity: "high",
+    pattern: /liquidat[\s\S]{0,100}(reward|bonus)(?![\s\S]{0,100}(cap|min.*debt))/i,
+    description: "Liquidation reward could exceed debt being repaid.",
+    recommendation: "Cap liquidation reward at repaid debt plus reasonable bonus."
+  }
+];
+var DEX_AMM_PATTERNS = [
+  {
+    id: "SOL2651",
+    name: "AMM K Value Not Preserved",
+    severity: "critical",
+    pattern: /(swap|trade)[\s\S]{0,100}(reserve|balance)(?![\s\S]{0,100}(k_value|invariant|constant_product))/i,
+    description: "Constant product invariant (k=x*y) not verified after swap.",
+    recommendation: "Always verify k value is preserved or increased after swap."
+  },
+  {
+    id: "SOL2652",
+    name: "Concentrated Liquidity Out of Range",
+    severity: "high",
+    pattern: /(clmm|concentrated)[\s\S]{0,100}(liquidity|position)(?![\s\S]{0,100}(range|tick|bound))/i,
+    description: "Concentrated liquidity position tick range not validated.",
+    recommendation: "Verify position tick range is valid and within pool bounds."
+  },
+  {
+    id: "SOL2653",
+    name: "LP Share Inflation on First Deposit",
+    severity: "critical",
+    pattern: /lp[\s\S]{0,50}(share|token|mint)[\s\S]{0,100}(total.*==.*0|first.*deposit)/i,
+    description: "First LP depositor can manipulate share price.",
+    recommendation: "Mint initial LP tokens to dead address or use minimum liquidity."
+  },
+  {
+    id: "SOL2654",
+    name: "Swap Output Amount Zero",
+    severity: "high",
+    pattern: /swap[\s\S]{0,100}(output|out|amount_out)(?![\s\S]{0,100}(>|greater|minimum|min))/i,
+    description: "Swap may return zero output for dust amounts.",
+    recommendation: "Verify output amount is non-zero and meets minimum."
+  },
+  {
+    id: "SOL2655",
+    name: "Pool Fee Not Applied Correctly",
+    severity: "high",
+    pattern: /swap[\s\S]{0,50}(fee|commission)(?![\s\S]{0,100}(before|deduct|subtract).*output)/i,
+    description: "Fee deducted from wrong side or at wrong time.",
+    recommendation: "Deduct fee from input or add to output consistently."
+  },
+  {
+    id: "SOL2656",
+    name: "Virtual Reserves Manipulation",
+    severity: "high",
+    pattern: /virtual[\s\S]{0,30}(reserve|balance)(?![\s\S]{0,100}(bound|limit|verify))/i,
+    description: "Virtual reserves can be manipulated to affect pricing.",
+    recommendation: "Bound virtual reserves and verify consistency with real reserves."
+  },
+  {
+    id: "SOL2657",
+    name: "Price Impact Calculation Missing",
+    severity: "high",
+    pattern: /(swap|trade)[\s\S]{0,100}(execute|process)(?![\s\S]{0,100}price_impact)/i,
+    description: "Trade executed without calculating or limiting price impact.",
+    recommendation: "Calculate price impact and reject trades exceeding threshold."
+  },
+  {
+    id: "SOL2658",
+    name: "Tick Spacing Validation Missing",
+    severity: "medium",
+    pattern: /tick[\s\S]{0,30}(lower|upper|index)(?![\s\S]{0,100}(spacing|modulo|divisible))/i,
+    description: "Tick values not validated against tick spacing.",
+    recommendation: "Verify ticks are divisible by tick spacing."
+  },
+  {
+    id: "SOL2659",
+    name: "Sqrt Price X96 Overflow",
+    severity: "high",
+    pattern: /sqrt[\s\S]{0,30}price[\s\S]{0,30}(x96|q64)(?![\s\S]{0,100}(bound|overflow|check))/i,
+    description: "Fixed-point sqrt price calculations may overflow.",
+    recommendation: "Use checked math for sqrt price calculations."
+  },
+  {
+    id: "SOL2660",
+    name: "Liquidity Delta Sign Confusion",
+    severity: "high",
+    pattern: /liquidity[\s\S]{0,30}delta[\s\S]{0,30}(i128|signed)(?![\s\S]{0,100}(positive|negative|check))/i,
+    description: "Signed liquidity delta may be confused (add vs remove).",
+    recommendation: "Explicitly handle positive (add) and negative (remove) delta."
+  },
+  {
+    id: "SOL2661",
+    name: "Pool Creation Without Fee Tier",
+    severity: "medium",
+    pattern: /pool[\s\S]{0,50}(create|init)(?![\s\S]{0,100}fee_(tier|rate|bps))/i,
+    description: "Pool created without specifying fee tier.",
+    recommendation: "Require explicit fee tier selection on pool creation."
+  },
+  {
+    id: "SOL2662",
+    name: "Swap Route Validation Missing",
+    severity: "high",
+    pattern: /(route|path|hop)[\s\S]{0,50}(execute|swap)(?![\s\S]{0,100}(validate|verify|check))/i,
+    description: "Multi-hop swap route not validated for consistency.",
+    recommendation: "Validate each hop in route and verify final token matches expected."
+  },
+  {
+    id: "SOL2663",
+    name: "Protocol Fee Receiver Mutable",
+    severity: "medium",
+    pattern: /protocol_fee[\s\S]{0,50}(receiver|recipient)[\s\S]{0,30}mut/i,
+    description: "Protocol fee receiver can be changed by admin.",
+    recommendation: "Use timelock for fee receiver changes or make immutable."
+  },
+  {
+    id: "SOL2664",
+    name: "Flash Swap Callback Reentrancy",
+    severity: "critical",
+    pattern: /flash[\s\S]{0,50}swap[\s\S]{0,100}callback(?![\s\S]{0,100}(guard|lock|reentr))/i,
+    description: "Flash swap callback may enable reentrancy.",
+    recommendation: "Add reentrancy guard around flash swap operations."
+  },
+  {
+    id: "SOL2665",
+    name: "Observation Array Not Updated",
+    severity: "medium",
+    pattern: /observation[\s\S]{0,50}(array|buffer)(?![\s\S]{0,100}(update|write|grow))/i,
+    description: "TWAP observation array not updated on trades.",
+    recommendation: "Update observation array on every swap for accurate TWAP."
+  },
+  {
+    id: "SOL2666",
+    name: "Position NFT Transfer Unchecked",
+    severity: "high",
+    pattern: /position[\s\S]{0,50}(nft|token)[\s\S]{0,50}transfer(?![\s\S]{0,100}(authority|owner).*check)/i,
+    description: "Position NFT transfer without ownership verification.",
+    recommendation: "Verify caller owns position NFT before allowing operations."
+  },
+  {
+    id: "SOL2667",
+    name: "Pool Paused But Withdrawals Blocked",
+    severity: "high",
+    pattern: /pool[\s\S]{0,30}paused(?![\s\S]{0,200}withdraw.*allow)/i,
+    description: "Paused pool blocks all operations including user fund withdrawal.",
+    recommendation: "Always allow withdrawals even when pool is paused."
+  },
+  {
+    id: "SOL2668",
+    name: "Zero Liquidity Check Missing",
+    severity: "high",
+    pattern: /swap[\s\S]{0,100}(execute|process)(?![\s\S]{0,100}liquidity.*>.*0)/i,
+    description: "Swap attempted on pool with zero liquidity.",
+    recommendation: "Verify pool has liquidity before executing swaps."
+  },
+  {
+    id: "SOL2669",
+    name: "Reward Token Drain via Collect",
+    severity: "high",
+    pattern: /collect[\s\S]{0,50}(reward|fee)(?![\s\S]{0,100}(owner|position).*check)/i,
+    description: "Anyone can collect rewards not belonging to them.",
+    recommendation: "Verify caller owns the position before collecting rewards."
+  },
+  {
+    id: "SOL2670",
+    name: "Emergency Withdraw Forfeits Rewards",
+    severity: "medium",
+    pattern: /emergency[\s\S]{0,30}withdraw(?![\s\S]{0,100}(reward|fee).*collect)/i,
+    description: "Emergency withdrawal loses accrued rewards.",
+    recommendation: "Collect rewards before emergency withdrawal or return them."
+  }
+];
+var STAKING_VALIDATOR_PATTERNS = [
+  {
+    id: "SOL2671",
+    name: "Stake Pool Commission Unlimited",
+    severity: "high",
+    pattern: /commission[\s\S]{0,30}(fee|rate|percent)(?![\s\S]{0,100}(max|cap|limit))/i,
+    description: "Stake pool commission can be set to 100%.",
+    recommendation: "Cap commission at reasonable maximum (e.g., 10%)."
+  },
+  {
+    id: "SOL2672",
+    name: "Validator Set Not Verified",
+    severity: "high",
+    pattern: /validator[\s\S]{0,50}(vote|identity)(?![\s\S]{0,100}(verify|whitelist|approved))/i,
+    description: "Delegating to validators without verification.",
+    recommendation: "Maintain approved validator list or verify vote account."
+  },
+  {
+    id: "SOL2673",
+    name: "Unstake Without Cooldown",
+    severity: "medium",
+    pattern: /unstake[\s\S]{0,100}(execute|process)(?![\s\S]{0,100}(cooldown|delay|epoch))/i,
+    description: "Instant unstake without cooldown period.",
+    recommendation: "Enforce unstaking cooldown aligned with Solana epochs."
+  },
+  {
+    id: "SOL2674",
+    name: "Stake Pool Reserve Insufficient",
+    severity: "high",
+    pattern: /stake[\s\S]{0,30}pool[\s\S]{0,50}reserve(?![\s\S]{0,100}minimum)/i,
+    description: "Stake pool reserve for instant withdrawals may be insufficient.",
+    recommendation: "Maintain minimum reserve ratio for withdrawal liquidity."
+  },
+  {
+    id: "SOL2675",
+    name: "Validator Commission Change Instant",
+    severity: "medium",
+    pattern: /validator[\s\S]{0,50}commission[\s\S]{0,30}(set|update)(?![\s\S]{0,100}(delay|notice|timelock))/i,
+    description: "Validator can instantly increase commission.",
+    recommendation: "Require advance notice for commission increases."
+  },
+  {
+    id: "SOL2676",
+    name: "Slashing Not Handled",
+    severity: "critical",
+    pattern: /stake[\s\S]{0,100}(reward|yield)(?![\s\S]{0,200}(slash|penalty|loss))/i,
+    description: "Staking protocol does not handle validator slashing.",
+    recommendation: "Implement slashing detection and loss distribution."
+  },
+  {
+    id: "SOL2677",
+    name: "Reward Distribution Not Pro-Rata",
+    severity: "high",
+    pattern: /reward[\s\S]{0,50}distribut(?![\s\S]{0,100}(pro_rata|proportion|share))/i,
+    description: "Rewards not distributed proportionally to stake.",
+    recommendation: "Distribute rewards proportional to stake share."
+  },
+  {
+    id: "SOL2678",
+    name: "Stake Account Not Delegated",
+    severity: "medium",
+    pattern: /stake[\s\S]{0,30}account[\s\S]{0,50}(create|init)(?![\s\S]{0,100}delegat)/i,
+    description: "Stake account created but not delegated to validator.",
+    recommendation: "Delegate stake accounts to earn rewards."
+  },
+  {
+    id: "SOL2679",
+    name: "Epoch Boundary Reward Timing",
+    severity: "medium",
+    pattern: /epoch[\s\S]{0,50}(reward|yield|return)(?![\s\S]{0,100}(boundary|transition|change))/i,
+    description: "Reward calculation may miss epoch boundary edge cases.",
+    recommendation: "Handle epoch transitions explicitly in reward calculations."
+  },
+  {
+    id: "SOL2680",
+    name: "Delegation Strategy Manipulation",
+    severity: "high",
+    pattern: /delegat[\s\S]{0,50}(strategy|allocation)(?![\s\S]{0,100}(validate|verify|bound))/i,
+    description: "Delegation strategy can concentrate stake on few validators.",
+    recommendation: "Enforce diversification limits in delegation strategy."
+  },
+  {
+    id: "SOL2681",
+    name: "Liquid Stake Token Depeg",
+    severity: "high",
+    pattern: /(lst|liquid_stake)[\s\S]{0,50}(token|mint)(?![\s\S]{0,100}(backing|reserve|peg))/i,
+    description: "Liquid staking token may depeg from underlying SOL.",
+    recommendation: "Ensure LST is always backed by >= equivalent staked SOL."
+  },
+  {
+    id: "SOL2682",
+    name: "Stake Account Authority Not Transferred",
+    severity: "high",
+    pattern: /stake[\s\S]{0,30}account[\s\S]{0,50}(authority|withdraw)(?![\s\S]{0,100}(transfer|assign|pool))/i,
+    description: "Stake account authority not transferred to pool.",
+    recommendation: "Transfer stake authority to pool PDA for proper management."
+  },
+  {
+    id: "SOL2683",
+    name: "Validator Vote Account Mismatch",
+    severity: "high",
+    pattern: /validator[\s\S]{0,50}(pubkey|address)[\s\S]{0,50}vote(?![\s\S]{0,100}(match|verify|check))/i,
+    description: "Validator identity not verified against vote account.",
+    recommendation: "Verify validator identity matches vote account."
+  },
+  {
+    id: "SOL2684",
+    name: "Stake Pool SOL Counting Error",
+    severity: "high",
+    pattern: /total[\s\S]{0,30}(sol|lamports)[\s\S]{0,50}(count|sum)(?![\s\S]{0,100}(all|every|stake.*reserve))/i,
+    description: "Total SOL calculation may miss some accounts.",
+    recommendation: "Include all SOL: staked + reserve + rent-exempt."
+  },
+  {
+    id: "SOL2685",
+    name: "Stake Pool Fee Update Without Notice",
+    severity: "medium",
+    pattern: /pool[\s\S]{0,30}fee[\s\S]{0,30}(update|change)(?![\s\S]{0,100}(notice|delay|timelock))/i,
+    description: "Pool fees can change instantly without user notice.",
+    recommendation: "Require advance notice for fee increases."
+  }
+];
+var TOKEN_SECURITY_PATTERNS = [
+  {
+    id: "SOL2686",
+    name: "Mint Authority Not Revoked",
+    severity: "high",
+    pattern: /mint[\s\S]{0,30}authority(?![\s\S]{0,100}(none|revoke|null|zero))/i,
+    description: "Token mint authority still active, enabling unlimited minting.",
+    recommendation: "Revoke mint authority for fixed-supply tokens."
+  },
+  {
+    id: "SOL2687",
+    name: "Freeze Authority Centralized",
+    severity: "medium",
+    pattern: /freeze[\s\S]{0,30}authority(?![\s\S]{0,100}(multisig|none|revoke))/i,
+    description: "Single entity can freeze any token account.",
+    recommendation: "Use multisig for freeze authority or revoke if not needed."
+  },
+  {
+    id: "SOL2688",
+    name: "Token Extension Incompatibility",
+    severity: "high",
+    pattern: /token_2022[\s\S]{0,100}extension(?![\s\S]{0,100}(compat|support|check))/i,
+    description: "Token-2022 extensions may conflict with protocol logic.",
+    recommendation: "Test protocol with all relevant token extensions."
+  },
+  {
+    id: "SOL2689",
+    name: "Transfer Hook Reentrancy",
+    severity: "critical",
+    pattern: /transfer_hook[\s\S]{0,100}(invoke|call)(?![\s\S]{0,100}(guard|lock))/i,
+    description: "Transfer hook may enable reentrancy attacks.",
+    recommendation: "Add reentrancy protection around transfer hooks."
+  },
+  {
+    id: "SOL2690",
+    name: "Confidential Transfer Leak",
+    severity: "high",
+    pattern: /confidential[\s\S]{0,50}transfer(?![\s\S]{0,100}(audit|verify|proof))/i,
+    description: "Confidential transfer amounts may leak through other means.",
+    recommendation: "Ensure all related operations maintain confidentiality."
+  },
+  {
+    id: "SOL2691",
+    name: "Permanent Delegate Abuse",
+    severity: "critical",
+    pattern: /permanent[\s\S]{0,30}delegate(?![\s\S]{0,100}(warn|consent|aware))/i,
+    description: "Permanent delegate can drain tokens without user consent.",
+    recommendation: "Warn users about permanent delegate, require explicit consent."
+  },
+  {
+    id: "SOL2692",
+    name: "Interest-Bearing Token Accrual",
+    severity: "high",
+    pattern: /interest[\s\S]{0,30}bearing[\s\S]{0,50}(token|mint)(?![\s\S]{0,100}(rate|accrue).*check)/i,
+    description: "Interest-bearing token rate may be manipulated.",
+    recommendation: "Validate interest rate is within acceptable bounds."
+  },
+  {
+    id: "SOL2693",
+    name: "Non-Transferable Token Override",
+    severity: "high",
+    pattern: /non_transferable(?![\s\S]{0,100}(enforce|block|prevent))/i,
+    description: "Non-transferable token constraint may be bypassed.",
+    recommendation: "Verify transfer is actually blocked in all code paths."
+  },
+  {
+    id: "SOL2694",
+    name: "Memo Required Not Checked",
+    severity: "low",
+    pattern: /memo[\s\S]{0,30}required(?![\s\S]{0,100}(check|verify|enforce))/i,
+    description: "Memo requirement declared but not enforced.",
+    recommendation: "Actually check memo presence when required."
+  },
+  {
+    id: "SOL2695",
+    name: "Default Account State Unexpected",
+    severity: "medium",
+    pattern: /default[\s\S]{0,30}account[\s\S]{0,30}state(?![\s\S]{0,100}(expect|handle|check))/i,
+    description: "Token-2022 default account state may differ from expected.",
+    recommendation: "Handle both frozen and initialized default states."
+  },
+  {
+    id: "SOL2696",
+    name: "Reallocate Without Size Check",
+    severity: "high",
+    pattern: /reallocat[\s\S]{0,50}(account|space)(?![\s\S]{0,100}(max|limit|bound))/i,
+    description: "Account reallocation without size limit.",
+    recommendation: "Limit reallocation size to prevent compute exhaustion."
+  },
+  {
+    id: "SOL2697",
+    name: "CPI Guard State Ignored",
+    severity: "high",
+    pattern: /cpi_guard[\s\S]{0,50}(state|enabled)(?![\s\S]{0,100}check)/i,
+    description: "CPI guard state not checked before CPI operation.",
+    recommendation: "Check CPI guard state and fail if enabled when not expected."
+  },
+  {
+    id: "SOL2698",
+    name: "Metadata Authority Mismatch",
+    severity: "high",
+    pattern: /metadata[\s\S]{0,50}authority(?![\s\S]{0,100}(verify|check|match))/i,
+    description: "Token metadata authority not verified against expected.",
+    recommendation: "Verify metadata authority matches expected before trusting data."
+  },
+  {
+    id: "SOL2699",
+    name: "Token Burn Not Reducing Supply",
+    severity: "high",
+    pattern: /burn[\s\S]{0,100}(token|amount)(?![\s\S]{0,100}(supply.*decrement|total.*sub))/i,
+    description: "Token burn operation may not reduce total supply.",
+    recommendation: "Verify total supply decreases after burn."
+  },
+  {
+    id: "SOL2700",
+    name: "Decimal Mismatch in Token Math",
+    severity: "high",
+    pattern: /(token_a|token_b)[\s\S]{0,50}(amount|value)[\s\S]{0,50}(add|sub|mul|div)(?![\s\S]{0,100}decimal)/i,
+    description: "Token arithmetic without considering different decimals.",
+    recommendation: "Normalize token amounts to same decimal scale before math."
+  }
+];
+var ALL_BATCH_62_PATTERNS = [
+  ...LENDING_PROTOCOL_PATTERNS,
+  ...DEX_AMM_PATTERNS,
+  ...STAKING_VALIDATOR_PATTERNS,
+  ...TOKEN_SECURITY_PATTERNS
+];
+function checkBatch62Patterns(input) {
+  const findings = [];
+  const content = input.rust?.content || "";
+  const fileName = input.path || input.rust?.filePath || "unknown";
+  if (!content) return findings;
+  const lines = content.split("\n");
+  for (const pattern of ALL_BATCH_62_PATTERNS) {
+    try {
+      const flags = pattern.pattern.flags.includes("g") ? pattern.pattern.flags : pattern.pattern.flags + "g";
+      const regex = new RegExp(pattern.pattern.source, flags);
+      const matches = [...content.matchAll(regex)];
+      for (const match of matches) {
+        const matchIndex = match.index || 0;
+        let lineNum = 1;
+        let charCount = 0;
+        for (let i = 0; i < lines.length; i++) {
+          charCount += lines[i].length + 1;
+          if (charCount > matchIndex) {
+            lineNum = i + 1;
+            break;
+          }
+        }
+        const startLine = Math.max(0, lineNum - 2);
+        const endLine = Math.min(lines.length, lineNum + 2);
+        const snippet = lines.slice(startLine, endLine).join("\n");
+        findings.push({
+          id: pattern.id,
+          title: pattern.name,
+          severity: pattern.severity,
+          description: pattern.description,
+          location: { file: fileName, line: lineNum },
+          recommendation: pattern.recommendation,
+          code: snippet.substring(0, 200)
+        });
+      }
+    } catch (error) {
+    }
+  }
+  return findings;
+}
+var BATCH_62_PATTERN_COUNT = ALL_BATCH_62_PATTERNS.length;
+
 // src/patterns/index.ts
 var CORE_PATTERNS = [
   {
@@ -6708,6 +7945,14 @@ async function runPatterns(input) {
     findings.push(...checkBatch60Patterns(input));
   } catch (error) {
   }
+  try {
+    findings.push(...checkBatch61Patterns(input));
+  } catch (error) {
+  }
+  try {
+    findings.push(...checkBatch62Patterns(input));
+  } catch (error) {
+  }
   const seen = /* @__PURE__ */ new Set();
   const deduped = findings.filter((f) => {
     const key = `${f.id}-${f.location.line}`;
@@ -6751,7 +7996,7 @@ function listPatterns() {
     // Placeholder
   }));
 }
-var PATTERN_COUNT = ALL_PATTERNS.length + 4465;
+var PATTERN_COUNT = ALL_PATTERNS.length + 4605;
 
 // src/sdk.ts
 import { existsSync, readdirSync, statSync } from "fs";
