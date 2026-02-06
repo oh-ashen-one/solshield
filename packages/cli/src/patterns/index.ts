@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 6000+ security patterns for Solana smart contract auditing
- * Updated: Feb 6, 2026 2:00 AM - Added Batch 79-80 (Solsec Research + Helius Complete History + 2026 Emerging Patterns)
+ * 6500+ security patterns for Solana smart contract auditing
+ * Updated: Feb 6, 2026 2:30 AM - Added Batch 81-82 (Latest Exploit Deep Dives + Audit Firm Patterns + 2026 Emerging Threats)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -86,6 +86,12 @@ import { checkBatch79Patterns } from './solana-batched-patterns-79.js';
 
 // Import Batch 80 patterns (Feb 6, 2026 2:00 AM) - Helius Complete History + 2024-2026 Emerging Threats (SOL4026-SOL4100)
 import { checkBatch80Patterns } from './solana-batched-patterns-80.js';
+
+// Import Batch 81 patterns (Feb 6, 2026 2:30 AM) - Latest Exploit Deep Dives + Advanced Detection (SOL4151-SOL4250)
+import { checkBatch81Patterns } from './solana-batched-patterns-81.js';
+
+// Import Batch 82 patterns (Feb 6, 2026 2:30 AM) - Audit Firm Patterns + 2026 Emerging Threats (SOL4201-SOL4300)
+import { checkBatch82Patterns } from './solana-batched-patterns-82.js';
 
 export interface Finding {
   id: string;
@@ -803,6 +809,20 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     findings.push(...checkBatch80Patterns(input));
   } catch (error) {
     // Skip if Batch 80 patterns fail
+  }
+  
+  // Run Batch 81 patterns (50 patterns: Latest Exploit Deep Dives + Advanced Detection - SOL4151-SOL4200)
+  try {
+    findings.push(...checkBatch81Patterns(input));
+  } catch (error) {
+    // Skip if Batch 81 patterns fail
+  }
+  
+  // Run Batch 82 patterns (50 patterns: Audit Firm Patterns + 2026 Emerging Threats - SOL4201-SOL4250)
+  try {
+    findings.push(...checkBatch82Patterns(input));
+  } catch (error) {
+    // Skip if Batch 82 patterns fail
   }
   
   // Deduplicate by ID + line
