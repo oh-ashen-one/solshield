@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 7500+ security patterns for Solana smart contract auditing
- * Updated: Feb 6, 2026 6:00 AM - Added Batch 92 (Solsec Deep Dive + PoC Exploits + Cope Roulette + Jet Protocol + Neodyme $2.6B)
+ * 7600+ security patterns for Solana smart contract auditing
+ * Updated: Feb 6, 2026 6:30 AM - Added Batch 93 (Step Finance $40M + arXiv Research + Sec3 2025 Final + AI Agent Security)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -122,6 +122,9 @@ import { checkBatch91Patterns } from './solana-batched-patterns-91.js';
 
 // Import Batch 92 patterns (Feb 6, 2026 6:00 AM) - Solsec Deep Dive + PoC Exploits + Cope Roulette + Jet Protocol + Neodyme $2.6B (SOL5201-SOL5280)
 import { checkBatch92Patterns } from './solana-batched-patterns-92.js';
+
+// Import Batch 93 patterns (Feb 6, 2026 6:30 AM) - Step Finance $40M + arXiv Research + Sec3 2025 Final + Certora Lulo + Token-2022 + AI Agent Security (SOL5301-SOL5400)
+import { scanBatch93 as checkBatch93Patterns } from './solana-batched-patterns-93.js';
 
 export interface Finding {
   id: string;
@@ -925,6 +928,13 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 92 patterns fail
   }
   
+  // Run Batch 93 patterns (100 patterns: Step Finance $40M + arXiv Research + Sec3 2025 Final + Certora + AI Agent Security - SOL5301-SOL5400)
+  try {
+    findings.push(...checkBatch93Patterns({ content: input.rust?.content || '', file: input.path }));
+  } catch (error) {
+    // Skip if Batch 93 patterns fail
+  }
+  
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -1036,5 +1046,6 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-89.ts (SOL4901-SOL5000): Zellic Anchor Vulnerabilities + Cantina Security Guide + Advanced DeFi Patterns + 2026 Emerging Threats
 //   - solana-batched-patterns-90.ts (SOL5001-SOL5100): arXiv Academic Research + Sec3 2025 Final + Helius 2026 + Token-2022 + cNFT + MEV + Emerging Threats
 //   - solana-batched-patterns-91.ts (SOL5101-SOL5200): arXiv:2504.07419 Deep Dive (Solend $1.26M, Mango $100M, Cashio $52M, Wormhole $326M) + Sec3 2025 Final Categories (Business Logic 38.5%, Input Validation 25%, Access Control 19%, Data Integrity 8.9%, DoS 8.5%) + Helius 38 Incidents Deep Analysis (Slope $8M, Raydium $4.4M, DEXX $30M, Web3.js Supply Chain) + ThreeSigma Loopscale $5.8M + Certora Lulo Audit + BlockHacks $600M Analysis + Solsec Compiled Audits + Token-2022 + cNFT + Governance + Bridge + Wallet + Emergency Response + Monitoring
-// 91 batched/pattern files × ~70-100 patterns each + 50 core + 250+ individual patterns = 7400+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 6800; // 7400+ total with all batched patterns
+//   - solana-batched-patterns-93.ts (SOL5301-SOL5400): Step Finance $40M + arXiv Research + Sec3 2025 Final + Certora Lulo + GetFailsafe + Accretion + Token-2022 + AI Agent Security + Supply Chain + Monitoring
+// 92 batched/pattern files × ~70-100 patterns each + 50 core + 250+ individual patterns = 7600+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 6900; // 7600+ total with all batched patterns
