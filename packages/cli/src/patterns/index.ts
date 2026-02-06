@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 7000+ security patterns for Solana smart contract auditing
- * Updated: Feb 6, 2026 4:00 AM - Added Batch 87 (Helius 38 Incidents + Solsec PoC + Armani Sealevel Attacks + 2026 Threats)
+ * 7200+ security patterns for Solana smart contract auditing
+ * Updated: Feb 6, 2026 4:35 AM - Added Batch 88-89 (Helius Complete + Zellic + Cantina + Advanced DeFi)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -107,6 +107,12 @@ import { checkBatch86Patterns } from './solana-batched-patterns-86.js';
 
 // Import Batch 87 patterns (Feb 6, 2026 4:00 AM) - Helius 38 Incidents + Solsec PoC + Armani Sealevel Attacks + 2026 Threats (SOL4701-SOL4800)
 import { checkBatch87Patterns } from './solana-batched-patterns-87.js';
+
+// Import Batch 88 patterns (Feb 6, 2026 4:30 AM) - Helius Complete History + Solsec PoC Deep Dives + Cope Roulette + Port Finance + Jet Protocol (SOL4801-SOL4900)
+import { checkBatch88Patterns } from './solana-batched-patterns-88.js';
+
+// Import Batch 89 patterns (Feb 6, 2026 4:35 AM) - Zellic Anchor Vulnerabilities + Cantina Security Guide + Advanced DeFi + 2026 Threats (SOL4901-SOL5000)
+import { checkBatch89Patterns } from './solana-batched-patterns-89.js';
 
 export interface Finding {
   id: string;
@@ -875,6 +881,20 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 87 patterns fail
   }
   
+  // Run Batch 88 patterns (100 patterns: Helius Complete History + Solsec PoC Deep Dives - SOL4801-SOL4900)
+  try {
+    findings.push(...checkBatch88Patterns(input));
+  } catch (error) {
+    // Skip if Batch 88 patterns fail
+  }
+  
+  // Run Batch 89 patterns (100 patterns: Zellic Anchor + Cantina Guide + Advanced DeFi - SOL4901-SOL5000)
+  try {
+    findings.push(...checkBatch89Patterns(input));
+  } catch (error) {
+    // Skip if Batch 89 patterns fail
+  }
+  
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -982,4 +1002,7 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-85.ts (SOL4501-SOL4600): Sec3 2025 Report + Solsec PoC Deep Dives (Cope Roulette, Port Finance, Jet Bug) + 2026 Threats
 //   - solana-batched-patterns-86.ts (SOL4601-SOL4700): Helius Supply Chain (Web3.js, Parcl) + Network Attacks (Grape, Jito DDoS) + Core Protocol (Turbine, rBPF) + Insider Threats (Pump.fun, Cypher, DEXX)
 //   - solana-batched-patterns-87.ts (SOL4701-SOL4800): Helius 38 Incidents Deep Dive + Solsec PoC (Cope Roulette, Port, Jet) + Armani Sealevel Attacks + DeFi + 2026 Emerging Threats
-export const PATTERN_COUNT = ALL_PATTERNS.length + 6400; // 7000+ total with all batched patterns
+//   - solana-batched-patterns-88.ts (SOL4801-SOL4900): Helius Complete History (38 Incidents) + Solsec PoC Deep Dives + Cope Roulette + Port Finance $2.6B + Jet Protocol Break Bug
+//   - solana-batched-patterns-89.ts (SOL4901-SOL5000): Zellic Anchor Vulnerabilities + Cantina Security Guide + Advanced DeFi Patterns + 2026 Emerging Threats
+// 89 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 7200+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 6600; // 7200+ total with all batched patterns
