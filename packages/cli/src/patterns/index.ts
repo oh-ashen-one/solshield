@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 4955+ security patterns for Solana smart contract auditing
- * Updated: Feb 5, 2026 8:00 PM - Added Batch 65-66 Latest 2025-2026 Exploits + CLMM Deep Dive (SOL2901-SOL3000)
+ * 4975+ security patterns for Solana smart contract auditing
+ * Updated: Feb 5, 2026 8:30 PM - Added Batch 67 Emerging 2025-2026 Attack Vectors (SOL3001-SOL3020)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -44,6 +44,9 @@ import { checkBatch64Patterns } from './solana-batched-patterns-64.js';
 // Import Batch 65-66 patterns (Feb 5, 2026 8:00 PM) - Step Finance, CrediX, Upbit, SwissBorg, CLMM Deep Dive
 import { checkBatch65Patterns } from './solana-batched-patterns-65.js';
 import { checkBatch66Patterns } from './solana-batched-patterns-66.js';
+
+// Import Batch 67 patterns (Feb 5, 2026 8:30 PM) - 2025-2026 Emerging Attack Vectors + Infrastructure
+import { checkBatch67Patterns } from './solana-batched-patterns-67.js';
 
 export interface Finding {
   id: string;
@@ -652,6 +655,27 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 64 patterns fail
   }
   
+  // Run Batch 65 patterns (50 patterns: Step Finance $40M, CrediX $4.5M, Upbit $36M, SwissBorg $41M, Token-2022, NPM)
+  try {
+    findings.push(...checkBatch65Patterns(input));
+  } catch (error) {
+    // Skip if Batch 65 patterns fail
+  }
+  
+  // Run Batch 66 patterns (50 patterns: CLMM Deep Dive - Crema Finance, Account/PDA/CPI, Arithmetic, Oracle, State)
+  try {
+    findings.push(...checkBatch66Patterns(input));
+  } catch (error) {
+    // Skip if Batch 66 patterns fail
+  }
+  
+  // Run Batch 67 patterns (20 patterns: 2025-2026 Emerging Attack Vectors - Whale Cascades, MEV, Infrastructure, Reentrancy)
+  try {
+    findings.push(...checkBatch67Patterns(input));
+  } catch (error) {
+    // Skip if Batch 67 patterns fail
+  }
+  
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -738,6 +762,7 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-64.ts (SOL2801-SOL2900): Infrastructure & Off-Chain Security (Web3.js Supply Chain, Race Conditions, DePIN, Frontend, Core Protocol)
 //   - solana-batched-patterns-65.ts (SOL2901-SOL2950): Step Finance $40M, CrediX $4.5M, Upbit $36M, SwissBorg $41M, Token-2022, NPM Supply Chain, Bridges
 //   - solana-batched-patterns-66.ts (SOL2951-SOL3000): Crema Finance CLMM Deep Dive, Account/PDA/CPI Security, Arithmetic, Oracle, State, Token, Access Control
-// Categories: CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain, Helius Complete History, Wallet Security, Insider Threats, Token-2022, Compression, Blink Actions, Lookup Tables, Program Closure, Signature Bypass, Mint Validation, Tick Spoofing, arXiv Academic, Sealevel Attacks, PoC Framework, Protocol-Specific, Kudelski Audits, Neodyme Audits, OtterSec Audits, Bramah Audits, Halborn Audits, Jito MEV, cNFT Bubblegum, Loopscale RateX, Thunder Terminal, Banana Gun, NoOnes, Aurory, Saga DAO, Pump.fun, Solareum, Supply Chain, Certora Audit, Memory Safety, Rust Safety, Economic Security, DePIN Security, Off-Chain Race Conditions, Frontend Security, Step Finance, CrediX, Upbit, SwissBorg, CLMM Tick Account, Fee Accumulator
-// 67 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 4955+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 4905; // 4955+ total with all batched patterns
+//   - solana-batched-patterns-67.ts (SOL3001-SOL3020): 2025-2026 Emerging Attack Vectors (Whale Cascades, MEV Validator Concentration, CPI Reentrancy, Transfer Hooks)
+// Categories: CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain, Helius Complete History, Wallet Security, Insider Threats, Token-2022, Compression, Blink Actions, Lookup Tables, Program Closure, Signature Bypass, Mint Validation, Tick Spoofing, arXiv Academic, Sealevel Attacks, PoC Framework, Protocol-Specific, Kudelski Audits, Neodyme Audits, OtterSec Audits, Bramah Audits, Halborn Audits, Jito MEV, cNFT Bubblegum, Loopscale RateX, Thunder Terminal, Banana Gun, NoOnes, Aurory, Saga DAO, Pump.fun, Solareum, Supply Chain, Certora Audit, Memory Safety, Rust Safety, Economic Security, DePIN Security, Off-Chain Race Conditions, Frontend Security, Step Finance, CrediX, Upbit, SwissBorg, CLMM Tick Account, Fee Accumulator, Whale Cascades, Infrastructure Concentration
+// 68 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 4975+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 4925; // 4975+ total with all batched patterns
