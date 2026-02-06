@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 6900+ security patterns for Solana smart contract auditing
- * Updated: Feb 6, 2026 3:45 AM - Added Batch 85-86 (Sec3 2025 + Solsec PoC + Helius Supply Chain/Network/Core + 2026 Threats)
+ * 7000+ security patterns for Solana smart contract auditing
+ * Updated: Feb 6, 2026 4:00 AM - Added Batch 87 (Helius 38 Incidents + Solsec PoC + Armani Sealevel Attacks + 2026 Threats)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -104,6 +104,9 @@ import { checkBatch85Patterns } from './solana-batched-patterns-85.js';
 
 // Import Batch 86 patterns (Feb 6, 2026 3:45 AM) - Helius Supply Chain + Network Attacks + Core Protocol Vulns + 2026 Infrastructure (SOL4601-SOL4700)
 import { checkBatch86Patterns } from './solana-batched-patterns-86.js';
+
+// Import Batch 87 patterns (Feb 6, 2026 4:00 AM) - Helius 38 Incidents + Solsec PoC + Armani Sealevel Attacks + 2026 Threats (SOL4701-SOL4800)
+import { checkBatch87Patterns } from './solana-batched-patterns-87.js';
 
 export interface Finding {
   id: string;
@@ -865,6 +868,13 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 86 patterns fail
   }
   
+  // Run Batch 87 patterns (100 patterns: Helius 38 Incidents + Solsec PoC + Sealevel Attacks - SOL4701-SOL4800)
+  try {
+    findings.push(...checkBatch87Patterns(input));
+  } catch (error) {
+    // Skip if Batch 87 patterns fail
+  }
+  
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -968,7 +978,8 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-80.ts (SOL4026-SOL4100): Helius Complete Exploit History + 2024-2026 Emerging Threats (AI Agents, Token-2022, MEV, Governance)
 //   - solana-batched-patterns-83.ts (SOL4301-SOL4400): Helius 38 Verified Incidents + Sealevel Attacks + Audit Firm Patterns (Wormhole, Cashio, Crema, Mango, Nirvana, etc.)
 //   - solana-batched-patterns-84.ts (SOL4401-SOL4500): Protocol Audits (Mango, Marinade, Orca, Drift, Phoenix) + Advanced DeFi (Lending, AMM, Options, Staking, Bridges, NFT, Governance)
-// 86 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 6900+
+// 87 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 7000+
 //   - solana-batched-patterns-85.ts (SOL4501-SOL4600): Sec3 2025 Report + Solsec PoC Deep Dives (Cope Roulette, Port Finance, Jet Bug) + 2026 Threats
 //   - solana-batched-patterns-86.ts (SOL4601-SOL4700): Helius Supply Chain (Web3.js, Parcl) + Network Attacks (Grape, Jito DDoS) + Core Protocol (Turbine, rBPF) + Insider Threats (Pump.fun, Cypher, DEXX)
-export const PATTERN_COUNT = ALL_PATTERNS.length + 6300; // 6900+ total with all batched patterns
+//   - solana-batched-patterns-87.ts (SOL4701-SOL4800): Helius 38 Incidents Deep Dive + Solsec PoC (Cope Roulette, Port, Jet) + Armani Sealevel Attacks + DeFi + 2026 Emerging Threats
+export const PATTERN_COUNT = ALL_PATTERNS.length + 6400; // 7000+ total with all batched patterns
