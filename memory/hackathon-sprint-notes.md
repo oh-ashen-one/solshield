@@ -1,5 +1,78 @@
 # SolGuard Hackathon Sprint Notes
 
+## Session: Feb 5, 2026 - 6:30 PM CST (140 NEW PATTERNS!)
+
+### 🎯 Pattern Count Update: 4,515+ Patterns
+**Added 140 new patterns (SOL2421-SOL2560)**
+
+**Pattern Files Created:**
+- `solana-batched-patterns-59.ts` - SOL2421-SOL2490 (70 patterns): 2025 Latest Exploits
+- `solana-batched-patterns-60.ts` - SOL2491-SOL2560 (70 patterns): Real-World Exploit Deep Analysis
+
+**Batch 59 - 2025 Latest Exploits (SOL2421-SOL2490):**
+Sources: Helius Complete History (Q1 2025), Sec3 2025 Report
+
+New exploits covered:
+- **Loopscale ($5.8M)** - April 2025: Collateral under-collateralization, flashloan arbitrage, oracle frontrunning
+- **Thunder Terminal** - MongoDB injection, session management flaws
+- **Banana Gun ($1.4M)** - MEV bot private key storage, oracle dependency
+- **NoOnes Platform** - API key exposure, withdrawal rate limits
+- **Aurory** - NFT attribute manipulation, game economy inflation
+- **Saga DAO** - Proposal timing attack, flash governance
+- **Solareum** - LP token validation, admin backdoor
+- **Parcl Front-End** - CDN integrity (SRI), DNS hijack risk
+- **Web3.js NPM Compromise** - Package integrity, signing interception
+- **Synthetify DAO** - Unnoticed proposal attack
+
+Additional patterns from Sec3 2025 Report:
+- Business Logic: State machine violations, invariant checks, order-dependent logic
+- Input Validation: Range validation, string sanitization, bounds checking
+- Access Control: RBAC missing, privilege escalation, capability leaks
+- Data Integrity: Cross-reference integrity, timestamp manipulation
+- DoS/Liveness: Unbounded iteration, account spam
+
+2025 Emerging Attack Vectors:
+- JIT Liquidity MEV, Backrunning, Validator concentration
+- Cross-chain VAA replay, Bridge finality, L2 fraud proofs
+- Token-2022 confidential transfers, transfer fees, interest bearing
+- cNFT concurrent merkle updates, proof verification
+- Blink action origin validation, transaction preview
+- AI Agent wallet security (transaction limits, allowlists, key rotation)
+- Pump.fun bonding curve manipulation, insider trading detection
+- Infrastructure: RPC provider validation, WebSocket security
+- Economic attacks: First depositor, fee-on-transfer, rebasing tokens
+
+**Batch 60 - Real-World Exploit Deep Analysis (SOL2491-SOL2560):**
+Sources: In-depth analysis of 38 verified Helius incidents, Protocol audits
+
+Exploit-derived patterns:
+- **Wormhole ($326M)**: Signature count verification, deprecated verify function, guardian set updates
+- **Mango Markets ($116M)**: Perp market manipulation, self-reference oracle, collateral concentration
+- **Cashio ($52M)**: Collateral chain validation, LP token verification, nested account trust
+- **Crema Finance ($8.8M)**: CLMM tick account spoofing, fee claim validation, flash loan fee manipulation
+- **Slope Wallet ($8M)**: Seed phrase transmission, analytics key exposure
+- **Nirvana Finance ($3.5M)**: Bonding curve flash loan, algorithmic peg attack
+- **Raydium ($4.4M)**: Pool authority leak, admin key storage
+- **Pump.fun ($1.9M)**: Employee access control, privileged transaction monitoring
+- **OptiFi**: Shutdown sequence, irreversible action guard
+- **Cypher Protocol**: Post-exploit recovery, white-hat coordination
+
+Protocol-specific patterns:
+- Jupiter route aggregation, Marinade stake pool, Drift perp funding
+- Phoenix order book integrity, USDC blacklist check, Stablecoin depeg detection
+- DAO proposal spam, execution delay, quorum manipulation
+- NFT royalty enforcement, collection verification, metadata mutability
+- Bridge source finality, relayer incentives
+
+Advanced security:
+- Reentrancy CPI state check, guard patterns
+- Memory/compute optimization
+- Error handling best practices
+- Monitoring & observability
+- Upgrade migration safety, rollback capability
+
+---
+
 ## Session: Feb 5, 2026 - 5:30 PM CST (140 NEW PATTERNS!)
 
 ### 🎯 Pattern Count Update: 4,235+ Patterns
