@@ -446,7 +446,7 @@ const BATCH_93_PATTERNS: PatternDef[] = [
     id: 'SOL5347',
     name: 'Low Quorum DAO Drain',
     severity: 'high',
-    pattern: /quorum[\s\S]{0,100}(?:\d{1,2}|percentage)[\s\S]{0,100}(?!minimum_tokens|require.*>/i,
+    pattern: /quorum[\s\S]{0,100}(?:\d{1,2}|percentage)[\s\S]{0,100}(?!minimum_tokens|require)/i,
     description: 'Low quorum thresholds enable minority treasury drain. Saga DAO lost $1.5M to low-quorum attack.',
     recommendation: 'Set minimum quorum at 10%+ of circulating supply. Require higher quorum for treasury actions.'
   },
