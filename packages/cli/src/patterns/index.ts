@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 5050+ security patterns for Solana smart contract auditing
- * Updated: Feb 5, 2026 9:30 PM - Added Batch 69 Deep Exploit Analysis (SOL3076-SOL3125)
+ * 5125+ security patterns for Solana smart contract auditing
+ * Updated: Feb 5, 2026 10:00 PM - Added Batch 70 Step Finance, Phishing, 2026 Threats (SOL3126-SOL3200)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -53,6 +53,9 @@ import { checkBatch68Patterns } from './solana-batched-patterns-68.js';
 
 // Import Batch 69 patterns (Feb 5, 2026 9:30 PM) - Deep Exploit Analysis: Solend, Wormhole, Cashio, Mango, Crema, DEXX
 import { checkBatch69Patterns } from './solana-batched-patterns-69.js';
+
+// Import Batch 70 patterns (Feb 5, 2026 10:00 PM) - Step Finance, Phishing Attacks, 2026 Emerging Patterns (SOL3126-SOL3200)
+import { checkBatch70Patterns } from './solana-batched-patterns-70.js';
 
 export interface Finding {
   id: string;
@@ -695,6 +698,13 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 69 patterns fail
   }
   
+  // Run Batch 70 patterns (75 patterns: Step Finance $30M, Owner Phishing, 2026 Emerging Threats - SOL3126-SOL3200)
+  try {
+    findings.push(...checkBatch70Patterns(input));
+  } catch (error) {
+    // Skip if Batch 70 patterns fail
+  }
+  
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -784,5 +794,7 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-67.ts (SOL3001-SOL3020): 2025-2026 Emerging Attack Vectors (Whale Cascades, MEV Validator Concentration, CPI Reentrancy, Transfer Hooks)
 // Categories: CPI, Account Validation, Arithmetic, Oracle, Token, Access Control, Governance, AMM, Lending, Perps, Options, Staking, Yield, Bridge, NFT, Gaming, Real Exploits, Sec3 Categories, BPF, Memory, Compute, Validators, Anchor, Serialization, Phishing, MEV, Sybil, Honeypot, Cross-Chain, Helius Complete History, Wallet Security, Insider Threats, Token-2022, Compression, Blink Actions, Lookup Tables, Program Closure, Signature Bypass, Mint Validation, Tick Spoofing, arXiv Academic, Sealevel Attacks, PoC Framework, Protocol-Specific, Kudelski Audits, Neodyme Audits, OtterSec Audits, Bramah Audits, Halborn Audits, Jito MEV, cNFT Bubblegum, Loopscale RateX, Thunder Terminal, Banana Gun, NoOnes, Aurory, Saga DAO, Pump.fun, Solareum, Supply Chain, Certora Audit, Memory Safety, Rust Safety, Economic Security, DePIN Security, Off-Chain Race Conditions, Frontend Security, Step Finance, CrediX, Upbit, SwissBorg, CLMM Tick Account, Fee Accumulator, Whale Cascades, Infrastructure Concentration
 //   - solana-batched-patterns-68.ts (SOL3051-SOL3075): Jan 2026 Threats - Owner Phishing, Trust Wallet $7M Breach, Consensus Vulns, Incident Response
-// 69 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 5000+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 4950; // 5000+ total with all batched patterns
+//   - solana-batched-patterns-69.ts (SOL3076-SOL3125): Deep Exploit Analysis - Solend, Wormhole, Cashio, Mango, Crema, DEXX Forensics
+//   - solana-batched-patterns-70.ts (SOL3126-SOL3200): Step Finance $30M Hack, Owner Phishing Attacks, 2026 Emerging Threats, Protocol-Specific Deep Patterns
+// 70 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 5125+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 5025; // 5125+ total with all batched patterns
