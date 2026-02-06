@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 7800+ security patterns for Solana smart contract auditing
- * Updated: Feb 6, 2026 7:30 AM - Added Batches 94-95 (Helius + OtterSec + Neodyme + Zellic + Sec3 Workshop)
+ * 7900+ security patterns for Solana smart contract auditing
+ * Updated: Feb 6, 2026 8:00 AM - Added Batches 96-97 (Helius Complete + Sec3 2025 Final + Solsec PoC + Protocol Deep Dives)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -131,6 +131,12 @@ import { checkBatch94Patterns } from './solana-batched-patterns-94.js';
 
 // Import Batch 95 patterns (Feb 6, 2026 7:30 AM) - OtterSec Audits + Neodyme Research + Sec3 Workshop + Zellic Deep Dive (SOL5701-SOL5800)
 import { checkBatch95Patterns } from './solana-batched-patterns-95.js';
+
+// Import Batch 96 patterns (Feb 6, 2026 8:00 AM) - Helius Complete History + Sec3 2025 Final + 2026 Emerging Threats (SOL5801-SOL5900)
+import { checkBatch96Patterns } from './solana-batched-patterns-96.js';
+
+// Import Batch 97 patterns (Feb 6, 2026 8:00 AM) - Solsec PoC + Armani Sealevel + OtterSec/Kudelski Audits + Protocol Deep Dives (SOL5901-SOL6000)
+import { checkBatch97Patterns } from './solana-batched-patterns-97.js';
 
 export interface Finding {
   id: string;
@@ -971,6 +977,22 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     }
   } catch (error) {
     // Skip if Batch 95 patterns fail
+  }
+  
+  // Run Batch 96 patterns (50 patterns: Helius Complete History + Sec3 2025 Final + 2026 Emerging - SOL5801-SOL5900)
+  try {
+    const batch96Results = checkBatch96Patterns(input);
+    findings.push(...batch96Results);
+  } catch (error) {
+    // Skip if Batch 96 patterns fail
+  }
+  
+  // Run Batch 97 patterns (50 patterns: Solsec PoC + Armani Sealevel + Protocol Deep Dives - SOL5901-SOL6000)
+  try {
+    const batch97Results = checkBatch97Patterns(input);
+    findings.push(...batch97Results);
+  } catch (error) {
+    // Skip if Batch 97 patterns fail
   }
   
   // Deduplicate by ID + line
