@@ -1,8 +1,8 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 5500+ security patterns for Solana smart contract auditing
- * Updated: Feb 5, 2026 11:30 PM - Added Batch 74 Protocol Security + Research (SOL3476-SOL3575)
+ * 5600+ security patterns for Solana smart contract auditing
+ * Updated: Feb 5, 2026 11:45 PM - Added Batch 75 Sec3 Final + Helius History + arXiv (SOL3576-SOL3675)
  */
 
 import type { ParsedRust } from '../parsers/rust.js';
@@ -68,6 +68,9 @@ import { checkBatch73Patterns } from './solana-batched-patterns-73.js';
 
 // Import Batch 74 patterns (Feb 5, 2026 11:30 PM) - Comprehensive Protocol Security + Latest Research (SOL3476-SOL3575)
 import { checkBatch74Patterns } from './solana-batched-patterns-74.js';
+
+// Import Batch 75 patterns (Feb 5, 2026 11:45 PM) - Sec3 2025 Final + Helius Complete History + arXiv Research (SOL3576-SOL3675)
+import { checkBatch75Patterns } from './solana-batched-patterns-75.js';
 
 export interface Finding {
   id: string;
@@ -745,6 +748,13 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 74 patterns fail
   }
   
+  // Run Batch 75 patterns (100 patterns: Sec3 2025 Final + Helius Complete History + arXiv Research - SOL3576-SOL3675)
+  try {
+    findings.push(...checkBatch75Patterns(input));
+  } catch (error) {
+    // Skip if Batch 75 patterns fail
+  }
+  
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -837,5 +847,9 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-69.ts (SOL3076-SOL3125): Deep Exploit Analysis - Solend, Wormhole, Cashio, Mango, Crema, DEXX Forensics
 //   - solana-batched-patterns-70.ts (SOL3126-SOL3200): Step Finance $30M Hack, Owner Phishing Attacks, 2026 Emerging Threats, Protocol-Specific Deep Patterns
 //   - solana-batched-patterns-71.ts (SOL3201-SOL3275): DEV.to 15 Critical Vulns, Step Finance Details, CertiK Jan 2026 ($400M), Phishing Campaign Deep Dive
-// 71 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 5200+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 5100; // 5200+ total with all batched patterns
+//   - solana-batched-patterns-72.ts (SOL3276-SOL3375): Solsec Deep Dive + Audit Methodology Patterns
+//   - solana-batched-patterns-73.ts (SOL3376-SOL3475): DeFi Protocol Deep Dive + Cross-Chain Security
+//   - solana-batched-patterns-74.ts (SOL3476-SOL3575): Comprehensive Protocol Security + Latest Research
+//   - solana-batched-patterns-75.ts (SOL3576-SOL3675): Sec3 2025 Final + Helius Complete History + arXiv Research
+// 75 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 5600+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 5500; // 5600+ total with all batched patterns
