@@ -12,7 +12,7 @@ Manual smart contract audits cost **$10,000 - $100,000** and take weeks. Most so
 
 ## 💡 The Solution
 
-SolShield provides **instant, AI-powered security audits** for Solana programs. We analyze Anchor/Rust code against **5,400+ vulnerability patterns** and provide actionable fix suggestions.
+SolShield provides **instant, AI-powered security audits** for Solana programs. We analyze Anchor/Rust code against **6,800+ vulnerability patterns** and provide actionable fix suggestions.
 
 **What normally costs $50K+ and takes weeks → We do it in seconds, for free.**
 
@@ -22,7 +22,7 @@ SolShield provides **instant, AI-powered security audits** for Solana programs. 
 
 | Metric | Value |
 |--------|-------|
-| Vulnerability Patterns | **5,400+** |
+| Vulnerability Patterns | **6,800+** |
 | Pattern Files | **424** |
 | CLI Commands | **5** (audit, check, patterns, swarm, version) |
 | Test Coverage | **19 tests**, 100% passing |
@@ -86,7 +86,7 @@ This project demonstrates what's possible when AI agents build autonomously:
 ### What the Agent Built (Autonomously):
 1. ✅ Researched Solana security vulnerabilities across 50+ real exploits
 2. ✅ Designed full-stack architecture (monorepo, TypeScript, Next.js, Anchor)
-3. ✅ Implemented **5,400+ detection patterns** with regex matching
+3. ✅ Implemented **6,800+ detection patterns** with regex matching
 4. ✅ Built CLI with **5 commands** (audit, check, patterns, swarm, version)
 5. ✅ Created web UI with GitHub URL input, file upload, syntax highlighting
 6. ✅ Published **npm SDK** (`solshield`) for programmatic access
@@ -133,7 +133,7 @@ SolShield/
 │   ├── cli/          # Command-line tool (TypeScript)
 │   ├── web/          # Next.js frontend
 │   └── program/      # Anchor on-chain registry (Rust)
-├── patterns/         # 5,400+ vulnerability definitions (in packages/cli/src/patterns)
+├── patterns/         # 6,800+ vulnerability definitions (in packages/cli/src/patterns)
 ├── examples/         # Safe + vulnerable test programs
 └── docs/             # Documentation
 ```

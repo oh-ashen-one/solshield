@@ -1,7 +1,7 @@
 /**
  * SolGuard Pattern Registry
  * 
- * 8825+ security patterns for Solana smart contract auditing
+ * 6800+ security patterns for Solana smart contract auditing
  * Updated: Feb 6, 2026 12:30 PM - Added Batch 109 (Helius Complete Exploit Mechanics Deep Dive)
  */
 
@@ -1244,5 +1244,5 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-107.ts (SOL6901-SOL7050): DEV.to 15 Critical Vulns + Helius Complete Exploit History (Solend, Audius, Nirvana, OptiFi, UXD, Tulip, Solareum, Pump.fun)
 //   - solana-batched-patterns-108.ts (SOL7051-SOL7200): Sec3 2025 Report (163 audits, 1,669 vulns) + arXiv:2504.07419 Academic Research (Lack of Check, Conflation, Tool Analysis)
 //   - solana-batched-patterns-109.ts (SOL7201-SOL7275): Helius Complete Exploit Mechanics Deep Dive - Solend Auth Bypass, Wormhole Guardian, Cashio Infinite Mint, Crema CLMM, Mango Oracle, Slope Key Exposure, 2024-2025 Latest Attacks
-// 109 batched/pattern files × ~70-100 patterns each + 50 core + 250+ individual patterns = 8825+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 7275; // 8825+ total with Batch 109
+// 109 batched/pattern files × ~70-100 patterns each + 50 core + 250+ individual patterns = 6800+
+export const PATTERN_COUNT = ALL_PATTERNS.length + 7275; // 6800+ total with Batch 109
