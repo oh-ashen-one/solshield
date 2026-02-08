@@ -213,7 +213,7 @@ program
   .description('Show version')
   .action(() => {
     console.log('solguard v0.1.0');
-    console.log('689+ security patterns');
+    console.log(`${listPatterns().length}+ security patterns`);
   });
 
 program.parse();

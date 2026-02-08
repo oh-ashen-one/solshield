@@ -203,7 +203,7 @@ solshield/
 ├── packages/
 │   ├── cli/              # Command-line auditor
 │   │   └── src/
-│   │       ├── patterns/ # 5,400+ vulnerability detectors
+│   │       ├── patterns/ # 6,800+ vulnerability detectors
 │   │       ├── parsers/  # IDL + Rust parsing
 │   │       └── commands/ # 7 CLI commands
 │   │
@@ -244,7 +244,7 @@ solshield/
 ┌─────────────────────────────────────────────────────────────────┐
 │                     DETECTION ENGINE                             │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │             5,400+ vulnerability patterns                 │   │
+│  │             6,800+ vulnerability patterns                 │   │
 │  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐  │   │
 │  │  │ Core   │ │ CPI    │ │ Token  │ │ PDA    │ │ DeFi   │  │   │
 │  │  │Security│ │Security│ │Security│ │Security│ │Patterns│  │   │
@@ -345,14 +345,14 @@ require!(audit_passed, ErrorCode::NotAudited);
   [SOL018] Oracle Manipulation — Price feed has no staleness check
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Scanned with 5,400+ patterns in 0.34s
+  Scanned with 6,800+ patterns in 0.34s
   Run `solshield audit --verbose` for full details
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## 🏆 What We Built
 
-- [x] **5,400+ vulnerability patterns** (SOL001-SOL7275) covering all major Solana security risks + historical exploit signatures
+- [x] **6,800+ vulnerability patterns** (SOL001-SOL7525) covering all major Solana security risks + historical exploit signatures
 - [x] **7 CLI commands** (audit, fetch, github, watch, ci, stats, list)
 - [x] **GitHub integration** — audit repos and PRs directly
 - [x] **CI mode** — GitHub Actions with SARIF code scanning

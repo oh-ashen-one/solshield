@@ -46238,7 +46238,7 @@ program.command("swarm").description("Run multi-agent security audit with specia
 });
 program.command("version").description("Show version").action(() => {
   console.log("solguard v0.1.0");
-  console.log("689+ security patterns");
+  console.log(`${listPatterns().length}+ security patterns`);
 });
 program.parse();
 export {
