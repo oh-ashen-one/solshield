@@ -21,81 +21,12 @@ export async function certificateCommand(path: string, options: CertificateOptio
   const spinner = ora('Running audit...').start();
 
   try {
-    // Run the audit
-    let result: AuditResult;
-    
-    // Capture audit output
+    // Suppress audit display output — we just need the result
     const originalLog = console.log;
-    let jsonOutput = '';
-    console.log = (msg: string) => {
-      jsonOutput += msg;
-    };
-
+    console.log = () => {};
+    let result: AuditResult;
     try {
-      // Import and run audit internally
-      const { parseRustFiles } = await import('../parsers/rust.js');
-      const { runPatterns } = await import('../patterns/index.js');
-      const { existsSync, statSync, readdirSync } = await import('fs');
-      
-      if (!existsSync(path)) {
-        throw new Error(`Path not found: ${path}`);
-      }
-
-      const isDirectory = statSync(path).isDirectory();
-      let rustFiles: string[] = [];
-
-      if (isDirectory) {
-        const findRustFiles = (dir: string): string[] => {
-          const files: string[] = [];
-          const entries = readdirSync(dir, { withFileTypes: true });
-          for (const entry of entries) {
-            const fullPath = join(dir, entry.name);
-            if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'target') {
-              files.push(...findRustFiles(fullPath));
-            } else if (entry.name.endsWith('.rs')) {
-              files.push(fullPath);
-            }
-          }
-          return files;
-        };
-        
-        const srcDir = join(path, 'src');
-        const programsDir = join(path, 'programs');
-        
-        if (existsSync(programsDir)) {
-          rustFiles = findRustFiles(programsDir);
-        } else if (existsSync(srcDir)) {
-          rustFiles = findRustFiles(srcDir);
-        } else {
-          rustFiles = findRustFiles(path);
-        }
-      } else if (path.endsWith('.rs')) {
-        rustFiles = [path];
-      }
-
-      if (rustFiles.length === 0) {
-        throw new Error('No Rust files found');
-      }
-
-      spinner.text = 'Analyzing code...';
-      const rust = await parseRustFiles(rustFiles);
-      const findings = await runPatterns({ idl: null, rust, path });
-
-      result = {
-        programPath: path,
-        timestamp: new Date().toISOString(),
-        findings,
-        summary: {
-          critical: findings.filter(f => f.severity === 'critical').length,
-          high: findings.filter(f => f.severity === 'high').length,
-          medium: findings.filter(f => f.severity === 'medium').length,
-          low: findings.filter(f => f.severity === 'low').length,
-          info: findings.filter(f => f.severity === 'info').length,
-          total: findings.length,
-        },
-        passed: findings.filter(f => ['critical', 'high'].includes(f.severity)).length === 0,
-      };
-
+      result = await auditCommand(path, { output: 'json', verbose: false });
     } finally {
       console.log = originalLog;
     }
@@ -137,7 +68,7 @@ export async function certificateCommand(path: string, options: CertificateOptio
     console.log('');
 
     if (result.passed) {
-      console.log(chalk.green('  🎉 This program is ready for NFT certificate minting!'));
+      console.log(chalk.green('  🏆 This program is ready for NFT certificate minting!'));
     } else {
       console.log(chalk.yellow('  ⚠️  Fix the issues above before minting a certificate.'));
     }

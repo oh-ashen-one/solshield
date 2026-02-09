@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
 
 // src/index.ts
 import { Command } from "commander";
@@ -9747,6 +9753,279 @@ function checkBatch67Patterns(input) {
   const findings = [];
   for (const pattern of BATCH_67_PATTERNS) {
     findings.push(...pattern.run(input));
+  }
+  return findings;
+}
+
+// src/patterns/solana-batched-patterns-110.ts
+var BATCH_110_PATTERNS = [
+  // === TRANSFER HOOK REENTRANCY (Token-2022) ===
+  {
+    id: "SOL7526",
+    name: "Transfer Hook State Mutation Before Completion",
+    severity: "critical",
+    pattern: /transfer_hook[\s\S]{0,300}(?:state|balance|amount)[\s\S]{0,50}(?:=|\+=|-=)[\s\S]{0,200}(?![\s\S]{0,100}require![\s\S]{0,50}transfer_complete)/i,
+    description: "Transfer hook modifies protocol state before the transfer is finalized. Attackers can exploit partial execution to corrupt state if the outer transfer reverts.",
+    recommendation: "In transfer hooks, validate the transfer completed successfully before mutating any protocol state. Use post-transfer callbacks or verify token balances changed as expected."
+  },
+  {
+    id: "SOL7527",
+    name: "Transfer Hook Missing Program ID Validation",
+    severity: "critical",
+    pattern: /execute[\s\S]{0,100}transfer_hook[\s\S]{0,300}(?![\s\S]{0,200}program_id\s*==|[\s\S]{0,200}spl_transfer_hook_interface)/i,
+    description: "Transfer hook handler does not verify it was called by the expected Token-2022 program. Attackers can invoke the hook directly, bypassing the transfer flow.",
+    recommendation: "Verify the calling program is the Token-2022 program by checking the instruction sysvar or enforcing that only the token program can invoke the hook."
+  },
+  {
+    id: "SOL7528",
+    name: "Transfer Hook Recursive Invocation Risk",
+    severity: "high",
+    pattern: /transfer_hook[\s\S]{0,400}(?:transfer_checked|transfer|spl_token[\s\S]{0,50}invoke)/i,
+    description: "Transfer hook initiates another token transfer, risking recursive hook invocations. This can lead to reentrancy-like attacks or CPI depth exhaustion.",
+    recommendation: "Avoid initiating token transfers within transfer hooks. If necessary, use a flag to prevent recursive hook execution and validate CPI depth limits."
+  },
+  // === PINOCCHIO / NATIVE PROGRAM SAFETY ===
+  {
+    id: "SOL7529",
+    name: "Pinocchio Missing Manual Signer Verification",
+    severity: "critical",
+    pattern: /(?:AccountInfo|account_info)[\s\S]{0,200}(?:key|pubkey)[\s\S]{0,100}==[\s\S]{0,200}(?![\s\S]{0,100}is_signer\(\)|[\s\S]{0,100}Signer)/i,
+    description: "Native/Pinocchio program checks pubkey match without verifying is_signer(). The Solend 2021 attack exploited this exact pattern \u2014 anyone can pass any pubkey without the private key.",
+    recommendation: "In native programs, always check account.is_signer() BEFORE comparing pubkeys: if !authority.is_signer() { return Err(ProgramError::MissingRequiredSignature); }"
+  },
+  {
+    id: "SOL7530",
+    name: "Native Program Missing Account Owner Validation",
+    severity: "critical",
+    pattern: /(?:next_account_info|AccountInfo)[\s\S]{0,300}(?:try_borrow_data|data\(\)|lamports)[\s\S]{0,200}(?![\s\S]{0,100}owner\s*==|[\s\S]{0,100}check_program_account)/i,
+    description: "Native program reads or modifies account data/lamports without verifying the account is owned by the expected program. Attackers can pass accounts owned by malicious programs with crafted data.",
+    recommendation: "Verify account.owner == &expected_program_id before accessing account data. In Anchor, use Account<T> which validates ownership automatically."
+  },
+  {
+    id: "SOL7531",
+    name: "Native Unsafe Borsh Deserialization Without Discriminator",
+    severity: "high",
+    pattern: /try_from_slice|deserialize[\s\S]{0,100}(?:data|account_data)[\s\S]{0,200}(?![\s\S]{0,100}discriminator|[\s\S]{0,100}DISCRIMINATOR|[\s\S]{0,100}account_type)/i,
+    description: "Deserializing account data in native program without checking a discriminator/type tag first. An attacker can pass an account of a different type with matching byte layout to confuse the program.",
+    recommendation: "Prefix all account data with an 8-byte discriminator. Validate the discriminator matches the expected account type before deserializing."
+  },
+  {
+    id: "SOL7532",
+    name: "Native Manual PDA Derivation Without Canonical Bump",
+    severity: "high",
+    pattern: /create_program_address[\s\S]{0,200}(?![\s\S]{0,100}find_program_address|[\s\S]{0,100}canonical_bump|[\s\S]{0,100}bump\s*=\s*(?:stored|saved|expected))/i,
+    description: "Using create_program_address with a user-supplied bump instead of the canonical bump from find_program_address. Non-canonical bumps can create different valid PDAs for the same seeds.",
+    recommendation: "Always use find_program_address to derive the canonical bump, store it, and verify it on subsequent calls. Never accept bump values from user input."
+  },
+  // === TWO-STEP AUTHORITY TRANSFER ===
+  {
+    id: "SOL7533",
+    name: "Single-Step Authority Transfer Without Acceptance",
+    severity: "high",
+    pattern: /(?:authority|admin|owner)\s*=\s*(?:new_authority|new_admin|new_owner|ctx\.accounts\.new)[\s\S]{0,200}(?![\s\S]{0,200}pending_authority|[\s\S]{0,200}nominate|[\s\S]{0,200}accept_authority)/i,
+    description: "Authority is transferred in a single step without requiring the new authority to accept. Transferring to a wrong address permanently locks the protocol.",
+    recommendation: "Implement a two-step nominate \u2192 accept pattern: current authority nominates, new authority must call accept. Include a cancellation mechanism."
+  },
+  {
+    id: "SOL7534",
+    name: "Authority Transfer to Zero/Default Address",
+    severity: "critical",
+    pattern: /(?:authority|admin|owner)\s*=[\s\S]{0,100}(?![\s\S]{0,100}!=\s*(?:Pubkey::default|system_program|zero|0))/i,
+    description: "Authority transfer does not validate the new address is non-zero/non-default. Setting authority to the zero address permanently locks the protocol without any recovery path.",
+    recommendation: "Reject authority transfers to Pubkey::default(), system_program, or known burn addresses. Add explicit validation: require!(new_authority.key() != Pubkey::default())."
+  },
+  // === ANCHOR init_if_needed RISKS ===
+  {
+    id: "SOL7535",
+    name: "Anchor init_if_needed Without Ownership Constraint",
+    severity: "critical",
+    pattern: /init_if_needed[\s\S]{0,200}(?![\s\S]{0,100}has_one|[\s\S]{0,100}constraint\s*=|[\s\S]{0,100}owner\s*=)/i,
+    description: "Using init_if_needed without ownership constraints allows an attacker to front-run initialization with their own values, setting themselves as authority before the legitimate user.",
+    recommendation: "Avoid init_if_needed unless absolutely necessary. If used, pair with has_one or constraint checks to verify the initializer is authorized. Prefer separate init instructions with explicit access control."
+  },
+  {
+    id: "SOL7536",
+    name: "Initialization Without Deployer Authority Check",
+    severity: "critical",
+    pattern: /(?:initialize|init)[\s\S]{0,300}(?:authority|admin)\s*:[\s\S]{0,200}(?![\s\S]{0,100}upgrade_authority|[\s\S]{0,100}deployer|[\s\S]{0,100}hardcoded)/i,
+    description: 'Program initialization sets authority from an unconstrained input account. First caller can set themselves as admin. Zealynx: "Restrict initializers to program upgrade authority or hardcoded deployer."',
+    recommendation: "Verify the initializer is the program upgrade authority via program_data.upgrade_authority_address, or use a hardcoded deployer pubkey."
+  },
+  // === ACCOUNT DATA MATCHING (Zealynx Critical Check) ===
+  {
+    id: "SOL7537",
+    name: "State Modification Before Authority Validation",
+    severity: "critical",
+    pattern: /(?:try_borrow_mut_data|serialize|save|store)[\s\S]{0,300}(?:require!|constraint|has_one)[\s\S]{0,100}(?:authority|admin|owner)/i,
+    description: "Account state is modified before checking authority. If the authority check fails after state mutation, the transaction reverts but an attacker can observe the partial state via simulation.",
+    recommendation: "Always validate authority BEFORE any state changes. Order matters: (1) deserialize, (2) check authority, (3) modify state, (4) serialize."
+  },
+  {
+    id: "SOL7538",
+    name: "Missing Account Data Matching Constraint",
+    severity: "high",
+    pattern: /(?:vault|pool|config)[\s\S]{0,100}Account[\s\S]{0,200}(?:authority|admin)[\s\S]{0,100}(?:Signer|AccountInfo)[\s\S]{0,200}(?![\s\S]{0,100}has_one\s*=\s*authority|[\s\S]{0,100}constraint\s*=[\s\S]{0,50}\.authority\s*==)/i,
+    description: "Privileged function has separate vault/pool and authority accounts but no constraint linking them. Attacker can pass a valid signer with an unrelated vault to drain it.",
+    recommendation: "Use has_one = authority on the vault/pool account, or add constraint = vault.authority == authority.key()."
+  },
+  // === CROSS-INSTANCE / REPLAY ATTACKS ===
+  {
+    id: "SOL7539",
+    name: "Missing Program Instance Isolation in PDA Seeds",
+    severity: "high",
+    pattern: /seeds\s*=\s*\[[\s\S]{0,200}\][\s\S]{0,200}(?![\s\S]{0,100}program_id|[\s\S]{0,100}instance_id|[\s\S]{0,100}config\.key)/i,
+    description: "PDA seeds do not include a program instance identifier. If the program is deployed to multiple addresses, PDAs from one instance could be used in another.",
+    recommendation: "Include the program_id or a unique instance identifier in PDA seeds to prevent cross-instance account confusion."
+  },
+  {
+    id: "SOL7540",
+    name: "Instruction Replay Without Nonce or Sequence Number",
+    severity: "high",
+    pattern: /(?:process_instruction|handler)[\s\S]{0,500}(?:transfer|withdraw|claim|execute)[\s\S]{0,500}(?![\s\S]{0,200}nonce|[\s\S]{0,200}sequence|[\s\S]{0,200}already_processed|[\s\S]{0,200}claimed)/i,
+    description: "Instruction can be replayed because there is no nonce, sequence number, or processed flag. An attacker can submit the same signed transaction data multiple times.",
+    recommendation: 'Implement replay protection: use a monotonically increasing sequence number, a nonce account, or a "processed" flag in the target account.'
+  },
+  // === BRIDGE / CROSS-CHAIN (NoOnes $8M Pattern) ===
+  {
+    id: "SOL7541",
+    name: "Bridge Message Validation Without Chain ID",
+    severity: "critical",
+    pattern: /(?:bridge|relay|cross_chain)[\s\S]{0,300}(?:verify|validate|check)[\s\S]{0,300}(?![\s\S]{0,200}chain_id|[\s\S]{0,200}source_chain|[\s\S]{0,200}domain)/i,
+    description: "Bridge message validation does not include source chain ID. The NoOnes bridge exploit siphoned $8M by replaying messages across chains. Without chain ID verification, messages from one chain are valid on another.",
+    recommendation: "Include chain ID in bridge message hashing and verification. Validate source_chain matches expected origin. Use domain separators in signature schemes."
+  },
+  {
+    id: "SOL7542",
+    name: "Bridge Withdrawal Without Rate Limiting",
+    severity: "high",
+    pattern: /(?:bridge|relay)[\s\S]{0,300}(?:withdraw|release|unlock|mint)[\s\S]{0,400}(?![\s\S]{0,200}rate_limit|[\s\S]{0,200}cooldown|[\s\S]{0,200}max_per_tx|[\s\S]{0,200}daily_limit)/i,
+    description: "Bridge withdrawal has no rate limiting or per-transaction caps. A single exploit can drain the entire bridge in one transaction.",
+    recommendation: "Implement rate limiting: per-transaction caps, daily withdrawal limits, and time-based cooldowns. Use circuit breakers that pause withdrawals when thresholds are exceeded."
+  },
+  // === ADVANCED CPI SAFETY (Zealynx Domain 3) ===
+  {
+    id: "SOL7543",
+    name: "CPI Forwarding Signer to Untrusted Program",
+    severity: "critical",
+    pattern: /invoke(?:_signed)?[\s\S]{0,100}(?:signer_seeds|signers)[\s\S]{0,200}(?:remaining_accounts|ctx\.remaining|unchecked|AccountInfo)[\s\S]{0,200}(?![\s\S]{0,100}program_id\s*==)/i,
+    description: "CPI forwards user signer authority to a program loaded from remaining_accounts or an unchecked source. Attackers substitute a malicious program that steals the forwarded signer authority.",
+    recommendation: "Hardcode target program IDs for all CPIs. Never allow the target program to come from user input or remaining_accounts. Validate program_id before invoke."
+  },
+  {
+    id: "SOL7544",
+    name: "CPI Return Data Manipulation",
+    severity: "high",
+    pattern: /get_return_data|sol_get_return_data[\s\S]{0,200}(?![\s\S]{0,100}program_id\s*==|[\s\S]{0,100}verify_program)/i,
+    description: "Reading CPI return data without verifying which program set it. A malicious program in the CPI chain can overwrite return data with crafted values.",
+    recommendation: "Always verify the program_id returned by get_return_data() matches the expected callee before trusting the returned bytes."
+  },
+  // === MATH & PRECISION (Zealynx Domain 4) ===
+  {
+    id: "SOL7545",
+    name: "Release Build Arithmetic Overflow (No checked_math)",
+    severity: "high",
+    pattern: /(?:amount|balance|supply|total|price|rate)\s*(?:\+|-|\*)\s*(?:amount|balance|supply|total|price|rate)[\s\S]{0,100}(?![\s\S]{0,50}checked_|[\s\S]{0,50}saturating_|[\s\S]{0,50}overflow-checks\s*=\s*true)/i,
+    description: "Arithmetic on financial values without checked math. Rust release builds disable overflow checks by default \u2014 what panics in debug silently wraps in production.",
+    recommendation: "Use checked_add/checked_sub/checked_mul for all financial math. Or set overflow-checks = true in Cargo.toml [profile.release]."
+  },
+  {
+    id: "SOL7546",
+    name: "Lossy U128 to U64 Truncation in Token Amount",
+    severity: "high",
+    pattern: /as\s+u64[\s\S]{0,50}(?:amount|balance|lamports|supply)[\s\S]{0,100}(?![\s\S]{0,50}try_into|[\s\S]{0,50}try_from|[\s\S]{0,50}checked)/i,
+    description: 'Casting u128 to u64 with "as u64" silently truncates values exceeding u64::MAX. In DeFi, intermediate calculations often exceed u64 range.',
+    recommendation: 'Use u64::try_from(value).map_err(|_| error) instead of "as u64". This catches truncation and returns an explicit error.'
+  },
+  // === TOKEN OPERATIONS (Zealynx Domain 5) ===
+  {
+    id: "SOL7547",
+    name: "Token Account Mint Mismatch Not Validated",
+    severity: "critical",
+    pattern: /(?:token_account|source|destination)[\s\S]{0,200}(?:transfer|burn|mint_to)[\s\S]{0,300}(?![\s\S]{0,100}\.mint\s*==|[\s\S]{0,100}constraint[\s\S]{0,50}mint)/i,
+    description: "Token operation proceeds without verifying the token account belongs to the expected mint. Attackers can pass a token account for a worthless mint and receive valuable tokens in return.",
+    recommendation: "Validate token_account.mint == expected_mint before any transfer, burn, or mint operation. Use Anchor constraints: #[account(token::mint = expected_mint)]."
+  },
+  {
+    id: "SOL7548",
+    name: "Token Decimal Mismatch in Cross-Mint Operations",
+    severity: "high",
+    pattern: /(?:price|rate|ratio|exchange)[\s\S]{0,200}(?:mint_a|mint_b|token_a|token_b)[\s\S]{0,200}(?![\s\S]{0,100}decimals|[\s\S]{0,100}10_u64\.pow)/i,
+    description: "Cross-mint token calculation does not account for different decimal places between mints (e.g., USDC has 6, wSOL has 9). This creates exploitable pricing errors.",
+    recommendation: "Always normalize token amounts to a common decimal base before price calculations. Query mint.decimals and adjust: normalized = amount * 10^(target_decimals - mint.decimals)."
+  },
+  // === EDGE CASES & PITFALLS (Zealynx Domain 7) ===
+  {
+    id: "SOL7549",
+    name: "Account Close Without Data Zeroing Allows Revival",
+    severity: "critical",
+    pattern: /(?:close|close_account)[\s\S]{0,200}(?:lamports|sol)[\s\S]{0,100}(?:=\s*0|\*\*\s*=\s*0)[\s\S]{0,200}(?![\s\S]{0,100}(?:data|account_data)[\s\S]{0,50}(?:fill|copy_from|iter\(\)\.for_each|=\s*\[0))/i,
+    description: "Account is closed by draining lamports but data is not zeroed. Within the same transaction, another instruction can re-fund the account (sending lamports back), reviving it with stale data.",
+    recommendation: "After closing: (1) zero all account data, (2) drain lamports, (3) assign owner to system program. Use Anchor close = target which handles all three."
+  },
+  {
+    id: "SOL7550",
+    name: "Missing Realloc Zero-Init on Account Expansion",
+    severity: "medium",
+    pattern: /realloc[\s\S]{0,200}(?![\s\S]{0,100}zero_init|[\s\S]{0,100}realloc::zero_init|[\s\S]{0,100}zero\s*=\s*true)/i,
+    description: "Account reallocation expands data space without zero-initializing the new bytes. Stale data from previous account occupants could leak into the new space.",
+    recommendation: "Use realloc::zero_init = true in Anchor, or manually zero the expanded region after realloc in native programs."
+  },
+  // === ADVANCED ISSUES (Zealynx Domain 8) ===
+  {
+    id: "SOL7551",
+    name: "Lookup Table Account Without Deactivation Check",
+    severity: "medium",
+    pattern: /(?:address_lookup_table|lookup_table)[\s\S]{0,300}(?![\s\S]{0,200}deactivation_slot|[\s\S]{0,200}is_active|[\s\S]{0,200}status)/i,
+    description: "Program accepts address lookup table accounts without checking deactivation status. Deactivated tables can be closed and their addresses recycled, leading to account confusion.",
+    recommendation: "Verify the lookup table is still active by checking deactivation_slot == u64::MAX before trusting any addresses it contains."
+  },
+  {
+    id: "SOL7552",
+    name: "Permissionless Crank Without Incentive Alignment",
+    severity: "medium",
+    pattern: /(?:crank|keeper|liquidat)[\s\S]{0,300}(?![\s\S]{0,200}reward|[\s\S]{0,200}incentive|[\s\S]{0,200}tip|[\s\S]{0,200}fee.*crank)/i,
+    description: "Protocol relies on permissionless cranking (liquidation, settlement) but provides no economic incentive for crankers. Critical operations may not execute when gas costs exceed rewards.",
+    recommendation: "Provide cranker incentives (tip, fee share, or keeper reward) proportional to the gas cost. Implement fallback mechanisms for when no external cranker executes."
+  },
+  {
+    id: "SOL7553",
+    name: "Slot-Based Timing Without Clock Sysvar",
+    severity: "medium",
+    pattern: /Clock::get\(\)[\s\S]{0,50}slot[\s\S]{0,200}(?:expire|timeout|deadline|lock|unlock)[\s\S]{0,200}(?![\s\S]{0,100}unix_timestamp)/i,
+    description: "Using slot numbers for time-based logic (expirations, locks). Slot times vary from 400ms to multi-seconds during network congestion, making slot-based timing unreliable.",
+    recommendation: "Use Clock::get()?.unix_timestamp for time-sensitive logic instead of slot numbers. Slots are useful for ordering but not for measuring real-world time intervals."
+  },
+  {
+    id: "SOL7554",
+    name: "Governance Proposal Without Execution Timelock",
+    severity: "high",
+    pattern: /(?:proposal|vote)[\s\S]{0,300}(?:execute|enact|apply)[\s\S]{0,300}(?![\s\S]{0,200}timelock|[\s\S]{0,200}delay|[\s\S]{0,200}grace_period|[\s\S]{0,200}eta)/i,
+    description: "Governance proposals can be executed immediately after passing quorum, with no timelock delay. Malicious proposals can drain treasury before stakeholders react.",
+    recommendation: "Implement a timelock (24-72h) between proposal passage and execution. This gives stakeholders time to review, veto, or exit before potentially harmful changes take effect."
+  },
+  {
+    id: "SOL7555",
+    name: "Emergency Pause Without Unpause Mechanism",
+    severity: "high",
+    pattern: /(?:pause|freeze|halt|emergency_stop)[\s\S]{0,400}(?![\s\S]{0,300}unpause|[\s\S]{0,300}resume|[\s\S]{0,300}unfreeze|[\s\S]{0,300}thaw)/i,
+    description: "Protocol implements emergency pause but has no corresponding unpause function or governance-based recovery path. A paused protocol becomes permanently frozen.",
+    recommendation: "Always pair pause with unpause. Implement a governance-based unpause mechanism with a minimum timelock. Consider automatic unpause after a safety period."
+  }
+];
+function checkBatch110Patterns(input) {
+  const findings = [];
+  const content = input.rust?.content || "";
+  for (const pattern of BATCH_110_PATTERNS) {
+    if (pattern.pattern.test(content)) {
+      findings.push({
+        id: pattern.id,
+        title: pattern.name,
+        severity: pattern.severity,
+        description: pattern.description,
+        location: { file: input.path },
+        recommendation: pattern.recommendation
+      });
+    }
   }
   return findings;
 }
@@ -44886,6 +45165,11 @@ async function runPatterns(input) {
     findings.push(...batch109Results);
   } catch (error) {
   }
+  try {
+    const batch110Results = checkBatch110Patterns(input);
+    findings.push(...batch110Results);
+  } catch (error) {
+  }
   const seen = /* @__PURE__ */ new Set();
   const deduped = findings.filter((f) => {
     const key = `${f.id}-${f.location.line}`;
@@ -44929,7 +45213,7 @@ function listPatterns() {
     // Placeholder
   }));
 }
-var PATTERN_COUNT = ALL_PATTERNS2.length + 7275;
+var PATTERN_COUNT = ALL_PATTERNS2.length + 7555;
 
 // src/sdk.ts
 import { existsSync, readdirSync, statSync } from "fs";
@@ -44940,7 +45224,7 @@ async function scan(path, options = {}) {
   if (!existsSync(path)) {
     throw new Error(`Path not found: ${path}`);
   }
-  function findRustFiles2(dir) {
+  function findRustFiles3(dir) {
     const files = [];
     const scanDir = (d) => {
       for (const entry of readdirSync(d, { withFileTypes: true })) {
@@ -44955,7 +45239,7 @@ async function scan(path, options = {}) {
     scanDir(dir);
     return files;
   }
-  const rustFiles = statSync(path).isDirectory() ? findRustFiles2(path) : [path];
+  const rustFiles = statSync(path).isDirectory() ? findRustFiles3(path) : [path];
   if (rustFiles.length === 0) {
     throw new Error("No Rust files found to scan");
   }
@@ -45106,10 +45390,1706 @@ function findRustFiles(path) {
   return files;
 }
 
+// src/commands/github.ts
+import { exec } from "child_process";
+import { promisify } from "util";
+import { mkdir, rm, readdir, readFile } from "fs/promises";
+import { join as join4 } from "path";
+import { tmpdir } from "os";
+
+// src/parsers/idl.ts
+import { readFileSync as readFileSync3, existsSync as existsSync3 } from "fs";
+import { join as join3 } from "path";
+async function parseIdl(programPath) {
+  const possiblePaths = [
+    join3(programPath, "target", "idl", "*.json"),
+    join3(programPath, "idl.json"),
+    join3(programPath, "..", "target", "idl", "*.json")
+  ];
+  const searchDir = (dir) => {
+    try {
+      const idlPath2 = join3(dir, "target", "idl");
+      if (existsSync3(idlPath2)) {
+        const { readdirSync: readdirSync5 } = __require("fs");
+        const files = readdirSync5(idlPath2);
+        const idlFile = files.find((f) => f.endsWith(".json"));
+        if (idlFile) return join3(idlPath2, idlFile);
+      }
+    } catch {
+    }
+    return null;
+  };
+  const idlPath = searchDir(programPath);
+  if (!idlPath) {
+    return null;
+  }
+  try {
+    const content = readFileSync3(idlPath, "utf-8");
+    const idl = JSON.parse(content);
+    return {
+      version: idl.version || "0.0.0",
+      name: idl.name || "unknown",
+      instructions: idl.instructions || [],
+      accounts: idl.accounts || [],
+      types: idl.types || [],
+      events: idl.events || [],
+      errors: idl.errors || [],
+      raw: idl
+    };
+  } catch (error) {
+    console.warn(`Failed to parse IDL at ${idlPath}: ${error}`);
+    return null;
+  }
+}
+
+// src/commands/github.ts
+var execAsync = promisify(exec);
+function parseGithubUrl(input) {
+  const urlMatch = input.match(/github\.com[\/:]([^\/]+)\/([^\/\.\s]+)/);
+  if (urlMatch) {
+    return { owner: urlMatch[1], repo: urlMatch[2].replace(/\.git$/, "") };
+  }
+  const shortMatch = input.match(/^([^\/]+)\/([^\/]+)$/);
+  if (shortMatch) {
+    return { owner: shortMatch[1], repo: shortMatch[2] };
+  }
+  return null;
+}
+async function cloneRepo(owner, repo, options) {
+  const tempDir = join4(tmpdir(), `solguard-${Date.now()}`);
+  await mkdir(tempDir, { recursive: true });
+  const repoUrl = `https://github.com/${owner}/${repo}.git`;
+  await execAsync(`git clone --depth 1 ${repoUrl} ${tempDir}`, {
+    timeout: 6e4
+  });
+  if (options.pr) {
+    await execAsync(
+      `git fetch origin pull/${options.pr}/head:pr-${options.pr}`,
+      { cwd: tempDir, timeout: 3e4 }
+    );
+    await execAsync(
+      `git checkout pr-${options.pr}`,
+      { cwd: tempDir }
+    );
+  } else if (options.branch) {
+    await execAsync(
+      `git checkout ${options.branch}`,
+      { cwd: tempDir }
+    );
+  }
+  return tempDir;
+}
+async function findRustFiles2(dir) {
+  const files = [];
+  async function scan2(currentDir) {
+    const entries = await readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join4(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        if (["node_modules", "target", ".git", "dist", "build"].includes(entry.name)) {
+          continue;
+        }
+        await scan2(fullPath);
+      } else if (entry.name.endsWith(".rs")) {
+        files.push(fullPath);
+      }
+    }
+  }
+  await scan2(dir);
+  return files;
+}
+async function findIdlFiles(dir) {
+  const files = [];
+  async function scan2(currentDir) {
+    const entries = await readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join4(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        if (["node_modules", "target", ".git"].includes(entry.name)) continue;
+        await scan2(fullPath);
+      } else if (entry.name.endsWith(".json") && (entry.name.includes("idl") || currentDir.includes("idl"))) {
+        files.push(fullPath);
+      }
+    }
+  }
+  await scan2(dir);
+  return files;
+}
+async function auditGithub(repoInput, options = {}) {
+  const startTime = Date.now();
+  const parsed = parseGithubUrl(repoInput);
+  if (!parsed) {
+    throw new Error(`Invalid GitHub repository: ${repoInput}`);
+  }
+  const { owner, repo } = parsed;
+  let tempDir = null;
+  try {
+    if (options.verbose) {
+      console.log(`Cloning ${owner}/${repo}...`);
+    }
+    tempDir = await cloneRepo(owner, repo, {
+      pr: options.pr,
+      branch: options.branch
+    });
+    const rustFiles = await findRustFiles2(tempDir);
+    const idlFiles = await findIdlFiles(tempDir);
+    if (options.verbose) {
+      console.log(`Found ${rustFiles.length} Rust files, ${idlFiles.length} IDL files`);
+    }
+    const idls = await Promise.all(
+      idlFiles.map(async (f) => {
+        try {
+          const content = await readFile(f, "utf-8");
+          return { path: f.replace(tempDir + "/", ""), idl: parseIdl(content) };
+        } catch {
+          return null;
+        }
+      })
+    );
+    const allFindings = [];
+    try {
+      const parsedRust = parseRustFiles(rustFiles);
+      for (const file of parsedRust.files) {
+        const relativePath = file.path.replace(tempDir + "\\", "").replace(tempDir + "/", "");
+        const findings = await runPatterns({
+          path: relativePath,
+          rust: {
+            files: [file],
+            functions: parsedRust.functions.filter((f) => f.file === file.path),
+            structs: parsedRust.structs.filter((s) => s.file === file.path),
+            implBlocks: parsedRust.implBlocks.filter((i) => i.file === file.path),
+            content: file.content
+          },
+          idl: idls[0]?.idl || null
+        });
+        allFindings.push(...findings);
+      }
+    } catch (error) {
+      if (options.verbose) {
+        console.warn(`Failed to audit: ${error}`);
+      }
+    }
+    const duration = Date.now() - startTime;
+    return {
+      repo: `${owner}/${repo}`,
+      ref: options.pr ? `PR #${options.pr}` : options.branch || "main",
+      files: rustFiles.length,
+      findings: allFindings,
+      duration
+    };
+  } finally {
+    if (tempDir) {
+      try {
+        await rm(tempDir, { recursive: true, force: true });
+      } catch {
+      }
+    }
+  }
+}
+function formatGithubAuditResult(result, format = "text") {
+  if (format === "json") {
+    return JSON.stringify(result, null, 2);
+  }
+  if (format === "markdown") {
+    const lines2 = [
+      `# SolGuard Audit: ${result.repo}`,
+      "",
+      `**Ref:** ${result.ref}`,
+      `**Files Scanned:** ${result.files}`,
+      `**Duration:** ${result.duration}ms`,
+      "",
+      `## Findings (${result.findings.length})`,
+      ""
+    ];
+    if (result.findings.length === 0) {
+      lines2.push("\u2705 No vulnerabilities detected!");
+    } else {
+      const bySeverity = /* @__PURE__ */ new Map();
+      for (const f of result.findings) {
+        if (!bySeverity.has(f.severity)) {
+          bySeverity.set(f.severity, []);
+        }
+        bySeverity.get(f.severity).push(f);
+      }
+      const severityEmoji = {
+        critical: "\u{1F534}",
+        high: "\u{1F7E0}",
+        medium: "\u{1F7E1}",
+        low: "\u{1F535}",
+        info: "\u26AA"
+      };
+      for (const [severity, findings] of bySeverity) {
+        lines2.push(`### ${severityEmoji[severity] || ""} ${severity.toUpperCase()} (${findings.length})`);
+        lines2.push("");
+        for (const f of findings) {
+          lines2.push(`- **[${f.pattern}] ${f.title}**`);
+          lines2.push(`  - Location: \`${f.location}\``);
+          lines2.push(`  - ${f.description}`);
+          lines2.push("");
+        }
+      }
+    }
+    return lines2.join("\n");
+  }
+  const lines = [
+    `SolGuard Audit: ${result.repo} (${result.ref})`,
+    `Files: ${result.files} | Duration: ${result.duration}ms`,
+    ""
+  ];
+  if (result.findings.length === 0) {
+    lines.push("\u2713 No vulnerabilities detected");
+  } else {
+    lines.push(`Found ${result.findings.length} issue(s):`);
+    lines.push("");
+    for (const f of result.findings) {
+      const emoji = { critical: "\u{1F534}", high: "\u{1F7E0}", medium: "\u{1F7E1}", low: "\u{1F535}", info: "\u26AA" }[f.severity] || "";
+      lines.push(`${emoji} [${f.pattern}] ${f.title}`);
+      lines.push(`   ${f.location}`);
+      lines.push(`   ${f.description}`);
+      lines.push("");
+    }
+  }
+  return lines.join("\n");
+}
+
+// src/commands/fetch.ts
+import chalk2 from "chalk";
+import ora from "ora";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { writeFileSync, mkdirSync, existsSync as existsSync4 } from "fs";
+import { join as join5 } from "path";
+
+// src/commands/audit.ts
+import chalk from "chalk";
+async function auditCommand(path, options = {}) {
+  const result = await scan(path, {
+    ai: options.ai,
+    failOn: options.failOn || "critical",
+    format: "object"
+  });
+  const findings = result.findings.map((f) => ({
+    id: f.id,
+    pattern: f.pattern || f.id,
+    title: f.title,
+    severity: f.severity,
+    description: f.description,
+    location: f.location,
+    suggestion: f.suggestion,
+    code: f.code
+  }));
+  const auditResult = {
+    path: result.programPath,
+    programPath: result.programPath,
+    timestamp: result.timestamp,
+    duration: result.duration,
+    findings,
+    summary: result.summary,
+    passed: result.passed
+  };
+  const outputMode = options.output || options.format || "terminal";
+  if (outputMode === "terminal" || outputMode === "text") {
+    displayAuditResult(auditResult);
+  } else if (outputMode === "json") {
+    console.log(JSON.stringify(auditResult, null, 2));
+  }
+  return auditResult;
+}
+function displayAuditResult(result) {
+  if (result.findings.length === 0) {
+    console.log(chalk.green("\u2705 No vulnerabilities found!"));
+  } else {
+    console.log(chalk.yellow(`\u26A0\uFE0F  Found ${result.findings.length} potential issues:
+`));
+    for (const finding of result.findings) {
+      const severityColor = finding.severity === "critical" ? chalk.red : finding.severity === "high" ? chalk.yellow : finding.severity === "medium" ? chalk.cyan : chalk.gray;
+      const loc = typeof finding.location === "string" ? finding.location : `${finding.location.file}${finding.location.line ? `:${finding.location.line}` : ""}`;
+      console.log(`${severityColor(`[${finding.severity.toUpperCase()}]`)} ${finding.id}: ${finding.title}`);
+      console.log(chalk.gray(`  \u2514\u2500 ${loc}`));
+      console.log(chalk.gray(`     ${finding.description}`));
+      if (finding.suggestion) {
+        console.log(chalk.green(`     \u{1F4A1} ${finding.suggestion}`));
+      }
+      console.log();
+    }
+  }
+  console.log(chalk.bold("\n\u{1F4CA} Summary:"));
+  console.log(`  ${chalk.red("Critical:")} ${result.summary.critical}`);
+  console.log(`  ${chalk.yellow("High:")} ${result.summary.high}`);
+  console.log(`  ${chalk.cyan("Medium:")} ${result.summary.medium}`);
+  console.log(`  ${chalk.gray("Low:")} ${result.summary.low}`);
+  console.log(`  ${chalk.blue("Total:")} ${result.summary.total}`);
+  console.log(chalk.gray(`  Duration: ${result.duration}ms
+`));
+}
+
+// src/commands/fetch.ts
+var DEFAULT_RPC = "https://api.mainnet-beta.solana.com";
+async function fetchAndAuditCommand(programId, options) {
+  const spinner = ora("Connecting to Solana...").start();
+  try {
+    let pubkey;
+    try {
+      pubkey = new PublicKey(programId);
+    } catch {
+      spinner.fail("Invalid program ID");
+      process.exit(1);
+    }
+    const rpcUrl = options.rpc || process.env.SOLANA_RPC_URL || DEFAULT_RPC;
+    const connection = new Connection(rpcUrl, "confirmed");
+    spinner.text = "Checking program account...";
+    const accountInfo = await connection.getAccountInfo(pubkey);
+    if (!accountInfo) {
+      spinner.fail(`Program not found: ${programId}`);
+      process.exit(1);
+    }
+    if (!accountInfo.executable) {
+      spinner.fail(`Account is not a program: ${programId}`);
+      process.exit(1);
+    }
+    spinner.text = "Fetching IDL...";
+    const [idlAddress] = PublicKey.findProgramAddressSync(
+      [Buffer.from("anchor:idl"), pubkey.toBuffer()],
+      pubkey
+    );
+    const idlAccount = await connection.getAccountInfo(idlAddress);
+    if (!idlAccount) {
+      spinner.warn("No Anchor IDL found on-chain");
+      console.log(chalk2.yellow("\n  This program may not be an Anchor program, or IDL was not published."));
+      console.log(chalk2.yellow("  Try auditing the source code directly instead.\n"));
+      process.exit(1);
+    }
+    const idlData = idlAccount.data.slice(12);
+    let idlJson;
+    try {
+      idlJson = idlData.toString("utf8");
+      JSON.parse(idlJson);
+    } catch {
+      spinner.fail("IDL appears to be compressed. Decompression not yet supported.");
+      process.exit(1);
+    }
+    const tempDir = join5(process.cwd(), ".solguard-temp");
+    if (!existsSync4(tempDir)) {
+      mkdirSync(tempDir, { recursive: true });
+    }
+    const idlPath = join5(tempDir, `${programId}.json`);
+    writeFileSync(idlPath, idlJson);
+    spinner.succeed(`IDL fetched for ${programId}`);
+    console.log(chalk2.gray(`  Saved to: ${idlPath}
+`));
+    await auditCommand(idlPath, {
+      output: options.output || "terminal",
+      ai: options.ai !== false,
+      verbose: options.verbose || false
+    });
+  } catch (error) {
+    spinner.fail(`Failed to fetch program: ${error.message}`);
+    if (options.verbose) {
+      console.error(error);
+    }
+    process.exit(1);
+  }
+}
+function listKnownPrograms() {
+  const programs = [
+    { name: "Token Program", id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+    { name: "Token 2022", id: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb" },
+    { name: "Associated Token", id: "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" },
+    { name: "Metaplex Token Metadata", id: "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s" },
+    { name: "Metaplex Bubblegum", id: "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY" },
+    { name: "Marinade Finance", id: "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD" },
+    { name: "Raydium AMM", id: "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8" },
+    { name: "Orca Whirlpools", id: "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc" },
+    { name: "Jupiter Aggregator", id: "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4" },
+    { name: "Squads V3", id: "SMPLecH534NA9acpos4G6x7uf3LWbCAwZQE9e8ZekMu" }
+  ];
+  console.log(chalk2.bold("\n  Known Solana Programs:\n"));
+  for (const program2 of programs) {
+    console.log(chalk2.cyan(`  ${program2.name}`));
+    console.log(chalk2.gray(`    ${program2.id}
+`));
+  }
+  console.log(chalk2.dim("  Use: solguard fetch <program-id> to audit\n"));
+}
+
+// src/commands/watch.ts
+import chalk3 from "chalk";
+import { watch } from "fs";
+import { join as join6, relative } from "path";
+import { readdirSync as readdirSync3, statSync as statSync3, existsSync as existsSync5 } from "fs";
+async function watchCommand(path, options) {
+  console.log(chalk3.cyan("\n  \u{1F50D} SolGuard Watch Mode\n"));
+  console.log(chalk3.gray(`  Watching: ${path}`));
+  console.log(chalk3.gray("  Press Ctrl+C to stop\n"));
+  if (!existsSync5(path)) {
+    console.error(chalk3.red(`  Error: Path not found: ${path}`));
+    process.exit(1);
+  }
+  const dirsToWatch = /* @__PURE__ */ new Set();
+  function findDirs(dir) {
+    dirsToWatch.add(dir);
+    try {
+      const entries = readdirSync3(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "target" && entry.name !== "node_modules") {
+          findDirs(join6(dir, entry.name));
+        }
+      }
+    } catch {
+    }
+  }
+  if (statSync3(path).isDirectory()) {
+    findDirs(path);
+  } else {
+    dirsToWatch.add(path);
+  }
+  let debounceTimer = null;
+  let lastAuditTime = 0;
+  const DEBOUNCE_MS = 1e3;
+  async function runAudit() {
+    const now = Date.now();
+    if (now - lastAuditTime < DEBOUNCE_MS) {
+      return;
+    }
+    lastAuditTime = now;
+    console.log(chalk3.yellow("\n  \u2500".repeat(30)));
+    console.log(chalk3.yellow(`  \u{1F504} Re-auditing at ${(/* @__PURE__ */ new Date()).toLocaleTimeString()}`));
+    console.log(chalk3.yellow("  \u2500".repeat(30)));
+    try {
+      await auditCommand(path, {
+        output: options.output || "terminal",
+        ai: options.ai !== false,
+        verbose: false
+      });
+    } catch (error) {
+    }
+  }
+  console.log(chalk3.green("  Running initial audit...\n"));
+  await runAudit();
+  for (const dir of dirsToWatch) {
+    try {
+      watch(dir, { recursive: false }, (eventType, filename) => {
+        if (!filename) return;
+        if (!filename.endsWith(".rs")) return;
+        if (filename.startsWith(".")) return;
+        console.log(chalk3.blue(`
+  \u{1F4DD} Changed: ${relative(path, join6(dir, filename))}`));
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        debounceTimer = setTimeout(runAudit, 500);
+      });
+    } catch (error) {
+    }
+  }
+  process.on("SIGINT", () => {
+    console.log(chalk3.gray("\n\n  \u{1F44B} Watch mode stopped\n"));
+    process.exit(0);
+  });
+  await new Promise(() => {
+  });
+}
+
+// src/commands/ci.ts
+import { readFileSync as readFileSync4, existsSync as existsSync6, readdirSync as readdirSync4, statSync as statSync4, writeFileSync as writeFileSync2 } from "fs";
+import { join as join7 } from "path";
+async function ciCommand(path, options) {
+  const startTime = Date.now();
+  if (!existsSync6(path)) {
+    console.error(`::error::Path not found: ${path}`);
+    process.exit(1);
+  }
+  const isDirectory = statSync4(path).isDirectory();
+  let rustFiles = [];
+  let idlPath = null;
+  if (isDirectory) {
+    rustFiles = findRustFilesRecursive(path);
+    const idlDir = join7(path, "target", "idl");
+    if (existsSync6(idlDir)) {
+      const idlFiles = readdirSync4(idlDir).filter((f) => f.endsWith(".json"));
+      if (idlFiles.length > 0) {
+        idlPath = join7(idlDir, idlFiles[0]);
+      }
+    }
+  } else if (path.endsWith(".rs")) {
+    rustFiles = [path];
+  }
+  if (rustFiles.length === 0) {
+    console.log("::warning::No Rust files found to audit");
+    process.exit(0);
+  }
+  let idl = null;
+  if (idlPath) {
+    try {
+      idl = parseIdl(readFileSync4(idlPath, "utf-8"));
+    } catch {
+      console.log("::warning::Failed to parse IDL");
+    }
+  }
+  const parsedRust = parseRustFiles(rustFiles);
+  const allFindings = [];
+  for (const file of parsedRust.files) {
+    const findings = await runPatterns({
+      path: file.path,
+      rust: {
+        files: [file],
+        functions: parsedRust.functions.filter((f) => f.file === file.path),
+        structs: parsedRust.structs.filter((s) => s.file === file.path),
+        implBlocks: parsedRust.implBlocks.filter((i) => i.file === file.path),
+        content: file.content
+      },
+      idl
+    });
+    allFindings.push(...findings);
+  }
+  const duration = Date.now() - startTime;
+  for (const finding of allFindings) {
+    const level = finding.severity === "critical" || finding.severity === "high" ? "error" : finding.severity === "medium" ? "warning" : "notice";
+    const location = typeof finding.location === "string" ? finding.location : `${finding.location.file}:${finding.location.line || 1}`;
+    const [file, line] = location.split(":");
+    console.log(`::${level} file=${file},line=${line || 1},title=[${finding.pattern}] ${finding.title}::${finding.description}`);
+  }
+  const counts = {
+    critical: allFindings.filter((f) => f.severity === "critical").length,
+    high: allFindings.filter((f) => f.severity === "high").length,
+    medium: allFindings.filter((f) => f.severity === "medium").length,
+    low: allFindings.filter((f) => f.severity === "low").length,
+    info: allFindings.filter((f) => f.severity === "info").length
+  };
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY || options.summary;
+  if (summaryPath) {
+    const summaryLines = [
+      "## \u{1F6E1}\uFE0F SolGuard Security Audit",
+      "",
+      `| Severity | Count |`,
+      `|----------|-------|`,
+      `| \u{1F534} Critical | ${counts.critical} |`,
+      `| \u{1F7E0} High | ${counts.high} |`,
+      `| \u{1F7E1} Medium | ${counts.medium} |`,
+      `| \u{1F535} Low | ${counts.low} |`,
+      `| \u26AA Info | ${counts.info} |`,
+      "",
+      `**Files scanned:** ${rustFiles.length}`,
+      `**Duration:** ${duration}ms`,
+      `**Patterns:** ${listPatterns().length}`,
+      ""
+    ];
+    if (allFindings.length > 0) {
+      summaryLines.push("### Findings");
+      summaryLines.push("");
+      for (const f of allFindings.slice(0, 20)) {
+        const emoji = { critical: "\u{1F534}", high: "\u{1F7E0}", medium: "\u{1F7E1}", low: "\u{1F535}", info: "\u26AA" }[f.severity] || "";
+        summaryLines.push(`- ${emoji} **[${f.pattern}]** ${f.title}`);
+        summaryLines.push(`  - ${f.description}`);
+      }
+      if (allFindings.length > 20) {
+        summaryLines.push(`- ... and ${allFindings.length - 20} more`);
+      }
+    } else {
+      summaryLines.push("\u2705 **No vulnerabilities detected!**");
+    }
+    writeFileSync2(summaryPath, summaryLines.join("\n"), { flag: "a" });
+  }
+  if (options.sarif) {
+    const sarif = generateSarif(allFindings, path);
+    writeFileSync2(options.sarif, JSON.stringify(sarif, null, 2));
+    console.log(`::notice::SARIF report written to ${options.sarif}`);
+  }
+  console.log("\n--- SolGuard CI Summary ---");
+  console.log(`Files: ${rustFiles.length} | Findings: ${allFindings.length} | Duration: ${duration}ms`);
+  console.log(`Critical: ${counts.critical} | High: ${counts.high} | Medium: ${counts.medium} | Low: ${counts.low}`);
+  const failOn = options.failOn || "critical";
+  let shouldFail = false;
+  switch (failOn) {
+    case "any":
+      shouldFail = allFindings.length > 0;
+      break;
+    case "low":
+      shouldFail = counts.critical + counts.high + counts.medium + counts.low > 0;
+      break;
+    case "medium":
+      shouldFail = counts.critical + counts.high + counts.medium > 0;
+      break;
+    case "high":
+      shouldFail = counts.critical + counts.high > 0;
+      break;
+    case "critical":
+    default:
+      shouldFail = counts.critical > 0;
+      break;
+  }
+  if (shouldFail) {
+    console.log(`
+::error::Audit failed: found ${failOn} or higher severity issues`);
+    process.exit(1);
+  }
+  console.log("\n\u2713 Audit passed");
+  process.exit(0);
+}
+function generateSarif(findings, basePath) {
+  const rules = listPatterns().map((p) => ({
+    id: p.id,
+    name: p.name,
+    shortDescription: { text: p.name },
+    defaultConfiguration: {
+      level: p.severity === "critical" || p.severity === "high" ? "error" : p.severity === "medium" ? "warning" : "note"
+    }
+  }));
+  const results = findings.map((f) => {
+    const location = typeof f.location === "string" ? f.location : f.location.file;
+    const [file, lineStr] = location.split(":");
+    const line = parseInt(lineStr) || 1;
+    return {
+      ruleId: f.pattern,
+      level: f.severity === "critical" || f.severity === "high" ? "error" : f.severity === "medium" ? "warning" : "note",
+      message: { text: `${f.title}: ${f.description}` },
+      locations: [{
+        physicalLocation: {
+          artifactLocation: { uri: file },
+          region: { startLine: line }
+        }
+      }]
+    };
+  });
+  return {
+    $schema: "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+    version: "2.1.0",
+    runs: [{
+      tool: {
+        driver: {
+          name: "SolGuard",
+          version: "0.1.0",
+          informationUri: "https://github.com/oh-ashen-one/solguard",
+          rules
+        }
+      },
+      results
+    }]
+  };
+}
+function findRustFilesRecursive(dir) {
+  const files = [];
+  function scan2(currentDir) {
+    const entries = readdirSync4(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = join7(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        if (!["node_modules", "target", ".git", "dist", "build"].includes(entry.name)) {
+          scan2(fullPath);
+        }
+      } else if (entry.name.endsWith(".rs")) {
+        files.push(fullPath);
+      }
+    }
+  }
+  scan2(dir);
+  return files;
+}
+
+// src/commands/certificate.ts
+import chalk4 from "chalk";
+import ora2 from "ora";
+import { writeFileSync as writeFileSync3 } from "fs";
+import { join as join8 } from "path";
+
+// src/certificate/metadata.ts
+import { createHash } from "crypto";
+function generateCertificateMetadata(result, programId, imageUri = "https://solshieldai.netlify.app/certificate.png") {
+  const passed = result.passed;
+  const findingsHash = createHash("sha256").update(JSON.stringify(result.findings)).digest("hex").slice(0, 16);
+  return {
+    name: `SolShield Audit: ${programId.slice(0, 8)}...`,
+    symbol: "AUDIT",
+    description: passed ? `\u2705 This program passed the SolShield security audit with no critical or high severity issues.` : `\u26A0\uFE0F This program was audited by SolShield. ${result.summary.critical} critical and ${result.summary.high} high severity issues were found.`,
+    image: imageUri,
+    external_url: `https://solshieldai.netlify.app/audit/${programId}`,
+    attributes: [
+      {
+        trait_type: "Status",
+        value: passed ? "PASSED" : "FAILED"
+      },
+      {
+        trait_type: "Critical Issues",
+        value: result.summary.critical
+      },
+      {
+        trait_type: "High Issues",
+        value: result.summary.high
+      },
+      {
+        trait_type: "Medium Issues",
+        value: result.summary.medium
+      },
+      {
+        trait_type: "Low Issues",
+        value: result.summary.low
+      },
+      {
+        trait_type: "Total Findings",
+        value: result.summary.total
+      },
+      {
+        trait_type: "Audit Date",
+        value: result.timestamp.split("T")[0]
+      },
+      {
+        trait_type: "Findings Hash",
+        value: findingsHash
+      },
+      {
+        trait_type: "Auditor",
+        value: "SolGuard AI"
+      },
+      {
+        trait_type: "Version",
+        value: "1.0.0"
+      }
+    ],
+    properties: {
+      files: [
+        {
+          uri: imageUri,
+          type: "image/png"
+        }
+      ],
+      category: "image"
+    }
+  };
+}
+function calculateSeverityScore(result) {
+  const weights = {
+    critical: 40,
+    high: 25,
+    medium: 10,
+    low: 3,
+    info: 1
+  };
+  let score = 0;
+  score += result.summary.critical * weights.critical;
+  score += result.summary.high * weights.high;
+  score += result.summary.medium * weights.medium;
+  score += result.summary.low * weights.low;
+  score += result.summary.info * weights.info;
+  return Math.min(100, score);
+}
+function generateCertificateSvg(programId, passed, summary, timestamp) {
+  const statusColor = passed ? "#10B981" : "#EF4444";
+  const statusText = passed ? "PASSED" : "FAILED";
+  const date = new Date(timestamp).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#18181B"/>
+      <stop offset="100%" style="stop-color:#09090B"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="500" fill="url(#bg)" rx="16"/>
+  
+  <!-- Border -->
+  <rect x="8" y="8" width="384" height="484" fill="none" stroke="${statusColor}" stroke-width="2" rx="12" opacity="0.5"/>
+  
+  <!-- Header -->
+  <text x="200" y="50" text-anchor="middle" fill="#FAFAFA" font-family="system-ui" font-size="24" font-weight="bold">\u{1F6E1}\uFE0F SolGuard</text>
+  <text x="200" y="75" text-anchor="middle" fill="#71717A" font-family="system-ui" font-size="12">Security Audit Certificate</text>
+  
+  <!-- Status Badge -->
+  <rect x="125" y="100" width="150" height="40" fill="${statusColor}" rx="20"/>
+  <text x="200" y="127" text-anchor="middle" fill="#FAFAFA" font-family="system-ui" font-size="18" font-weight="bold">${statusText}</text>
+  
+  <!-- Program ID -->
+  <text x="200" y="180" text-anchor="middle" fill="#A1A1AA" font-family="monospace" font-size="10">Program ID</text>
+  <text x="200" y="200" text-anchor="middle" fill="#FAFAFA" font-family="monospace" font-size="11">${programId.slice(0, 22)}...</text>
+  
+  <!-- Findings Summary -->
+  <text x="200" y="250" text-anchor="middle" fill="#A1A1AA" font-family="system-ui" font-size="12">Findings Summary</text>
+  
+  <g transform="translate(50, 270)">
+    <rect width="70" height="50" fill="#7F1D1D" rx="8"/>
+    <text x="35" y="25" text-anchor="middle" fill="#FCA5A5" font-family="system-ui" font-size="20" font-weight="bold">${summary.critical}</text>
+    <text x="35" y="42" text-anchor="middle" fill="#FCA5A5" font-family="system-ui" font-size="9">Critical</text>
+  </g>
+  
+  <g transform="translate(130, 270)">
+    <rect width="70" height="50" fill="#78350F" rx="8"/>
+    <text x="35" y="25" text-anchor="middle" fill="#FCD34D" font-family="system-ui" font-size="20" font-weight="bold">${summary.high}</text>
+    <text x="35" y="42" text-anchor="middle" fill="#FCD34D" font-family="system-ui" font-size="9">High</text>
+  </g>
+  
+  <g transform="translate(210, 270)">
+    <rect width="70" height="50" fill="#422006" rx="8"/>
+    <text x="35" y="25" text-anchor="middle" fill="#FDE68A" font-family="system-ui" font-size="20" font-weight="bold">${summary.medium}</text>
+    <text x="35" y="42" text-anchor="middle" fill="#FDE68A" font-family="system-ui" font-size="9">Medium</text>
+  </g>
+  
+  <g transform="translate(290, 270)">
+    <rect width="70" height="50" fill="#1E3A5F" rx="8"/>
+    <text x="35" y="25" text-anchor="middle" fill="#93C5FD" font-family="system-ui" font-size="20" font-weight="bold">${summary.low}</text>
+    <text x="35" y="42" text-anchor="middle" fill="#93C5FD" font-family="system-ui" font-size="9">Low</text>
+  </g>
+  
+  <!-- Date -->
+  <text x="200" y="370" text-anchor="middle" fill="#71717A" font-family="system-ui" font-size="11">Audited on ${date}</text>
+  
+  <!-- Footer -->
+  <text x="200" y="450" text-anchor="middle" fill="#52525B" font-family="system-ui" font-size="10">Powered by AI \u2022 solshieldai.netlify.app</text>
+  <text x="200" y="470" text-anchor="middle" fill="#3F3F46" font-family="system-ui" font-size="8">This certificate is stored on the Solana blockchain</text>
+</svg>
+  `.trim();
+}
+
+// src/commands/certificate.ts
+async function certificateCommand(path, options) {
+  const spinner = ora2("Running audit...").start();
+  try {
+    const originalLog = console.log;
+    console.log = () => {
+    };
+    let result;
+    try {
+      result = await auditCommand(path, { output: "json", verbose: false });
+    } finally {
+      console.log = originalLog;
+    }
+    spinner.text = "Generating certificate...";
+    const programId = options.programId || "Unknown";
+    const severityScore = calculateSeverityScore(result);
+    const metadata = generateCertificateMetadata(result, programId);
+    const svg = generateCertificateSvg(programId, result.passed, result.summary, result.timestamp);
+    const outputDir = options.output || ".";
+    const metadataPath = join8(outputDir, "certificate-metadata.json");
+    const svgPath = join8(outputDir, "certificate.svg");
+    writeFileSync3(metadataPath, JSON.stringify(metadata, null, 2));
+    writeFileSync3(svgPath, svg);
+    spinner.succeed("Certificate generated!");
+    console.log("");
+    console.log(chalk4.bold("  Certificate Summary"));
+    console.log(chalk4.gray("  \u2500".repeat(25)));
+    console.log("");
+    console.log(`  Status: ${result.passed ? chalk4.green("\u2705 PASSED") : chalk4.red("\u274C FAILED")}`);
+    console.log(`  Severity Score: ${chalk4.yellow(severityScore + "/100")} ${severityScore === 0 ? "(Perfect!)" : ""}`);
+    console.log("");
+    console.log(`  Findings:`);
+    console.log(`    ${chalk4.red("Critical:")} ${result.summary.critical}`);
+    console.log(`    ${chalk4.yellow("High:")} ${result.summary.high}`);
+    console.log(`    ${chalk4.blue("Medium:")} ${result.summary.medium}`);
+    console.log(`    ${chalk4.gray("Low:")} ${result.summary.low}`);
+    console.log("");
+    console.log(chalk4.gray(`  Metadata: ${metadataPath}`));
+    console.log(chalk4.gray(`  SVG: ${svgPath}`));
+    console.log("");
+    if (result.passed) {
+      console.log(chalk4.green("  \u{1F3C6} This program is ready for NFT certificate minting!"));
+    } else {
+      console.log(chalk4.yellow("  \u26A0\uFE0F  Fix the issues above before minting a certificate."));
+    }
+    console.log("");
+  } catch (error) {
+    spinner.fail(`Certificate generation failed: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+// src/docs-mapping.ts
+var DOCS_BASE = "https://solana.com/docs";
+var patternDocs = {
+  // === CRITICAL: Account & Ownership ===
+  "SOL001": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Account Ownership"
+    },
+    {
+      title: "Programs",
+      url: `${DOCS_BASE}/core/programs`,
+      mdUrl: `${DOCS_BASE}/core/programs.md`,
+      section: "Owner Validation"
+    }
+  ],
+  // === CRITICAL: Signer Checks ===
+  "SOL002": [
+    {
+      title: "Transactions",
+      url: `${DOCS_BASE}/core/transactions`,
+      mdUrl: `${DOCS_BASE}/core/transactions.md`,
+      section: "Signatures"
+    },
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Account Structure"
+    }
+  ],
+  // === HIGH: Integer Overflow ===
+  "SOL003": [
+    {
+      title: "Developing Programs - Rust",
+      url: `${DOCS_BASE}/programs/lang-rust`,
+      mdUrl: `${DOCS_BASE}/programs/lang-rust.md`,
+      section: "Arithmetic Safety"
+    }
+  ],
+  // === HIGH: PDA Validation ===
+  "SOL004": [
+    {
+      title: "Program Derived Addresses",
+      url: `${DOCS_BASE}/core/pda`,
+      mdUrl: `${DOCS_BASE}/core/pda.md`,
+      section: "Canonical Bumps"
+    }
+  ],
+  // === CRITICAL: Authority Bypass ===
+  "SOL005": [
+    {
+      title: "Programs",
+      url: `${DOCS_BASE}/core/programs`,
+      mdUrl: `${DOCS_BASE}/core/programs.md`,
+      section: "Access Control"
+    },
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Account Ownership"
+    }
+  ],
+  // === CRITICAL: Initialization ===
+  "SOL006": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Creating Accounts"
+    }
+  ],
+  // === HIGH: CPI Vulnerabilities ===
+  "SOL007": [
+    {
+      title: "Cross Program Invocation",
+      url: `${DOCS_BASE}/core/cpi`,
+      mdUrl: `${DOCS_BASE}/core/cpi.md`,
+      section: "CPI Security"
+    }
+  ],
+  // === MEDIUM: Rounding Errors ===
+  "SOL008": [
+    {
+      title: "Developing Programs - Rust",
+      url: `${DOCS_BASE}/programs/lang-rust`,
+      mdUrl: `${DOCS_BASE}/programs/lang-rust.md`,
+      section: "Numeric Precision"
+    }
+  ],
+  // === HIGH: Account Confusion ===
+  "SOL009": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Account Validation"
+    }
+  ],
+  // === CRITICAL: Closing Accounts ===
+  "SOL010": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Closing Accounts"
+    },
+    {
+      title: "Fees on Solana",
+      url: `${DOCS_BASE}/core/fees`,
+      mdUrl: `${DOCS_BASE}/core/fees.md`,
+      section: "Rent"
+    }
+  ],
+  // === HIGH: Reentrancy ===
+  "SOL011": [
+    {
+      title: "Cross Program Invocation",
+      url: `${DOCS_BASE}/core/cpi`,
+      mdUrl: `${DOCS_BASE}/core/cpi.md`,
+      section: "CPI Depth"
+    }
+  ],
+  // === CRITICAL: Arbitrary CPI ===
+  "SOL012": [
+    {
+      title: "Cross Program Invocation",
+      url: `${DOCS_BASE}/core/cpi`,
+      mdUrl: `${DOCS_BASE}/core/cpi.md`,
+      section: "Program ID Validation"
+    }
+  ],
+  // === HIGH: Duplicate Mutable ===
+  "SOL013": [
+    {
+      title: "Transactions",
+      url: `${DOCS_BASE}/core/transactions`,
+      mdUrl: `${DOCS_BASE}/core/transactions.md`,
+      section: "Account Locking"
+    }
+  ],
+  // === MEDIUM: Rent Exemption ===
+  "SOL014": [
+    {
+      title: "Fees on Solana",
+      url: `${DOCS_BASE}/core/fees`,
+      mdUrl: `${DOCS_BASE}/core/fees.md`,
+      section: "Rent"
+    }
+  ],
+  // === CRITICAL: Type Cosplay ===
+  "SOL015": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Account Discriminators"
+    }
+  ],
+  // === HIGH: Bump Seeds ===
+  "SOL016": [
+    {
+      title: "Program Derived Addresses",
+      url: `${DOCS_BASE}/core/pda`,
+      mdUrl: `${DOCS_BASE}/core/pda.md`,
+      section: "Canonical Bumps"
+    }
+  ],
+  // === MEDIUM: Freeze Authority ===
+  "SOL017": [
+    {
+      title: "Tokens on Solana",
+      url: `${DOCS_BASE}/core/tokens`,
+      mdUrl: `${DOCS_BASE}/core/tokens.md`,
+      section: "Token Authorities"
+    }
+  ],
+  // === HIGH: Oracle Manipulation ===
+  "SOL018": [
+    {
+      title: "Programs",
+      url: `${DOCS_BASE}/core/programs`,
+      mdUrl: `${DOCS_BASE}/core/programs.md`,
+      section: "External Data"
+    }
+  ],
+  // === CRITICAL: Flash Loans ===
+  "SOL019": [
+    {
+      title: "Transactions",
+      url: `${DOCS_BASE}/core/transactions`,
+      mdUrl: `${DOCS_BASE}/core/transactions.md`,
+      section: "Atomicity"
+    }
+  ],
+  // === HIGH: Unsafe Math ===
+  "SOL020": [
+    {
+      title: "Developing Programs - Rust",
+      url: `${DOCS_BASE}/programs/lang-rust`,
+      mdUrl: `${DOCS_BASE}/programs/lang-rust.md`,
+      section: "Checked Arithmetic"
+    }
+  ],
+  // === CRITICAL: Sysvar Manipulation ===
+  "SOL021": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Sysvar Accounts"
+    }
+  ],
+  // === MEDIUM: Upgrade Authority ===
+  "SOL022": [
+    {
+      title: "Programs",
+      url: `${DOCS_BASE}/core/programs`,
+      mdUrl: `${DOCS_BASE}/core/programs.md`,
+      section: "Program Deployment"
+    }
+  ],
+  // === HIGH: Token Validation ===
+  "SOL023": [
+    {
+      title: "Tokens on Solana",
+      url: `${DOCS_BASE}/core/tokens`,
+      mdUrl: `${DOCS_BASE}/core/tokens.md`,
+      section: "Token Accounts"
+    }
+  ],
+  // === HIGH: Cross-Program State ===
+  "SOL024": [
+    {
+      title: "Cross Program Invocation",
+      url: `${DOCS_BASE}/core/cpi`,
+      mdUrl: `${DOCS_BASE}/core/cpi.md`,
+      section: "State Dependencies"
+    }
+  ],
+  // === HIGH: Lamport Balance ===
+  "SOL025": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Lamports"
+    },
+    {
+      title: "Fees on Solana",
+      url: `${DOCS_BASE}/core/fees`,
+      mdUrl: `${DOCS_BASE}/core/fees.md`,
+      section: "Rent"
+    }
+  ],
+  // PDA & Seeds
+  "SOL026": [
+    {
+      title: "Program Derived Addresses",
+      url: `${DOCS_BASE}/core/pda`,
+      mdUrl: `${DOCS_BASE}/core/pda.md`,
+      section: "Seeds"
+    }
+  ],
+  // Error Handling
+  "SOL027": [
+    {
+      title: "Developing Programs - Rust",
+      url: `${DOCS_BASE}/programs/lang-rust`,
+      mdUrl: `${DOCS_BASE}/programs/lang-rust.md`,
+      section: "Error Handling"
+    }
+  ],
+  // Events
+  "SOL028": [
+    {
+      title: "Programs",
+      url: `${DOCS_BASE}/core/programs`,
+      mdUrl: `${DOCS_BASE}/core/programs.md`,
+      section: "Logging"
+    }
+  ],
+  // Instruction Introspection
+  "SOL029": [
+    {
+      title: "Transactions",
+      url: `${DOCS_BASE}/core/transactions`,
+      mdUrl: `${DOCS_BASE}/core/transactions.md`,
+      section: "Instructions"
+    }
+  ],
+  // Anchor
+  "SOL030": [
+    {
+      title: "Anchor Framework",
+      url: `${DOCS_BASE}/programs/anchor`,
+      mdUrl: `${DOCS_BASE}/programs/anchor.md`,
+      section: "Account Constraints"
+    }
+  ],
+  // Access Control
+  "SOL031": [
+    {
+      title: "Programs",
+      url: `${DOCS_BASE}/core/programs`,
+      mdUrl: `${DOCS_BASE}/core/programs.md`,
+      section: "Authorization"
+    }
+  ],
+  // Time Lock
+  "SOL032": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Clock Sysvar"
+    }
+  ],
+  // Signature Replay
+  "SOL033": [
+    {
+      title: "Transactions",
+      url: `${DOCS_BASE}/core/transactions`,
+      mdUrl: `${DOCS_BASE}/core/transactions.md`,
+      section: "Signatures"
+    }
+  ],
+  // Storage Collision
+  "SOL034": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`,
+      section: "Account Data"
+    }
+  ],
+  // Token operations
+  "SOL038": [
+    {
+      title: "Token Extensions",
+      url: `${DOCS_BASE}/core/tokens`,
+      mdUrl: `${DOCS_BASE}/core/tokens.md`,
+      section: "Token-2022"
+    }
+  ],
+  // CPI Guard
+  "SOL040": [
+    {
+      title: "Cross Program Invocation",
+      url: `${DOCS_BASE}/core/cpi`,
+      mdUrl: `${DOCS_BASE}/core/cpi.md`,
+      section: "CPI Security"
+    }
+  ]
+};
+var topicDocs = {
+  "accounts": [
+    {
+      title: "Accounts",
+      url: `${DOCS_BASE}/core/accounts`,
+      mdUrl: `${DOCS_BASE}/core/accounts.md`
+    }
+  ],
+  "pda": [
+    {
+      title: "Program Derived Addresses",
+      url: `${DOCS_BASE}/core/pda`,
+      mdUrl: `${DOCS_BASE}/core/pda.md`
+    }
+  ],
+  "cpi": [
+    {
+      title: "Cross Program Invocation",
+      url: `${DOCS_BASE}/core/cpi`,
+      mdUrl: `${DOCS_BASE}/core/cpi.md`
+    }
+  ],
+  "tokens": [
+    {
+      title: "Tokens on Solana",
+      url: `${DOCS_BASE}/core/tokens`,
+      mdUrl: `${DOCS_BASE}/core/tokens.md`
+    }
+  ],
+  "transactions": [
+    {
+      title: "Transactions",
+      url: `${DOCS_BASE}/core/transactions`,
+      mdUrl: `${DOCS_BASE}/core/transactions.md`
+    }
+  ],
+  "programs": [
+    {
+      title: "Programs on Solana",
+      url: `${DOCS_BASE}/core/programs`,
+      mdUrl: `${DOCS_BASE}/core/programs.md`
+    }
+  ],
+  "fees": [
+    {
+      title: "Fees on Solana",
+      url: `${DOCS_BASE}/core/fees`,
+      mdUrl: `${DOCS_BASE}/core/fees.md`
+    }
+  ],
+  "rent": [
+    {
+      title: "Fees on Solana",
+      url: `${DOCS_BASE}/core/fees`,
+      mdUrl: `${DOCS_BASE}/core/fees.md`,
+      section: "Rent"
+    }
+  ],
+  "anchor": [
+    {
+      title: "Anchor Framework",
+      url: `${DOCS_BASE}/programs/anchor`,
+      mdUrl: `${DOCS_BASE}/programs/anchor.md`
+    }
+  ],
+  "rust": [
+    {
+      title: "Developing Programs in Rust",
+      url: `${DOCS_BASE}/programs/lang-rust`,
+      mdUrl: `${DOCS_BASE}/programs/lang-rust.md`
+    }
+  ]
+};
+function getDocsForPattern(patternId) {
+  return patternDocs[patternId] || [];
+}
+function getDocsForTopic(topic) {
+  const normalized = topic.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return topicDocs[normalized] || [];
+}
+async function fetchDocContent(mdUrl) {
+  try {
+    const response = await fetch(mdUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.status}`);
+    }
+    return await response.text();
+  } catch (error) {
+    throw new Error(`Could not fetch documentation: ${error}`);
+  }
+}
+
+// src/commands/learn.ts
+var COLORS = {
+  reset: "\x1B[0m",
+  bold: "\x1B[1m",
+  dim: "\x1B[2m",
+  cyan: "\x1B[36m",
+  green: "\x1B[32m",
+  yellow: "\x1B[33m",
+  blue: "\x1B[34m",
+  magenta: "\x1B[35m"
+};
+async function learnCommand(query, options) {
+  const { raw = false, brief = false, urls = false } = options;
+  if (!query) {
+    console.log(`${COLORS.cyan}${COLORS.bold}\u{1F4DA} SolShield Learn${COLORS.reset}`);
+    console.log(`
+Usage: solshield learn <pattern-id|topic>
+`);
+    console.log(`${COLORS.bold}Examples:${COLORS.reset}`);
+    console.log(`  solshield learn SOL001     # Learn about Missing Owner Check`);
+    console.log(`  solshield learn SOL004     # Learn about PDA Validation`);
+    console.log(`  solshield learn pda        # Learn about PDAs in general`);
+    console.log(`  solshield learn cpi        # Learn about Cross Program Invocation`);
+    console.log(`  solshield learn tokens     # Learn about Solana tokens`);
+    console.log(`
+${COLORS.bold}Available topics:${COLORS.reset}`);
+    console.log(`  accounts, pda, cpi, tokens, transactions, programs, fees, rent, anchor, rust`);
+    console.log(`
+${COLORS.bold}Options:${COLORS.reset}`);
+    console.log(`  --urls     Show only documentation URLs`);
+    console.log(`  --brief    Show summary only (no full content)`);
+    console.log(`  --raw      Output raw markdown (for piping to LLMs)`);
+    return;
+  }
+  const isPatternId = /^SOL\d{3}$/i.test(query);
+  let docs = [];
+  let contextTitle = "";
+  if (isPatternId) {
+    const patternId = query.toUpperCase();
+    const pattern = getPatternById(patternId);
+    if (!pattern) {
+      console.error(`${COLORS.yellow}Pattern ${patternId} not found.${COLORS.reset}`);
+      console.log(`
+Use 'solshield list' to see all available patterns.`);
+      return;
+    }
+    docs = getDocsForPattern(patternId);
+    contextTitle = `${patternId}: ${pattern.name}`;
+    if (!urls) {
+      console.log(`
+${COLORS.cyan}${COLORS.bold}\u{1F6E1}\uFE0F ${contextTitle}${COLORS.reset}`);
+      console.log(`${COLORS.dim}Severity: ${pattern.severity}${COLORS.reset}
+`);
+    }
+  } else {
+    docs = getDocsForTopic(query);
+    contextTitle = query.charAt(0).toUpperCase() + query.slice(1);
+    if (docs.length === 0) {
+      console.error(`${COLORS.yellow}Topic "${query}" not recognized.${COLORS.reset}`);
+      console.log(`
+Available topics: accounts, pda, cpi, tokens, transactions, programs, fees, rent, anchor, rust`);
+      return;
+    }
+    if (!urls) {
+      console.log(`
+${COLORS.cyan}${COLORS.bold}\u{1F4DA} Learning: ${contextTitle}${COLORS.reset}
+`);
+    }
+  }
+  if (docs.length === 0) {
+    console.log(`${COLORS.yellow}No documentation mapped for this pattern yet.${COLORS.reset}`);
+    console.log(`
+General Solana security docs: https://solana.com/docs/programs/anchor`);
+    return;
+  }
+  if (urls) {
+    console.log(`
+${COLORS.bold}\u{1F4D6} Documentation URLs:${COLORS.reset}
+`);
+    for (const doc of docs) {
+      console.log(`${COLORS.green}${doc.title}${COLORS.reset}`);
+      console.log(`  Web:      ${doc.url}`);
+      console.log(`  LLM-Ready: ${doc.mdUrl}`);
+      if (doc.section) {
+        console.log(`  ${COLORS.dim}Section: ${doc.section}${COLORS.reset}`);
+      }
+      console.log("");
+    }
+    console.log(`${COLORS.dim}\u{1F4A1} Tip: Use the .md URLs to feed documentation directly to AI assistants.${COLORS.reset}`);
+    return;
+  }
+  if (brief) {
+    console.log(`${COLORS.bold}\u{1F4D6} Related Documentation:${COLORS.reset}
+`);
+    for (const doc of docs) {
+      console.log(`  ${COLORS.green}\u2022${COLORS.reset} ${doc.title}${doc.section ? ` (${doc.section})` : ""}`);
+      console.log(`    ${COLORS.blue}${doc.url}${COLORS.reset}`);
+    }
+    console.log(`
+${COLORS.dim}Use --raw to fetch full content for LLM processing.${COLORS.reset}`);
+    return;
+  }
+  console.log(`${COLORS.bold}\u{1F4D6} Official Solana Documentation:${COLORS.reset}
+`);
+  for (const doc of docs) {
+    console.log(`${COLORS.magenta}\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501${COLORS.reset}`);
+    console.log(`${COLORS.green}${COLORS.bold}${doc.title}${COLORS.reset}${doc.section ? ` \u2192 ${doc.section}` : ""}`);
+    console.log(`${COLORS.dim}${doc.mdUrl}${COLORS.reset}`);
+    console.log(`${COLORS.magenta}\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501${COLORS.reset}
+`);
+    try {
+      const content = await fetchDocContent(doc.mdUrl);
+      if (raw) {
+        console.log(content);
+      } else {
+        const lines = content.split("\n");
+        const maxLines = 60;
+        let startLine = 0;
+        if (lines[0] === "---") {
+          for (let i = 1; i < lines.length; i++) {
+            if (lines[i] === "---") {
+              startLine = i + 1;
+              break;
+            }
+          }
+        }
+        const displayLines = lines.slice(startLine, startLine + maxLines);
+        console.log(displayLines.join("\n"));
+        if (lines.length > startLine + maxLines) {
+          console.log(`
+${COLORS.dim}... (${lines.length - startLine - maxLines} more lines)${COLORS.reset}`);
+          console.log(`${COLORS.dim}Use --raw for full content or visit: ${doc.url}${COLORS.reset}`);
+        }
+      }
+    } catch (error) {
+      console.error(`${COLORS.yellow}Could not fetch content: ${error}${COLORS.reset}`);
+      console.log(`${COLORS.dim}Visit: ${doc.url}${COLORS.reset}`);
+    }
+    console.log("");
+  }
+  if (!raw) {
+    console.log(`
+${COLORS.cyan}\u{1F4A1} Pro tip:${COLORS.reset} Use 'solshield learn ${query} --raw | claude' to feed docs to your AI assistant.`);
+  }
+}
+
+// src/commands/stats.ts
+import chalk5 from "chalk";
+function statsCommand() {
+  const patterns = listPatterns();
+  console.log("");
+  console.log(chalk5.bold("  \u{1F4CA} SolGuard Statistics"));
+  console.log(chalk5.gray("  \u2500".repeat(25)));
+  console.log("");
+  console.log(chalk5.cyan("  Version:"), "0.1.0");
+  console.log(chalk5.cyan("  Patterns:"), patterns.length);
+  console.log("");
+  const bySeverity = {
+    critical: patterns.filter((p) => p.severity === "critical"),
+    high: patterns.filter((p) => p.severity === "high"),
+    medium: patterns.filter((p) => p.severity === "medium"),
+    low: patterns.filter((p) => p.severity === "low")
+  };
+  console.log(chalk5.bold("  Vulnerability Patterns:"));
+  console.log("");
+  if (bySeverity.critical.length > 0) {
+    console.log(chalk5.red("  \u{1F534} Critical:"));
+    for (const p of bySeverity.critical) {
+      console.log(chalk5.gray(`     ${p.id}: ${p.name}`));
+    }
+    console.log("");
+  }
+  if (bySeverity.high.length > 0) {
+    console.log(chalk5.yellow("  \u{1F7E0} High:"));
+    for (const p of bySeverity.high) {
+      console.log(chalk5.gray(`     ${p.id}: ${p.name}`));
+    }
+    console.log("");
+  }
+  if (bySeverity.medium.length > 0) {
+    console.log(chalk5.blue("  \u{1F7E1} Medium:"));
+    for (const p of bySeverity.medium) {
+      console.log(chalk5.gray(`     ${p.id}: ${p.name}`));
+    }
+    console.log("");
+  }
+  console.log(chalk5.bold("  Capabilities:"));
+  console.log("");
+  console.log(chalk5.green("  \u2713"), "Anchor IDL + Rust parsing");
+  console.log(chalk5.green("  \u2713"), "GitHub repo/PR auditing");
+  console.log(chalk5.green("  \u2713"), "CI/CD with SARIF output");
+  console.log(chalk5.green("  \u2713"), "HTML report generation");
+  console.log(chalk5.green("  \u2713"), "NFT certificate generation");
+  console.log(chalk5.green("  \u2713"), "Watch mode for development");
+  console.log(chalk5.green("  \u2713"), "Git pre-commit/push hooks");
+  console.log(chalk5.green("  \u2713"), "Config file support");
+  console.log(chalk5.green("  \u2713"), "JSON/Markdown/Terminal output");
+  console.log(chalk5.green("  \u2713"), "LLM-ready Solana docs integration");
+  console.log("");
+  console.log(chalk5.bold("  Available Commands (15):"));
+  console.log("");
+  console.log(chalk5.cyan("  solguard audit <path>"), "       Audit a program");
+  console.log(chalk5.cyan("  solguard fetch <id>"), "         Fetch and audit on-chain");
+  console.log(chalk5.cyan("  solguard github <repo>"), "      Audit GitHub repo/PR");
+  console.log(chalk5.cyan("  solguard compare <a> <b>"), "    Compare two versions");
+  console.log(chalk5.cyan("  solguard list"), "               List all patterns");
+  console.log(chalk5.cyan("  solguard learn <pattern>"), "    Learn with Solana docs");
+  console.log(chalk5.cyan("  solguard check <path>"), "       Quick pass/fail check");
+  console.log(chalk5.cyan("  solguard ci <path>"), "          CI mode with SARIF");
+  console.log(chalk5.cyan("  solguard watch <path>"), "       Watch and auto-audit");
+  console.log(chalk5.cyan("  solguard report <path>"), "      Generate HTML report");
+  console.log(chalk5.cyan("  solguard certificate <path>"), " Generate NFT certificate");
+  console.log(chalk5.cyan("  solguard init"), "               Create config file");
+  console.log(chalk5.cyan("  solguard programs"), "           List known programs");
+  console.log(chalk5.cyan("  solguard parse <idl>"), "        Parse IDL file");
+  console.log(chalk5.cyan("  solguard stats"), "              Show this info");
+  console.log("");
+  console.log(chalk5.gray("  Built by Midir for Solana Agent Hackathon 2026"));
+  console.log(chalk5.gray("  https://github.com/oh-ashen-one/solguard"));
+  console.log("");
+}
+
+// src/commands/list.ts
+import chalk6 from "chalk";
+var PATTERN_DESCRIPTIONS = {
+  SOL001: "Detects accounts accessed without validating the owner field. An attacker could pass a fake account owned by a different program.",
+  SOL002: "Detects authority/admin accounts that are not declared as Signers. Without signer verification, anyone can claim to be the authority.",
+  SOL003: "Detects arithmetic operations without overflow protection. Rust integers wrap on overflow, leading to unexpected behavior.",
+  SOL004: "Detects Program Derived Addresses used without validating the bump seed. Attackers could use a different bump to bypass validation.",
+  SOL005: "Detects sensitive operations (transfers, state changes) without proper authority checks.",
+  SOL006: "Detects accounts used without checking if they are initialized. Uninitialized accounts may contain garbage or be controlled by attackers.",
+  SOL007: "Detects Cross-Program Invocations without proper verification of the target program or account constraints.",
+  SOL008: "Detects division operations that may lose precision. In financial calculations, this can be exploited for profit.",
+  SOL009: "Detects when multiple accounts of the same type lack constraints ensuring they are different accounts.",
+  SOL010: "Detects improper account closing that allows account revival or rent theft.",
+  SOL011: "Detects state changes after CPI calls where a callback could manipulate state.",
+  SOL012: "Detects invoke() calls where the program_id is user-controlled without validation.",
+  SOL013: "Detects when the same account could be passed as multiple mutable parameters.",
+  SOL014: "Detects account operations that may leave accounts below rent-exempt minimum.",
+  SOL015: "Detects account deserialization without type discriminator validation, allowing type confusion attacks."
+};
+var PATTERN_EXAMPLES = {
+  SOL002: {
+    vulnerable: `// VULNERABLE
+pub authority: AccountInfo<'info>,`,
+    safe: `// SAFE
+pub authority: Signer<'info>,`
+  },
+  SOL003: {
+    vulnerable: `// VULNERABLE
+vault.balance = vault.balance + amount;`,
+    safe: `// SAFE
+vault.balance = vault.balance.checked_add(amount).unwrap();`
+  }
+};
+function listCommand(options = {}) {
+  const patterns = listPatterns();
+  const format = options.output || "terminal";
+  let filtered = patterns;
+  if (options.severity) {
+    filtered = patterns.filter((p) => p.severity === options.severity);
+  }
+  if (format === "json") {
+    const data = filtered.map((p) => ({
+      ...p,
+      description: PATTERN_DESCRIPTIONS[p.id] || "",
+      run: void 0
+    }));
+    console.log(JSON.stringify(data, null, 2));
+    return;
+  }
+  if (format === "markdown") {
+    console.log("# SolGuard Vulnerability Patterns\n");
+    console.log(`Total: ${filtered.length} patterns
+`);
+    for (const p of filtered) {
+      const emoji = p.severity === "critical" ? "\u{1F534}" : p.severity === "high" ? "\u{1F7E0}" : "\u{1F7E1}";
+      console.log(`## ${emoji} ${p.id}: ${p.name}
+`);
+      console.log(`**Severity:** ${p.severity}
+`);
+      console.log(PATTERN_DESCRIPTIONS[p.id] || "No description available.\n");
+      const example = PATTERN_EXAMPLES[p.id];
+      if (example) {
+        console.log("\n**Example:**\n");
+        console.log("```rust");
+        console.log(example.vulnerable);
+        console.log("```\n");
+        console.log("**Fix:**\n");
+        console.log("```rust");
+        console.log(example.safe);
+        console.log("```\n");
+      }
+    }
+    return;
+  }
+  console.log("");
+  console.log(chalk6.bold("  \u{1F6E1}\uFE0F SolGuard Vulnerability Patterns"));
+  console.log(chalk6.gray("  \u2500".repeat(30)));
+  console.log("");
+  const bySeverity = {
+    critical: filtered.filter((p) => p.severity === "critical"),
+    high: filtered.filter((p) => p.severity === "high"),
+    medium: filtered.filter((p) => p.severity === "medium")
+  };
+  if (bySeverity.critical.length > 0) {
+    console.log(chalk6.red.bold("  \u{1F534} CRITICAL"));
+    console.log("");
+    for (const p of bySeverity.critical) {
+      console.log(chalk6.white(`  ${p.id}: ${p.name}`));
+      console.log(chalk6.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
+      console.log("");
+    }
+  }
+  if (bySeverity.high.length > 0) {
+    console.log(chalk6.yellow.bold("  \u{1F7E0} HIGH"));
+    console.log("");
+    for (const p of bySeverity.high) {
+      console.log(chalk6.white(`  ${p.id}: ${p.name}`));
+      console.log(chalk6.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
+      console.log("");
+    }
+  }
+  if (bySeverity.medium.length > 0) {
+    console.log(chalk6.blue.bold("  \u{1F7E1} MEDIUM"));
+    console.log("");
+    for (const p of bySeverity.medium) {
+      console.log(chalk6.white(`  ${p.id}: ${p.name}`));
+      console.log(chalk6.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
+      console.log("");
+    }
+  }
+  console.log(chalk6.gray("  \u2500".repeat(30)));
+  console.log(chalk6.dim(`  Total: ${filtered.length} patterns`));
+  console.log("");
+}
+function truncate(str, len) {
+  if (str.length <= len) return str;
+  return str.slice(0, len - 3) + "...";
+}
+
 // src/swarm/orchestrator.ts
 import { execSync } from "child_process";
-import { readFileSync as readFileSync3, existsSync as existsSync3, writeFileSync, mkdirSync } from "fs";
-import { join as join3, basename as basename2 } from "path";
+import { readFileSync as readFileSync5, existsSync as existsSync7, writeFileSync as writeFileSync4, mkdirSync as mkdirSync2 } from "fs";
+import { join as join9, basename as basename2 } from "path";
 
 // src/swarm/agents.ts
 var BASE_SECURITY_CONTEXT = `You are a security auditor specializing in Solana and Anchor programs.
@@ -45863,10 +47843,10 @@ var SwarmOrchestrator = class {
    */
   readCode(targetPath) {
     try {
-      if (!existsSync3(targetPath)) {
+      if (!existsSync7(targetPath)) {
         return null;
       }
-      const content = readFileSync3(targetPath, "utf-8");
+      const content = readFileSync5(targetPath, "utf-8");
       return content;
     } catch {
       return null;
@@ -46008,10 +47988,10 @@ var SwarmOrchestrator = class {
       const startTime = Date.now();
       const prompt = agent.getAnalysisPrompt(code, filePath);
       try {
-        const tempDir = join3(this.config.outputDir, ".temp");
-        if (!existsSync3(tempDir)) mkdirSync(tempDir, { recursive: true });
-        const promptFile = join3(tempDir, `${agent.config.id}-prompt.txt`);
-        writeFileSync(promptFile, prompt);
+        const tempDir = join9(this.config.outputDir, ".temp");
+        if (!existsSync7(tempDir)) mkdirSync2(tempDir, { recursive: true });
+        const promptFile = join9(tempDir, `${agent.config.id}-prompt.txt`);
+        writeFileSync4(promptFile, prompt);
         const result = execSync(
           `claude --print --model ${this.config.model} < "${promptFile}"`,
           {
@@ -46048,12 +48028,12 @@ var SwarmOrchestrator = class {
    */
   saveReport(report) {
     try {
-      if (!existsSync3(this.config.outputDir)) {
-        mkdirSync(this.config.outputDir, { recursive: true });
+      if (!existsSync7(this.config.outputDir)) {
+        mkdirSync2(this.config.outputDir, { recursive: true });
       }
       const filename = `swarm-audit-${Date.now()}.json`;
-      const reportPath = join3(this.config.outputDir, filename);
-      writeFileSync(reportPath, JSON.stringify(report, null, 2));
+      const reportPath = join9(this.config.outputDir, filename);
+      writeFileSync4(reportPath, JSON.stringify(report, null, 2));
       this.log(`Report saved to: ${reportPath}`);
     } catch (e) {
       this.log(`Failed to save report: ${e.message}`);
@@ -46102,13 +48082,13 @@ async function swarmAudit(options) {
 }
 
 // src/index.ts
-import chalk from "chalk";
+import chalk7 from "chalk";
 var program = new Command();
-program.name("solguard").description("AI-Powered Smart Contract Security Auditor for Solana").version("0.1.0");
+program.name("solshield").description("AI-Powered Smart Contract Security Auditor for Solana \u2014 6,800+ patterns").version("0.1.0");
 program.command("audit").description("Run a full security audit on a Solana program").argument("<path>", "Path to program directory or Rust file").option("-f, --format <format>", "Output format (text|json|markdown)", "text").option("--ai", "Include AI-powered explanations").option("--fail-on <severity>", "Exit with error on severity level (critical|high|medium|low|any)", "critical").action(async (path, options) => {
   try {
-    console.log(chalk.blue("\u{1F50D} SolGuard Security Audit"));
-    console.log(chalk.gray(`Scanning: ${path}
+    console.log(chalk7.blue("\u{1F6E1}\uFE0F  SolShield Security Audit"));
+    console.log(chalk7.gray(`Scanning: ${path}
 `));
     const results = await scan(path, {
       format: options.format === "json" ? "json" : "object",
@@ -46116,36 +48096,103 @@ program.command("audit").description("Run a full security audit on a Solana prog
       failOn: options.failOn
     });
     if (results.findings.length === 0) {
-      console.log(chalk.green("\u2705 No vulnerabilities found!"));
+      console.log(chalk7.green("\u2705 No vulnerabilities found!"));
     } else {
-      console.log(chalk.yellow(`\u26A0\uFE0F  Found ${results.findings.length} potential issues:
+      console.log(chalk7.yellow(`\u26A0\uFE0F  Found ${results.findings.length} potential issues:
 `));
       for (const finding of results.findings) {
-        const severityColor = finding.severity === "critical" ? chalk.red : finding.severity === "high" ? chalk.yellow : finding.severity === "medium" ? chalk.cyan : chalk.gray;
+        const severityColor = finding.severity === "critical" ? chalk7.red : finding.severity === "high" ? chalk7.yellow : finding.severity === "medium" ? chalk7.cyan : chalk7.gray;
         console.log(`${severityColor(`[${finding.severity.toUpperCase()}]`)} ${finding.id}: ${finding.title}`);
-        console.log(chalk.gray(`  \u2514\u2500 ${finding.location.file}${finding.location.line ? `:${finding.location.line}` : ""}`));
-        console.log(chalk.gray(`     ${finding.description}`));
+        console.log(chalk7.gray(`  \u2514\u2500 ${finding.location.file}${finding.location.line ? `:${finding.location.line}` : ""}`));
+        console.log(chalk7.gray(`     ${finding.description}`));
         if (finding.suggestion) {
-          console.log(chalk.green(`     \u{1F4A1} ${finding.suggestion}`));
+          console.log(chalk7.green(`     \u{1F4A1} ${finding.suggestion}`));
         }
         console.log();
       }
     }
-    console.log(chalk.bold("\n\u{1F4CA} Summary:"));
-    console.log(`  ${chalk.red("Critical:")} ${results.summary.critical}`);
-    console.log(`  ${chalk.yellow("High:")} ${results.summary.high}`);
-    console.log(`  ${chalk.cyan("Medium:")} ${results.summary.medium}`);
-    console.log(`  ${chalk.gray("Low:")} ${results.summary.low}`);
-    console.log(`  ${chalk.blue("Total:")} ${results.summary.total}`);
-    console.log(chalk.gray(`  Duration: ${results.duration}ms
+    console.log(chalk7.bold("\n\u{1F4CA} Summary:"));
+    console.log(`  ${chalk7.red("Critical:")} ${results.summary.critical}`);
+    console.log(`  ${chalk7.yellow("High:")} ${results.summary.high}`);
+    console.log(`  ${chalk7.cyan("Medium:")} ${results.summary.medium}`);
+    console.log(`  ${chalk7.gray("Low:")} ${results.summary.low}`);
+    console.log(`  ${chalk7.blue("Total:")} ${results.summary.total}`);
+    console.log(chalk7.gray(`  Duration: ${results.duration}ms
 `));
     if (!results.passed) {
       process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red(`Error: ${error.message}`));
+    console.error(chalk7.red(`Error: ${error.message}`));
     process.exit(2);
   }
+});
+program.command("github").description("Audit a Solana program directly from a GitHub repo").argument("<repo>", "GitHub repo (owner/repo or full URL)").option("--pr <number>", "Audit a specific pull request").option("--branch <name>", "Audit a specific branch").option("-f, --format <format>", "Output format (text|json|markdown)", "text").option("-v, --verbose", "Verbose output").action(async (repo, options) => {
+  try {
+    console.log(chalk7.blue("\u{1F6E1}\uFE0F  SolShield GitHub Audit"));
+    console.log(chalk7.gray(`Repository: ${repo}
+`));
+    const result = await auditGithub(repo, {
+      pr: options.pr ? parseInt(options.pr) : void 0,
+      branch: options.branch,
+      output: options.format,
+      verbose: options.verbose
+    });
+    console.log(formatGithubAuditResult(result, options.format));
+    if (result.findings.length > 0) {
+      const criticals = result.findings.filter((f) => f.severity === "critical").length;
+      if (criticals > 0) process.exit(1);
+    }
+  } catch (error) {
+    console.error(chalk7.red(`Error: ${error.message}`));
+    process.exit(2);
+  }
+});
+program.command("fetch").description("Fetch an on-chain Solana program and audit its IDL").argument("<program_id>", "Solana program ID (base58 public key)").option("--rpc <url>", "Solana RPC endpoint URL").option("-f, --format <format>", "Output format (terminal|json|markdown)", "terminal").option("--ai", "Include AI-powered explanations").option("-v, --verbose", "Verbose output").action(async (programId, options) => {
+  await fetchAndAuditCommand(programId, {
+    rpc: options.rpc,
+    output: options.format,
+    ai: options.ai,
+    verbose: options.verbose
+  });
+});
+program.command("programs").description("List well-known Solana programs you can fetch and audit").action(() => {
+  listKnownPrograms();
+});
+program.command("watch").description("Watch a directory and re-audit on every file change").argument("<path>", "Path to program directory").option("-f, --format <format>", "Output format (terminal|json|markdown)", "terminal").option("--ai", "Include AI-powered explanations").action(async (path, options) => {
+  await watchCommand(path, {
+    output: options.format,
+    ai: options.ai
+  });
+});
+program.command("ci").description("CI mode \u2014 GitHub Actions annotations, SARIF output, exit codes").argument("<path>", "Path to program directory").option("--fail-on <severity>", "Fail threshold (critical|high|medium|low|any)", "critical").option("--sarif <file>", "Write SARIF report to file").option("--summary <file>", "Write markdown summary to file").action(async (path, options) => {
+  await ciCommand(path, {
+    failOn: options.failOn,
+    sarif: options.sarif,
+    summary: options.summary
+  });
+});
+program.command("certificate").description("Generate an NFT-ready audit certificate (SVG + Metaplex metadata)").argument("<path>", "Path to program directory").option("-o, --output <dir>", "Output directory", ".").option("--program-id <id>", "On-chain program ID for the certificate").action(async (path, options) => {
+  await certificateCommand(path, {
+    output: options.output,
+    programId: options.programId
+  });
+});
+program.command("learn").description("Learn about a vulnerability pattern or Solana topic with official docs").argument("[query]", "Pattern ID (SOL001) or topic (pda, cpi, tokens...)").option("--urls", "Show only documentation URLs").option("--brief", "Show summary only (no full content)").option("--raw", "Output raw markdown (for piping to LLMs)").action(async (query, options) => {
+  await learnCommand(query || "", {
+    urls: options.urls,
+    brief: options.brief,
+    raw: options.raw
+  });
+});
+program.command("stats").description("Show SolShield statistics and capabilities").action(() => {
+  statsCommand();
+});
+program.command("list").description("List all vulnerability patterns").option("-s, --severity <severity>", "Filter by severity (critical|high|medium|low)").option("-f, --format <format>", "Output format (terminal|json|markdown)", "terminal").action((options) => {
+  listCommand({
+    severity: options.severity,
+    output: options.format
+  });
 });
 program.command("check").description("Quick security check (pass/fail)").argument("<path>", "Path to program directory").option("--fail-on <severity>", "Fail on severity level", "critical").option("-q, --quiet", "Minimal output").action(async (path, options) => {
   await checkCommand(path, {
@@ -46153,7 +48200,7 @@ program.command("check").description("Quick security check (pass/fail)").argumen
     quiet: options.quiet
   });
 });
-program.command("patterns").description("List all available security patterns").option("--json", "Output as JSON").option("-s, --severity <severity>", "Filter by severity").action((options) => {
+program.command("patterns").description('List all available security patterns (alias for "list")').option("--json", "Output as JSON").option("-s, --severity <severity>", "Filter by severity").action((options) => {
   const patterns = listPatterns();
   let filtered = patterns;
   if (options.severity) {
@@ -46162,8 +48209,8 @@ program.command("patterns").description("List all available security patterns").
   if (options.json) {
     console.log(JSON.stringify(filtered, null, 2));
   } else {
-    console.log(chalk.blue(`
-\u{1F6E1}\uFE0F  SolGuard Security Patterns (${filtered.length} total)
+    console.log(chalk7.blue(`
+\u{1F6E1}\uFE0F  SolShield Security Patterns (${filtered.length} total)
 `));
     const bySeverity = {
       critical: filtered.filter((p) => p.severity === "critical"),
@@ -46172,28 +48219,28 @@ program.command("patterns").description("List all available security patterns").
       low: filtered.filter((p) => p.severity === "low"),
       info: filtered.filter((p) => p.severity === "info")
     };
-    console.log(chalk.red(`Critical (${bySeverity.critical.length}):`));
+    console.log(chalk7.red(`Critical (${bySeverity.critical.length}):`));
     bySeverity.critical.slice(0, 10).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
-    if (bySeverity.critical.length > 10) console.log(chalk.gray(`  ... and ${bySeverity.critical.length - 10} more`));
-    console.log(chalk.yellow(`
+    if (bySeverity.critical.length > 10) console.log(chalk7.gray(`  ... and ${bySeverity.critical.length - 10} more`));
+    console.log(chalk7.yellow(`
 High (${bySeverity.high.length}):`));
     bySeverity.high.slice(0, 10).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
-    if (bySeverity.high.length > 10) console.log(chalk.gray(`  ... and ${bySeverity.high.length - 10} more`));
-    console.log(chalk.cyan(`
+    if (bySeverity.high.length > 10) console.log(chalk7.gray(`  ... and ${bySeverity.high.length - 10} more`));
+    console.log(chalk7.cyan(`
 Medium (${bySeverity.medium.length}):`));
     bySeverity.medium.slice(0, 10).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
-    if (bySeverity.medium.length > 10) console.log(chalk.gray(`  ... and ${bySeverity.medium.length - 10} more`));
-    console.log(chalk.gray(`
+    if (bySeverity.medium.length > 10) console.log(chalk7.gray(`  ... and ${bySeverity.medium.length - 10} more`));
+    console.log(chalk7.gray(`
 Low (${bySeverity.low.length}):`));
     bySeverity.low.slice(0, 5).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
-    if (bySeverity.low.length > 5) console.log(chalk.gray(`  ... and ${bySeverity.low.length - 5} more`));
+    if (bySeverity.low.length > 5) console.log(chalk7.gray(`  ... and ${bySeverity.low.length - 5} more`));
   }
 });
 program.command("swarm").description("Run multi-agent security audit with specialized AI agents").argument("<path>", "Path to program directory or Rust file").option("--mode <mode>", "Execution mode (api|agent-teams|subprocess|auto)", "auto").option("--specialists <list>", "Comma-separated specialists (reentrancy,access-control,arithmetic,oracle)", "").option("-v, --verbose", "Verbose output").option("--markdown", "Output as markdown report").action(async (path, options) => {
   try {
-    console.log(chalk.blue("\u{1F916} SolGuard Multi-Agent Security Swarm"));
-    console.log(chalk.gray(`Target: ${path}`));
-    console.log(chalk.gray(`Mode: ${options.mode}
+    console.log(chalk7.blue("\u{1F41D} SolShield Multi-Agent Security Swarm"));
+    console.log(chalk7.gray(`Target: ${path}`));
+    console.log(chalk7.gray(`Mode: ${options.mode}
 `));
     const specialists = options.specialists ? options.specialists.split(",").map((s) => s.trim()) : void 0;
     const result = await swarmAudit({
@@ -46206,38 +48253,38 @@ program.command("swarm").description("Run multi-agent security audit with specia
     if (result.markdownReport) {
       console.log(result.markdownReport);
     } else {
-      console.log(chalk.bold(`
+      console.log(chalk7.bold(`
 \u2705 Swarm Audit Complete`));
-      console.log(chalk.gray(`  Mode: ${result.mode}`));
-      console.log(chalk.gray(`  Duration: ${result.duration}ms`));
-      console.log(chalk.gray(`  Agents: ${result.agentResults.length}`));
+      console.log(chalk7.gray(`  Mode: ${result.mode}`));
+      console.log(chalk7.gray(`  Duration: ${result.duration}ms`));
+      console.log(chalk7.gray(`  Agents: ${result.agentResults.length}`));
       if (result.synthesis) {
         const s = result.synthesis.summary;
-        console.log(chalk.bold("\n\u{1F4CA} Findings Summary:"));
-        console.log(`  ${chalk.red("Critical:")} ${s.critical}`);
-        console.log(`  ${chalk.yellow("High:")} ${s.high}`);
-        console.log(`  ${chalk.cyan("Medium:")} ${s.medium}`);
-        console.log(`  ${chalk.gray("Low:")} ${s.low}`);
-        console.log(`  ${chalk.blue("Total:")} ${result.findings.length}`);
+        console.log(chalk7.bold("\n\u{1F4CA} Findings Summary:"));
+        console.log(`  ${chalk7.red("Critical:")} ${s.critical}`);
+        console.log(`  ${chalk7.yellow("High:")} ${s.high}`);
+        console.log(`  ${chalk7.cyan("Medium:")} ${s.medium}`);
+        console.log(`  ${chalk7.gray("Low:")} ${s.low}`);
+        console.log(`  ${chalk7.blue("Total:")} ${result.findings.length}`);
       }
       if (result.errors && result.errors.length > 0) {
-        console.log(chalk.yellow("\n\u26A0\uFE0F  Warnings:"));
-        result.errors.forEach((err) => console.log(chalk.gray(`  - ${err}`)));
+        console.log(chalk7.yellow("\n\u26A0\uFE0F  Warnings:"));
+        result.errors.forEach((err) => console.log(chalk7.gray(`  - ${err}`)));
       }
     }
     if (result.synthesis && result.synthesis.summary.critical > 0) {
       process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red(`Error: ${error.message}`));
+    console.error(chalk7.red(`Error: ${error.message}`));
     if (options.verbose && error.stack) {
-      console.error(chalk.gray(error.stack));
+      console.error(chalk7.gray(error.stack));
     }
     process.exit(2);
   }
 });
-program.command("version").description("Show version").action(() => {
-  console.log("solguard v0.1.0");
+program.command("version").description("Show version and pattern count").action(() => {
+  console.log("solshield v0.1.0");
   console.log(`${listPatterns().length}+ security patterns`);
 });
 program.parse();

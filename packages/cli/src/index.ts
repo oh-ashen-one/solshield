@@ -1,30 +1,44 @@
 #!/usr/bin/env node
 /**
- * SolGuard CLI - AI-Powered Smart Contract Security Auditor for Solana
+ * SolShield CLI - AI-Powered Smart Contract Security Auditor for Solana
  * 
- * 900+ security patterns covering real-world exploits and common vulnerabilities.
+ * 6,800+ security patterns covering real-world exploits and common vulnerabilities.
  * 
  * Usage:
- *   solguard audit ./programs/my-vault
- *   solguard check ./programs/my-vault --fail-on high
- *   solguard patterns
+ *   solshield audit ./programs/my-vault
+ *   solshield github owner/repo
+ *   solshield fetch <PROGRAM_ID>
+ *   solshield watch ./programs/my-vault
+ *   solshield ci ./programs/my-vault --fail-on high
+ *   solshield certificate ./programs/my-vault
+ *   solshield learn SOL001
+ *   solshield stats
+ *   solshield list
  */
 
 import { Command } from 'commander';
 import { scan, type ScanOptions } from './sdk.js';
 import { checkCommand } from './commands/check.js';
-import { listPatterns } from './patterns/index.js';
+import { listPatterns, getPatternById } from './patterns/index.js';
+import { auditGithub, formatGithubAuditResult } from './commands/github.js';
+import { fetchAndAuditCommand, listKnownPrograms } from './commands/fetch.js';
+import { watchCommand } from './commands/watch.js';
+import { ciCommand } from './commands/ci.js';
+import { certificateCommand } from './commands/certificate.js';
+import { learnCommand } from './commands/learn.js';
+import { statsCommand } from './commands/stats.js';
+import { listCommand } from './commands/list.js';
 import { swarmAudit } from './swarm/audit.js';
 import chalk from 'chalk';
 
 const program = new Command();
 
 program
-  .name('solguard')
-  .description('AI-Powered Smart Contract Security Auditor for Solana')
+  .name('solshield')
+  .description('AI-Powered Smart Contract Security Auditor for Solana — 6,800+ patterns')
   .version('0.1.0');
 
-// Audit command (full scan with detailed output)
+// ─── audit ───────────────────────────────────────────────────────────
 program
   .command('audit')
   .description('Run a full security audit on a Solana program')
@@ -34,7 +48,7 @@ program
   .option('--fail-on <severity>', 'Exit with error on severity level (critical|high|medium|low|any)', 'critical')
   .action(async (path: string, options: any) => {
     try {
-      console.log(chalk.blue('🔍 SolGuard Security Audit'));
+      console.log(chalk.blue('🛡️  SolShield Security Audit'));
       console.log(chalk.gray(`Scanning: ${path}\n`));
       
       const results = await scan(path, {
@@ -43,7 +57,6 @@ program
         failOn: options.failOn,
       } as ScanOptions);
       
-      // Display findings
       if (results.findings.length === 0) {
         console.log(chalk.green('✅ No vulnerabilities found!'));
       } else {
@@ -66,7 +79,6 @@ program
         }
       }
       
-      // Summary
       console.log(chalk.bold('\n📊 Summary:'));
       console.log(`  ${chalk.red('Critical:')} ${results.summary.critical}`);
       console.log(`  ${chalk.yellow('High:')} ${results.summary.high}`);
@@ -84,7 +96,147 @@ program
     }
   });
 
-// Check command (quick pass/fail)
+// ─── github ──────────────────────────────────────────────────────────
+program
+  .command('github')
+  .description('Audit a Solana program directly from a GitHub repo')
+  .argument('<repo>', 'GitHub repo (owner/repo or full URL)')
+  .option('--pr <number>', 'Audit a specific pull request')
+  .option('--branch <name>', 'Audit a specific branch')
+  .option('-f, --format <format>', 'Output format (text|json|markdown)', 'text')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (repo: string, options: any) => {
+    try {
+      console.log(chalk.blue('🛡️  SolShield GitHub Audit'));
+      console.log(chalk.gray(`Repository: ${repo}\n`));
+      
+      const result = await auditGithub(repo, {
+        pr: options.pr ? parseInt(options.pr) : undefined,
+        branch: options.branch,
+        output: options.format,
+        verbose: options.verbose,
+      });
+
+      console.log(formatGithubAuditResult(result, options.format));
+
+      if (result.findings.length > 0) {
+        const criticals = result.findings.filter(f => f.severity === 'critical').length;
+        if (criticals > 0) process.exit(1);
+      }
+    } catch (error: any) {
+      console.error(chalk.red(`Error: ${error.message}`));
+      process.exit(2);
+    }
+  });
+
+// ─── fetch ───────────────────────────────────────────────────────────
+program
+  .command('fetch')
+  .description('Fetch an on-chain Solana program and audit its IDL')
+  .argument('<program_id>', 'Solana program ID (base58 public key)')
+  .option('--rpc <url>', 'Solana RPC endpoint URL')
+  .option('-f, --format <format>', 'Output format (terminal|json|markdown)', 'terminal')
+  .option('--ai', 'Include AI-powered explanations')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (programId: string, options: any) => {
+    await fetchAndAuditCommand(programId, {
+      rpc: options.rpc,
+      output: options.format,
+      ai: options.ai,
+      verbose: options.verbose,
+    });
+  });
+
+// ─── programs ────────────────────────────────────────────────────────
+program
+  .command('programs')
+  .description('List well-known Solana programs you can fetch and audit')
+  .action(() => {
+    listKnownPrograms();
+  });
+
+// ─── watch ───────────────────────────────────────────────────────────
+program
+  .command('watch')
+  .description('Watch a directory and re-audit on every file change')
+  .argument('<path>', 'Path to program directory')
+  .option('-f, --format <format>', 'Output format (terminal|json|markdown)', 'terminal')
+  .option('--ai', 'Include AI-powered explanations')
+  .action(async (path: string, options: any) => {
+    await watchCommand(path, {
+      output: options.format,
+      ai: options.ai,
+    });
+  });
+
+// ─── ci ──────────────────────────────────────────────────────────────
+program
+  .command('ci')
+  .description('CI mode — GitHub Actions annotations, SARIF output, exit codes')
+  .argument('<path>', 'Path to program directory')
+  .option('--fail-on <severity>', 'Fail threshold (critical|high|medium|low|any)', 'critical')
+  .option('--sarif <file>', 'Write SARIF report to file')
+  .option('--summary <file>', 'Write markdown summary to file')
+  .action(async (path: string, options: any) => {
+    await ciCommand(path, {
+      failOn: options.failOn,
+      sarif: options.sarif,
+      summary: options.summary,
+    });
+  });
+
+// ─── certificate ─────────────────────────────────────────────────────
+program
+  .command('certificate')
+  .description('Generate an NFT-ready audit certificate (SVG + Metaplex metadata)')
+  .argument('<path>', 'Path to program directory')
+  .option('-o, --output <dir>', 'Output directory', '.')
+  .option('--program-id <id>', 'On-chain program ID for the certificate')
+  .action(async (path: string, options: any) => {
+    await certificateCommand(path, {
+      output: options.output,
+      programId: options.programId,
+    });
+  });
+
+// ─── learn ───────────────────────────────────────────────────────────
+program
+  .command('learn')
+  .description('Learn about a vulnerability pattern or Solana topic with official docs')
+  .argument('[query]', 'Pattern ID (SOL001) or topic (pda, cpi, tokens...)')
+  .option('--urls', 'Show only documentation URLs')
+  .option('--brief', 'Show summary only (no full content)')
+  .option('--raw', 'Output raw markdown (for piping to LLMs)')
+  .action(async (query: string | undefined, options: any) => {
+    await learnCommand(query || '', {
+      urls: options.urls,
+      brief: options.brief,
+      raw: options.raw,
+    });
+  });
+
+// ─── stats ───────────────────────────────────────────────────────────
+program
+  .command('stats')
+  .description('Show SolShield statistics and capabilities')
+  .action(() => {
+    statsCommand();
+  });
+
+// ─── list ────────────────────────────────────────────────────────────
+program
+  .command('list')
+  .description('List all vulnerability patterns')
+  .option('-s, --severity <severity>', 'Filter by severity (critical|high|medium|low)')
+  .option('-f, --format <format>', 'Output format (terminal|json|markdown)', 'terminal')
+  .action((options: any) => {
+    listCommand({
+      severity: options.severity,
+      output: options.format,
+    });
+  });
+
+// ─── check (quick pass/fail) ────────────────────────────────────────
 program
   .command('check')
   .description('Quick security check (pass/fail)')
@@ -98,10 +250,10 @@ program
     });
   });
 
-// List patterns command
+// ─── patterns (alias for list) ──────────────────────────────────────
 program
   .command('patterns')
-  .description('List all available security patterns')
+  .description('List all available security patterns (alias for "list")')
   .option('--json', 'Output as JSON')
   .option('-s, --severity <severity>', 'Filter by severity')
   .action((options: any) => {
@@ -115,7 +267,7 @@ program
     if (options.json) {
       console.log(JSON.stringify(filtered, null, 2));
     } else {
-      console.log(chalk.blue(`\n🛡️  SolGuard Security Patterns (${filtered.length} total)\n`));
+      console.log(chalk.blue(`\n🛡️  SolShield Security Patterns (${filtered.length} total)\n`));
       
       const bySeverity = {
         critical: filtered.filter(p => p.severity === 'critical'),
@@ -143,7 +295,7 @@ program
     }
   });
 
-// Swarm command (multi-agent audit)
+// ─── swarm (multi-agent audit) ──────────────────────────────────────
 program
   .command('swarm')
   .description('Run multi-agent security audit with specialized AI agents')
@@ -154,7 +306,7 @@ program
   .option('--markdown', 'Output as markdown report')
   .action(async (path: string, options: any) => {
     try {
-      console.log(chalk.blue('🤖 SolGuard Multi-Agent Security Swarm'));
+      console.log(chalk.blue('🐝 SolShield Multi-Agent Security Swarm'));
       console.log(chalk.gray(`Target: ${path}`));
       console.log(chalk.gray(`Mode: ${options.mode}\n`));
       
@@ -194,7 +346,6 @@ program
         }
       }
       
-      // Exit with error if critical findings
       if (result.synthesis && result.synthesis.summary.critical > 0) {
         process.exit(1);
       }
@@ -207,12 +358,12 @@ program
     }
   });
 
-// Version command
+// ─── version ─────────────────────────────────────────────────────────
 program
   .command('version')
-  .description('Show version')
+  .description('Show version and pattern count')
   .action(() => {
-    console.log('solguard v0.1.0');
+    console.log('solshield v0.1.0');
     console.log(`${listPatterns().length}+ security patterns`);
   });
 
