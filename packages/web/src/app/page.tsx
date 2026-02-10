@@ -42,15 +42,52 @@ export default function Home() {
 
     setLoadingStatus(`Fetching from ${parsed.owner}/${parsed.repo}...`);
     
-    // Use GitHub API to get repo contents
-    const apiUrl = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${parsed.branch}?recursive=1`;
-    const response = await fetch(apiUrl);
+    // Try main first, then master, then the parsed branch
+    const branchesToTry = parsed.branch !== 'main' ? [parsed.branch, 'main', 'master'] : ['main', 'master'];
+    let data: any = null;
+    let usedBranch = 'main';
     
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
+    for (const branch of branchesToTry) {
+      const apiUrl = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${branch}?recursive=1`;
+      const response = await fetch(apiUrl);
+      if (response.ok) {
+        data = await response.json();
+        usedBranch = branch;
+        break;
+      }
     }
     
-    const data = await response.json();
+    if (!data) {
+      // Fallback: try the repo contents API which is more forgiving
+      const contentsUrl = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/contents/`;
+      const response = await fetch(contentsUrl);
+      if (!response.ok) {
+        throw new Error(`Could not access repository. Make sure it's public and the URL is correct.`);
+      }
+      // For contents API, we can't recurse easily, so try common Solana paths
+      const commonPaths = ['programs', 'src', 'program/src', 'programs/src'];
+      const fileContents: string[] = [];
+      for (const dir of commonPaths) {
+        try {
+          const dirRes = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/contents/${dir}`);
+          if (dirRes.ok) {
+            const items = await dirRes.json();
+            const rsFiles = Array.isArray(items) ? items.filter((f: any) => f.name.endsWith('.rs')) : [];
+            for (const file of rsFiles.slice(0, 5)) {
+              const rawUrl = `https://raw.githubusercontent.com/${parsed.owner}/${parsed.repo}/HEAD/${file.path}`;
+              const fileRes = await fetch(rawUrl);
+              if (fileRes.ok) {
+                const content = await fileRes.text();
+                fileContents.push(`// ===== ${file.path} =====\n${content}`);
+              }
+            }
+          }
+        } catch { /* skip */ }
+      }
+      if (fileContents.length === 0) throw new Error('No Rust files found in repository');
+      return fileContents.join('\n\n');
+    }
+    
     const rustFiles = data.tree?.filter((f: any) => 
       f.path.endsWith('.rs') && f.type === 'blob'
     ) || [];
@@ -67,7 +104,7 @@ export default function Home() {
     
     for (const file of filesToFetch) {
       setLoadingStatus(`Downloading ${file.path}...`);
-      const rawUrl = `https://raw.githubusercontent.com/${parsed.owner}/${parsed.repo}/${parsed.branch}/${file.path}`;
+      const rawUrl = `https://raw.githubusercontent.com/${parsed.owner}/${parsed.repo}/${usedBranch}/${file.path}`;
       const fileRes = await fetch(rawUrl);
       if (fileRes.ok) {
         const content = await fileRes.text();
