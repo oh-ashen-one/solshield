@@ -1,5 +1,5 @@
 {
-  "name": "@solshield/cli",
+  "name": "solshield-cli",
   "version": "0.2.0",
   "description": "SolShield CLI - The first security check for vibe-coded Solana programs. 5,916 vulnerability patterns.",
   "author": "SolShield Team",
