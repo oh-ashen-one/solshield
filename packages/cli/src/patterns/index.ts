@@ -61,6 +61,8 @@ import { detectBatch111 } from './solana-batched-patterns-111.js';
 import { checkBatch112Patterns } from './solana-batched-patterns-112.js';
 // Import Batch 113 patterns (Feb 11, 2026) - Owner Permission Phishing, Simulation Bypass, Wallet Drain (SOL7646-SOL7695)
 import { checkBatch113Patterns } from './solana-batched-patterns-113.js';
+// Import Batch 114 patterns (Feb 11, 2026) - Account Revival, Address Pre-funding DoS, ZK Compression, Validator Gossip (SOL7696-SOL7726)
+import { detectBatch114 } from './solana-batched-patterns-114.js';
 
 // Import Batch 68 patterns (Feb 5, 2026 9:00 PM) - January 2026 Threats: Owner Phishing, Trust Wallet, Consensus Vulns
 import { checkBatch68Patterns } from './solana-batched-patterns-68.js';
@@ -1171,6 +1173,14 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     findings.push(...batch113Results);
   } catch {
     // Skip if Batch 113 patterns fail
+  }
+
+  // Run Batch 114 patterns (31 patterns: Account Revival, ZK Compression, Validator Gossip - SOL7696-SOL7726)
+  try {
+    const batch114Results = detectBatch114(input);
+    findings.push(...batch114Results);
+  } catch {
+    // Skip if Batch 114 patterns fail
   }
 
   // Run Batch 55 Zealynx Checklist patterns (30 patterns: Token-2022, CPI, Oracle, Real Exploits - SOL7556-SOL7585)
