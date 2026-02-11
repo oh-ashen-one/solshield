@@ -29,6 +29,7 @@ import { learnCommand } from './commands/learn.js';
 import { statsCommand } from './commands/stats.js';
 import { listCommand } from './commands/list.js';
 import { swarmAudit } from './swarm/audit.js';
+import { applyFixes, displayFixResults } from './commands/fix.js';
 import chalk from 'chalk';
 
 const program = new Command();
@@ -46,6 +47,8 @@ program
   .option('-f, --format <format>', 'Output format (text|json|markdown)', 'text')
   .option('--ai', 'Include AI-powered explanations')
   .option('--fail-on <severity>', 'Exit with error on severity level (critical|high|medium|low|any)', 'critical')
+  .option('--fix', 'Auto-generate patched source files with vulnerability fixes applied')
+  .option('--fix-output <path>', 'Output path for fixed file (default: <file>.fixed.rs)')
   .action(async (path: string, options: any) => {
     try {
       console.log(chalk.blue('🛡️  SolShield Security Audit'));
@@ -87,6 +90,14 @@ program
       console.log(`  ${chalk.blue('Total:')} ${results.summary.total}`);
       console.log(chalk.gray(`  Duration: ${results.duration}ms\n`));
       
+      // Apply fixes if --fix flag is set
+      if (options.fix && results.findings.length > 0) {
+        const fixResults = applyFixes(results.findings, {
+          fixOutput: options.fixOutput,
+        });
+        displayFixResults(fixResults);
+      }
+
       if (!results.passed) {
         process.exit(1);
       }

@@ -1,8 +1,8 @@
 /**
- * SolGuard SDK - Programmatic API for vulnerability scanning
+ * SolShield SDK - Programmatic API for vulnerability scanning
  * 
  * Usage:
- *   import { scan, audit } from '@solguard/cli';
+ *   import { scan, audit } from 'solshield';
  *   
  *   const results = await scan('./my-program');
  *   if (results.summary.critical > 0) {
@@ -72,7 +72,7 @@ export interface ScanResult {
  * 
  * @example
  * ```ts
- * import { scan } from '@solguard/cli';
+ * import { scan } from 'solshield';
  * 
  * const results = await scan('./programs/my-vault');
  * console.log(`Found ${results.summary.total} issues`);
@@ -199,7 +199,7 @@ export async function scan(path: string, options: ScanOptions = {}): Promise<Sca
  * 
  * @example
  * ```ts
- * import { check } from '@solguard/cli';
+ * import { check } from 'solshield';
  * 
  * if (!await check('./my-program')) {
  *   console.error('Security check failed!');

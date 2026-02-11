@@ -2424,6 +2424,60 @@ function checkBatch54Patterns(input) {
   return findings;
 }
 
+// src/patterns/batch-55-zealynx-checklist.ts
+var PATTERNS = [
+  { id: "SOL7556", title: "Stale Account Data After CPI", severity: "high", category: "state-management", pattern: /invoke_signed?\s*\([\s\S]{0,400}(?:\.amount|\.balance|\.data_len)/i, desc: "Account data read after CPI may be stale \u2014 call reload() after any CPI that modifies accounts", rec: "Call account.reload()? immediately after CPIs before reading fields." },
+  { id: "SOL7557", title: "Missing Reload After Token Transfer CPI", severity: "high", category: "token-operations", pattern: /token::transfer[\s\S]{0,300}\.amount/i, desc: "Token account amount accessed after transfer CPI without reload \u2014 accounting mismatch", rec: "Always reload token accounts after transfer CPIs." },
+  { id: "SOL7558", title: "Account Reallocation Without Zero Init", severity: "medium", category: "state-management", pattern: /realloc[\s\S]{0,50}zero_init\s*=\s*false/i, desc: "Reallocation with zero_init=false may expose stale data in newly allocated space", rec: "Set zero_init = true when account size may increase after a decrease in same tx." },
+  { id: "SOL7559", title: "Duplicate Mutable Account Attack", severity: "high", category: "account-validation", pattern: /#\[account\(mut\)\]\s*pub\s+\w+[\s\S]{0,200}#\[account\(mut\)\]\s*pub\s+\w+/i, desc: "Two mutable accounts without uniqueness constraint \u2014 same account can be passed twice for double-counting", rec: "Add constraint: account_a.key() != account_b.key()." },
+  { id: "SOL7560", title: "User Wallet Signer Forwarded in CPI", severity: "critical", category: "cpi-security", pattern: /invoke\w*\s*\([\s\S]{0,300}user[\s\S]{0,100}is_signer:\s*true/i, desc: 'Forwarding user wallet as signer to untrusted CPI enables "steal the wallet" attack', rec: "Use protocol PDAs as CPI authorities instead of forwarding user wallets." },
+  { id: "SOL7561", title: "Account Closed Without Data Zeroing", severity: "high", category: "state-management", pattern: /lamports\s*=\s*0[\s\S]{0,200}(?!sol_memset|fill\(0\)|CLOSED_ACCOUNT)/i, desc: "Account closed by zeroing lamports but data not zeroed \u2014 revival attack possible", rec: "Zero all data and set CLOSED_ACCOUNT_DISCRIMINATOR before transferring lamports." },
+  { id: "SOL7562", title: "Token-2022 Transfer Hook Bypass", severity: "critical", category: "token-2022", pattern: /spl_token::instruction::transfer\b[\s\S]{0,200}token.?2022/i, desc: "Legacy SPL Token transfer used with Token-2022 bypasses transfer hooks", rec: "Use transfer_checked from Token-2022 program for tokens with extensions." },
+  { id: "SOL7563", title: "Token-2022 Close Authority Not Validated", severity: "high", category: "token-2022", pattern: /mint[\s\S]{0,200}token.?2022[\s\S]{0,200}(?!close_authority|MintCloseAuthority)/i, desc: "Token-2022 mint accepted without checking close authority extension \u2014 mint can be closed", rec: "Check for MintCloseAuthority extension. Reject mints with close authority unless trusted." },
+  { id: "SOL7564", title: "Token-2022 Permanent Delegate Unchecked", severity: "high", category: "token-2022", pattern: /deposit|collateral|stake[\s\S]{0,300}token.?2022[\s\S]{0,200}(?!permanent_delegate|PermanentDelegate)/i, desc: "Token-2022 permanent delegate can drain any holders tokens at any time", rec: "Check PermanentDelegate extension. Reject in lending/staking/escrow contexts." },
+  { id: "SOL7565", title: "Token-2022 Transfer Fee Unaccounted", severity: "high", category: "token-2022", pattern: /transfer_checked[\s\S]{0,200}amount[\s\S]{0,100}(?!fee|TransferFee)/i, desc: "Transfer amount used without accounting for Token-2022 transfer fee \u2014 accounting mismatch", rec: "Query TransferFeeConfig extension to calculate actual received amount after fees." },
+  { id: "SOL7566", title: "Unrestricted Protocol Initialization", severity: "critical", category: "access-control", pattern: /pub\s+fn\s+initialize[\s\S]{0,500}(?!upgrade_authority|deployer|ADMIN_PUBKEY)/i, desc: "Initialize callable by anyone \u2014 attacker can front-run deployment with malicious params", rec: "Restrict to program upgrade authority or hardcoded deployer pubkey." },
+  { id: "SOL7567", title: "Single-Step Authority Transfer", severity: "medium", category: "access-control", pattern: /authority\s*=\s*new_authority[\s\S]{0,50}(?!pending|nominee|accept)/i, desc: "Direct authority transfer risks permanent lockout if wrong address specified", rec: "Implement two-step: nominate_authority() then accept_authority()." },
+  { id: "SOL7568", title: "Arithmetic Overflow in Release Build", severity: "critical", category: "math-precision", pattern: /(?:amount|price|balance|supply|rate)\s*[\*\+\-][\s\S]{0,50}(?!checked_|saturating_)/i, desc: "Rust release builds silently wrap on integer overflow \u2014 u64 multiplication can wrap to tiny values", rec: "Use checked_mul(), checked_add(), etc. Or enable overflow-checks = true in Cargo.toml." },
+  { id: "SOL7569", title: "PDA Seed Without User Differentiation", severity: "high", category: "pda-security", pattern: /seeds\s*=\s*\[\s*b"[\w]+"\s*\]\s*(?!.*\.key\(\))/i, desc: "PDA with only static seeds is shared across all users \u2014 state collision", rec: 'Include user pubkey in seeds: seeds = [b"user_state", user.key().as_ref()].' },
+  { id: "SOL7570", title: "Custodial Key Storage (DEXX $30M Pattern)", severity: "critical", category: "key-management", pattern: /private_key|secret_key|keypair[\s\S]{0,100}(?:store|save|database|redis|server)/i, desc: "DEXX hack ($30M, 9000+ wallets) \u2014 storing private keys server-side is a single point of failure", rec: "Never store user private keys. Use non-custodial arch or HSMs/MPC threshold signing." },
+  { id: "SOL7571", title: "Cross-Chain Bridge Message Insufficient Validation", severity: "critical", category: "bridge-security", pattern: /bridge[\s\S]{0,200}(?:message|payload)[\s\S]{0,200}(?!verify_source|validate_chain|guardian)/i, desc: "NoOnes exploit ($8M, Jan 2025) \u2014 bridge messages without full source validation enable forgery", rec: "Validate source chain ID, sender contract, guardian signatures, and message nonce." },
+  { id: "SOL7572", title: "Nested Account Validation Root Bypass (Cashio $48M)", severity: "critical", category: "account-validation", pattern: /collateral[\s\S]{0,200}(?:mint|crate)[\s\S]{0,100}(?!root|verified_mint|hardcoded)/i, desc: "Cashio ($48M) \u2014 validated chain of account refs but not the root, allowing fake root injection", rec: "Validate ENTIRE chain including root. Use hardcoded known-good root addresses." },
+  { id: "SOL7573", title: "Single-Source AMM Oracle (Solend $1.26M)", severity: "critical", category: "oracle-security", pattern: /price[\s\S]{0,100}(?:pool|reserve|amm)[\s\S]{0,100}(?!twap|median|aggregate|pyth|switchboard)/i, desc: "Solend/USDH exploit ($1.26M) \u2014 single AMM pool oracle trivially manipulated with capital", rec: "Use TWAP over multiple blocks. Aggregate from multiple sources (Pyth, Switchboard, multiple DEXes)." },
+  { id: "SOL7574", title: "Account Substitution Without Constraint", severity: "high", category: "account-validation", pattern: /Account<'info,\s*\w+>\s*,[\s\S]{0,100}(?!has_one|constraint|seeds|address\s*=)/i, desc: "Typed account without has_one/address constraint \u2014 attacker can substitute valid but wrong account", rec: "Use has_one constraints to bind accounts to parent: #[account(has_one = vault)]." },
+  { id: "SOL7575", title: "CPI Return Data Source Not Verified", severity: "medium", category: "cpi-security", pattern: /get_return_data[\s\S]{0,200}(?!program_id|verify)/i, desc: "CPI return data read without verifying source program ID \u2014 malicious prior instruction can set it", rec: "Verify program_id from sol_get_return_data() matches expected callee." },
+  { id: "SOL7576", title: "Token-2022 Non-Transferable Extension Ignored", severity: "medium", category: "token-2022", pattern: /(?:collateral|escrow|transfer)[\s\S]{0,200}token.?2022[\s\S]{0,200}(?!non_transferable|NonTransferable)/i, desc: "Non-transferable (soulbound) Token-2022 tokens cause stuck positions if not checked", rec: "Check for NonTransferable extension before accepting as collateral or transferring." },
+  { id: "SOL7577", title: "Token-2022 Confidential Transfer Hidden Balance", severity: "high", category: "token-2022", pattern: /\.amount[\s\S]{0,100}token.?2022[\s\S]{0,100}(?!confidential|decrypt)/i, desc: "Confidential transfers encrypt balances \u2014 .amount shows 0, bypassing balance checks", rec: "Check ConfidentialTransferMint extension. Reject or use decryption flow for actual balances." },
+  { id: "SOL7578", title: "Token-2022 Interest-Bearing Token Mispriced", severity: "medium", category: "token-2022", pattern: /\.amount[\s\S]{0,100}interest.?bearing/i, desc: "Interest-bearing tokens have virtual accruing balance \u2014 raw .amount undervalues positions", rec: "Use amount_to_ui_amount() for interest-adjusted balance in pricing." },
+  { id: "SOL7579", title: "Arbitrary Program in CPI Target", severity: "critical", category: "cpi-security", pattern: /invoke\w*\s*\(\s*[\s\S]{0,100}(?:AccountInfo|UncheckedAccount)[\s\S]{0,100}(?!\.key\(\)\s*==|program_id)/i, desc: "CPI to user-supplied program ID without verification \u2014 attacker substitutes malicious program", rec: "Assert target program key matches expected ID. Use Anchor Program<T> for auto-validation." },
+  { id: "SOL7580", title: "Guardian Verification Bypass (Wormhole $326M)", severity: "critical", category: "bridge-security", pattern: /(?:guardian|verify_signatures)[\s\S]{0,200}(?:deprecated|legacy|secp256k1_program)/i, desc: "Wormhole ($326M) \u2014 deprecated verify_signatures call bypassed guardian set validation", rec: "Use current, audited verification. For bridges, verify active guardian set with proper quorum." },
+  { id: "SOL7581", title: "CLMM Tick Account Spoofing (Crema $8.8M)", severity: "critical", category: "defi-security", pattern: /tick[\s\S]{0,200}(?:AccountInfo|UncheckedAccount)[\s\S]{0,200}(?!seeds|constraint|owner)/i, desc: "Crema ($8.8M) \u2014 fake tick accounts with fabricated price data accepted without PDA verification", rec: "Derive tick accounts as PDAs from pool + tick index. Verify derivation matches passed account." },
+  { id: "SOL7582", title: "Perp Oracle Manipulation (Mango $115M)", severity: "critical", category: "oracle-security", pattern: /unrealized_pnl|perp[\s\S]{0,200}(?:collateral|borrow|margin)[\s\S]{0,100}(?!liquidity_check|depth)/i, desc: "Mango ($115M) \u2014 thin-liquidity perp market manipulated to inflate unrealized PnL as collateral", rec: "Weight collateral by market liquidity depth. Use time-delayed prices. Cap volatile position borrowing." },
+  { id: "SOL7583", title: "Flash Loan + Liquidation Combo Attack", severity: "high", category: "defi-security", pattern: /flash_loan[\s\S]{0,500}liquidat/i, desc: "Flash loans enable zero-capital oracle manipulation + liquidation extraction in single tx", rec: "Prevent flash loan and liquidation in same tx. Use TWAP oracles resistant to single-slot manipulation." },
+  { id: "SOL7584", title: "Account Re-Initialization Vulnerability", severity: "critical", category: "state-management", pattern: /pub\s+fn\s+initialize[\s\S]{0,500}(?!is_initialized|init\s*,|discriminator)/i, desc: "Initialize callable multiple times can reset admin, clear balances, or change config", rec: "Use Anchor init constraint (succeeds once). For native, check is_initialized flag." },
+  { id: "SOL7585", title: "User-Provided PDA Bump Seed", severity: "medium", category: "pda-security", pattern: /bump\s*:\s*(?:ctx\.accounts|args|instruction)[\s\S]{0,100}(?!canonical|find_program_address)/i, desc: "Non-canonical bumps create different PDAs, enabling duplicate accounts or uniqueness bypass", rec: "Always derive canonical bumps via find_program_address(). Never accept bumps from instruction args." }
+];
+function checkBatch55ZealynxPatterns(input) {
+  const findings = [];
+  const content = input.content;
+  for (const p of PATTERNS) {
+    const match = p.pattern.exec(content);
+    if (match) {
+      findings.push({
+        id: p.id,
+        title: p.title,
+        severity: p.severity,
+        category: p.category,
+        description: p.desc,
+        recommendation: p.rec,
+        line: content.substring(0, match.index).split("\n").length,
+        code: match[0].substring(0, 200)
+      });
+    }
+  }
+  return findings;
+}
+
 // src/patterns/solana-batched-patterns-55.ts
 var BATCH_55_PATTERNS = [
   // ========== arXiv Academic Findings (SOL2141-SOL2160) ==========
@@ -10024,6 +10078,1272 @@ function checkBatch110Patterns(input) {
         description: pattern.description,
         location: { file: input.path },
         recommendation: pattern.recommendation
+      });
+    }
+  }
+  return findings;
+}
+
+// src/patterns/solana-batched-patterns-111.ts
+var BATCH_111_PATTERNS = [
+  // === GOSSIP PROTOCOL SECURITY (Agave v3.0.14) ===
+  {
+    id: "SOL7586",
+    name: "Unvalidated Gossip Message Origin",
+    severity: "critical",
+    pattern: /gossip[\s\S]{0,200}(?:process|handle|receive)[\s\S]{0,300}(?![\s\S]{0,150}verify_signature|[\s\S]{0,150}check_origin)/i,
+    description: "Gossip message handler does not verify the origin signature. Attackers can inject malicious gossip data to corrupt cluster state, as seen in the Dec 2025 Agave disclosure.",
+    recommendation: "Always verify gossip message signatures against the claimed sender pubkey before processing. Reject messages with invalid or missing signatures."
+  },
+  {
+    id: "SOL7587",
+    name: "Gossip Duplicate Push Amplification",
+    severity: "high",
+    pattern: /gossip[\s\S]{0,200}(?:push|broadcast|propagate)[\s\S]{0,300}(?![\s\S]{0,200}dedup|[\s\S]{0,200}seen_cache|[\s\S]{0,200}bloom_filter)/i,
+    description: "Gossip push handler lacks deduplication, allowing an attacker to amplify messages across the cluster by replaying the same payload from multiple endpoints.",
+    recommendation: "Implement a bloom filter or LRU seen-cache for gossip message hashes. Drop duplicate pushes within a configurable time window."
+  },
+  {
+    id: "SOL7588",
+    name: "Gossip Pull Response Size Unbounded",
+    severity: "high",
+    pattern: /gossip[\s\S]{0,200}pull[\s\S]{0,200}response[\s\S]{0,300}(?![\s\S]{0,150}max_size|[\s\S]{0,150}limit|[\s\S]{0,150}truncate)/i,
+    description: "Gossip pull responses are not bounded by size, enabling a malicious node to flood peers with oversized responses that exhaust memory or bandwidth.",
+    recommendation: "Enforce maximum response sizes for gossip pull operations. Truncate or paginate responses that exceed the configured limit."
+  },
+  {
+    id: "SOL7589",
+    name: "Gossip CrdsValue Timestamp Drift Exploitation",
+    severity: "medium",
+    pattern: /crds[\s\S]{0,200}(?:value|entry)[\s\S]{0,300}(?:wallclock|timestamp)[\s\S]{0,200}(?![\s\S]{0,150}max_drift|[\s\S]{0,150}clock_skew)/i,
+    description: "CRDS values accept timestamps with unbounded drift from the local clock, allowing attackers to inject entries that persist indefinitely or override newer legitimate entries.",
+    recommendation: "Reject CRDS values with wallclock timestamps that deviate more than a configurable threshold from the local clock. Typical bound: 10 minutes."
+  },
+  // === VOTE TRANSACTION PROCESSING SECURITY ===
+  {
+    id: "SOL7590",
+    name: "Vote Transaction Missing Authorized Voter Check",
+    severity: "critical",
+    pattern: /vote[\s\S]{0,200}(?:process|execute|submit)[\s\S]{0,300}(?![\s\S]{0,200}authorized_voter|[\s\S]{0,200}vote_authority)/i,
+    description: "Vote transaction processing does not verify the authorized voter key matches the vote account. Spoofed votes can manipulate consensus and finality.",
+    recommendation: "Always verify the vote instruction signer matches the authorized voter stored in the vote account state before processing."
+  },
+  {
+    id: "SOL7591",
+    name: "Vote Slot Hash Mismatch Undetected",
+    severity: "high",
+    pattern: /vote[\s\S]{0,200}(?:slot|bank)[\s\S]{0,200}hash[\s\S]{0,300}(?![\s\S]{0,200}slot_hashes|[\s\S]{0,200}verify_hash)/i,
+    description: "Vote does not cross-reference the slot hash against the SlotHashes sysvar, allowing votes for fabricated or stale slot hashes that could fork consensus.",
+    recommendation: "Validate every vote slot+hash pair against the SlotHashes sysvar. Reject votes referencing unknown or expired slot hashes."
+  },
+  {
+    id: "SOL7592",
+    name: "Vote Lockout Bypass via Commission Update",
+    severity: "high",
+    pattern: /commission[\s\S]{0,200}(?:update|change|set)[\s\S]{0,300}(?![\s\S]{0,200}epoch_boundary|[\s\S]{0,200}lockout)/i,
+    description: "Validator commission changes are processed without enforcing epoch-boundary lockout constraints, allowing mid-epoch commission manipulation to extract delegator rewards.",
+    recommendation: "Enforce commission changes to take effect only at epoch boundaries. Reject mid-epoch commission update instructions."
+  },
+  // === RPC METADATA PRIVACY LEAKS ===
+  {
+    id: "SOL7593",
+    name: "RPC Request IP Address Logging Without Anonymization",
+    severity: "medium",
+    pattern: /rpc[\s\S]{0,200}(?:log|record|store)[\s\S]{0,200}(?:ip|addr|remote|peer)[\s\S]{0,200}(?![\s\S]{0,150}hash|[\s\S]{0,150}anonymize|[\s\S]{0,150}redact)/i,
+    description: "RPC endpoint logs client IP addresses without anonymization, creating a metadata surveillance vector that can deanonymize wallet owners through request correlation.",
+    recommendation: "Hash or redact client IP addresses in RPC logs. Use rotating salts to prevent rainbow-table deanonymization while preserving rate-limiting capability."
+  },
+  {
+    id: "SOL7594",
+    name: "Transaction Metadata Leaking Sender Identity",
+    severity: "medium",
+    pattern: /(?:send_transaction|submit_transaction)[\s\S]{0,300}(?:memo|metadata|tag)[\s\S]{0,200}(?:user|identity|name|email)/i,
+    description: "Transaction submission includes identifiable metadata (memos, tags) that can link on-chain transactions to real-world identities via public explorers.",
+    recommendation: "Strip or encrypt personally identifiable metadata from transactions before submission. Use separate memo programs with encryption for necessary annotations."
+  },
+  {
+    id: "SOL7595",
+    name: "Shared RPC Endpoint Wallet Correlation",
+    severity: "medium",
+    pattern: /rpc[\s\S]{0,200}(?:get_account_info|get_balance|get_token)[\s\S]{0,300}(?:batch|multi|array)[\s\S]{0,200}(?![\s\S]{0,150}proxy|[\s\S]{0,150}relay)/i,
+    description: "Batched RPC queries for multiple accounts through a shared endpoint allow the RPC provider to correlate wallet ownership patterns across addresses.",
+    recommendation: "Split batched account queries across multiple RPC providers or use private relay nodes. Avoid querying all owned accounts in a single batch."
+  },
+  // === PT TOKEN / YIELD TOKEN PRICING MANIPULATION (Loopscale-style) ===
+  {
+    id: "SOL7596",
+    name: "PT Token Price Feed Without Secondary Oracle",
+    severity: "critical",
+    pattern: /(?:pt_token|principal_token|rate_x)[\s\S]{0,300}(?:price|value|worth)[\s\S]{0,200}(?![\s\S]{0,200}twap|[\s\S]{0,200}secondary_oracle|[\s\S]{0,200}chainlink)/i,
+    description: "PT token pricing relies on a single on-chain price source without a secondary oracle or TWAP. The Loopscale $5.8M exploit manipulated RateX PT pricing to drain $5.8M through undercollateralized borrows.",
+    recommendation: "Use at least two independent price sources for PT/yield tokens. Implement TWAP with configurable windows and set maximum single-block price deviation thresholds."
+  },
+  {
+    id: "SOL7597",
+    name: "Yield Token Collateral Ratio Stale After Maturity",
+    severity: "high",
+    pattern: /(?:yield|pt|yt)[\s\S]{0,200}(?:collateral|ratio|ltv)[\s\S]{0,300}(?:maturity|expiry)[\s\S]{0,200}(?![\s\S]{0,150}update_after_maturity|[\s\S]{0,150}invalidate)/i,
+    description: "Yield token collateral ratios are not updated after maturity, allowing borrowers to maintain positions with stale favorable ratios while the underlying asset value diverges.",
+    recommendation: "Automatically recalculate collateral ratios at maturity. Invalidate or freeze positions using expired yield tokens until manual settlement."
+  },
+  {
+    id: "SOL7598",
+    name: "Lending Market PT Token Undercollateralization Window",
+    severity: "critical",
+    pattern: /(?:borrow|loan|lend)[\s\S]{0,300}(?:collateral[\s\S]{0,100}check|ltv[\s\S]{0,100}verify)[\s\S]{0,200}(?:pt|principal)[\s\S]{0,200}(?![\s\S]{0,200}atomic_price_check)/i,
+    description: "Lending protocol performs collateral checks and loan issuance in separate steps, creating a window where PT token price can be manipulated between validation and execution.",
+    recommendation: "Perform collateral valuation and loan issuance atomically within the same instruction. Re-validate collateral ratio immediately before fund disbursement."
+  },
+  // === TOKEN GOVERNANCE MANIPULATION (LISA-style) ===
+  {
+    id: "SOL7599",
+    name: "Governance Vote Without Token Lock Duration",
+    severity: "high",
+    pattern: /(?:vote|proposal|govern)[\s\S]{0,300}(?:token|stake)[\s\S]{0,200}(?![\s\S]{0,200}lock_duration|[\s\S]{0,200}cooldown|[\s\S]{0,200}escrow)/i,
+    description: "Governance voting does not lock tokens for a minimum duration, enabling flash-loan governance attacks where an attacker borrows tokens, votes, and returns them in one transaction.",
+    recommendation: "Require governance tokens to be locked in an escrow for a minimum period (e.g., the full voting period plus a cooldown) before votes are counted."
+  },
+  {
+    id: "SOL7600",
+    name: "Token Dump Via Concentrated Holder Without Timelock",
+    severity: "high",
+    pattern: /(?:transfer|sell|swap)[\s\S]{0,200}(?:amount|quantity)[\s\S]{0,200}(?:total_supply|max_supply)[\s\S]{0,200}(?![\s\S]{0,200}timelock|[\s\S]{0,200}vesting|[\s\S]{0,200}rate_limit)/i,
+    description: "Large token holders can dump significant supply percentages without timelock or rate-limiting. The LISA token collapsed 76% in minutes when a concentrated holder exited.",
+    recommendation: "Implement sell-side rate limits for wallets exceeding a threshold percentage of total supply. Add progressive timelocks for large transfers."
+  },
+  {
+    id: "SOL7601",
+    name: "Proposal Execution Without Quorum Validation",
+    severity: "critical",
+    pattern: /(?:proposal|execute_proposal)[\s\S]{0,300}(?:approved|passed)[\s\S]{0,200}(?![\s\S]{0,200}quorum|[\s\S]{0,200}minimum_votes)/i,
+    description: "Governance proposal execution does not verify quorum was reached, allowing proposals to pass with trivially small participation when most token holders are inactive.",
+    recommendation: "Enforce a minimum quorum threshold before any proposal can be executed. Use absolute quorum (% of total supply) rather than relative (% of votes cast)."
+  },
+  // === VALIDATOR VERSION & UPGRADE COORDINATION ===
+  {
+    id: "SOL7602",
+    name: "Missing Minimum Software Version Enforcement",
+    severity: "medium",
+    pattern: /validator[\s\S]{0,200}(?:version|software)[\s\S]{0,300}(?![\s\S]{0,200}min_version|[\s\S]{0,200}required_version|[\s\S]{0,200}feature_gate)/i,
+    description: "Protocol does not enforce minimum validator software versions via feature gates. During the Jan 2026 Agave v3.0.14 incident, >80% of stake remained on vulnerable versions for days.",
+    recommendation: "Use Solana feature gates to enforce minimum client versions for critical security patches. Integrate version checks into delegation criteria for stake-weighted enforcement."
+  },
+  {
+    id: "SOL7603",
+    name: "Feature Gate Activation Without Supermajority",
+    severity: "high",
+    pattern: /feature[\s\S]{0,200}(?:activate|enable|gate)[\s\S]{0,300}(?![\s\S]{0,200}supermajority|[\s\S]{0,200}threshold[\s\S]{0,50}(?:67|0\.67|two_thirds))/i,
+    description: "Feature gate activation proceeds without requiring a supermajority (67%) of stake support. Premature activation can fork validators running older software.",
+    recommendation: "Enforce supermajority stake threshold (\u226567%) before activating feature gates. Monitor real-time adoption before triggering activation."
+  },
+  // === WALLET KEY MANAGEMENT ===
+  {
+    id: "SOL7604",
+    name: "Browser Extension Key Storage Without Encryption At Rest",
+    severity: "critical",
+    pattern: /(?:localStorage|sessionStorage|indexedDB)[\s\S]{0,200}(?:private_key|secret_key|seed|mnemonic)[\s\S]{0,200}(?![\s\S]{0,150}encrypt|[\s\S]{0,150}cipher)/i,
+    description: "Wallet extension stores private keys in browser storage without encryption at rest. The Phantom wallet lawsuit ($500K hack, 2025) highlighted browser extension key theft vectors.",
+    recommendation: "Encrypt all key material at rest using a user-derived key (password/biometric). Use WebCrypto API for encryption and never store plaintext keys in localStorage."
+  },
+  {
+    id: "SOL7605",
+    name: "Wallet Simulation Bypass via Versioned Transaction",
+    severity: "high",
+    pattern: /(?:versioned_transaction|v0_transaction)[\s\S]{0,300}(?:simulate|simulation)[\s\S]{0,200}(?![\s\S]{0,200}address_lookup|[\s\S]{0,200}resolve_lookups)/i,
+    description: "Wallet simulation of versioned transactions does not resolve address lookup tables, causing simulated results to differ from actual execution. Attackers use this to make malicious transactions appear safe.",
+    recommendation: "Fully resolve all address lookup table entries before simulation. Compare resolved account lists between simulation and signing to detect discrepancies."
+  },
+  // === ADVANCED DeFi PATTERNS ===
+  {
+    id: "SOL7606",
+    name: "Bonding Curve Asymmetric Slippage Exploitation",
+    severity: "high",
+    pattern: /(?:bonding_curve|curve)[\s\S]{0,200}(?:buy|sell|swap)[\s\S]{0,300}(?:slippage)[\s\S]{0,200}(?![\s\S]{0,150}symmetric|[\s\S]{0,150}max_spread)/i,
+    description: "Bonding curve allows asymmetric slippage between buy and sell sides, enabling sandwich attacks that extract value by front-running buys with sells at tighter spreads.",
+    recommendation: "Enforce symmetric slippage bounds for buy and sell operations. Implement maximum spread limits that apply equally to both sides of the curve."
+  },
+  {
+    id: "SOL7607",
+    name: "Pool Reserve Manipulation via Concentrated Liquidity Tick",
+    severity: "high",
+    pattern: /(?:tick|concentrated[\s\S]{0,50}liquidity)[\s\S]{0,200}(?:reserve|balance)[\s\S]{0,300}(?![\s\S]{0,200}cross_tick_validation|[\s\S]{0,200}tick_bounds_check)/i,
+    description: "Concentrated liquidity pool does not validate reserves across tick boundaries during swaps, allowing attackers to manipulate the active tick to drain reserves from adjacent ranges.",
+    recommendation: "Validate pool reserves both before and after tick crossings. Ensure total reserves across all active ticks remain consistent with expected invariants."
+  },
+  {
+    id: "SOL7608",
+    name: "Oracle Heartbeat Staleness in Fast-Moving Markets",
+    severity: "high",
+    pattern: /(?:oracle|price_feed)[\s\S]{0,200}(?:heartbeat|staleness|max_age)[\s\S]{0,200}(?:30|60|120|300)[\s\S]{0,100}(?:seconds|secs)/i,
+    description: "Oracle staleness threshold set too high for volatile markets. A 30-300 second staleness window is an eternity for Solana slot times (~400ms), enabling exploitation during rapid price moves.",
+    recommendation: "Set oracle staleness thresholds relative to slot time, not wall-clock seconds. For high-volatility assets, use max staleness of 10-20 slots. Implement circuit breakers for price gaps."
+  },
+  {
+    id: "SOL7609",
+    name: "Cross-Program Oracle Price Divergence Not Checked",
+    severity: "high",
+    pattern: /(?:pyth|switchboard|chainlink)[\s\S]{0,300}(?:price|get_price)[\s\S]{0,200}(?![\s\S]{0,200}confidence|[\s\S]{0,200}deviation|[\s\S]{0,200}divergence)/i,
+    description: "Protocol consumes oracle prices without checking confidence intervals or cross-oracle divergence. An attacker can exploit momentary oracle disagreements to execute trades at stale prices.",
+    recommendation: "Check oracle confidence intervals and reject prices with wide confidence bands. When using multiple oracles, verify price divergence stays within acceptable bounds."
+  },
+  // === SUPPLY CHAIN & DEPENDENCY SECURITY ===
+  {
+    id: "SOL7610",
+    name: "NPM @solana Package Typosquatting Risk",
+    severity: "high",
+    pattern: /(?:require|import)[\s\S]{0,50}(?:@solanna|@soIana|@s0lana|solana-web3\.js[\s\S]{0,10}(?!@solana))/i,
+    description: "Import references a possible typosquatted Solana package. The Dec 2024 @solana/web3.js supply chain attack injected a backdoor that stole private keys via malicious postinstall scripts.",
+    recommendation: "Verify package names exactly match official Solana packages. Use lockfiles with integrity hashes. Audit new dependencies before installation."
+  },
+  {
+    id: "SOL7611",
+    name: "Dependency Using Deprecated @solana/web3.js Version",
+    severity: "medium",
+    pattern: /@solana\/web3\.js[\s\S]{0,20}(?:1\.(?:[0-6]\d|7[0-7])\.|0\.)/i,
+    description: "Project depends on an older @solana/web3.js version that may contain known vulnerabilities. Versions prior to 1.78 predate critical security fixes from the Dec 2024 supply chain incident.",
+    recommendation: "Update @solana/web3.js to the latest patched version. Review the changelog for security-relevant changes and test thoroughly after upgrading."
+  },
+  // === PROGRAM DEPLOYMENT SECURITY ===
+  {
+    id: "SOL7612",
+    name: "Program Deployed Without Verified Build",
+    severity: "medium",
+    pattern: /(?:deploy|program[\s\S]{0,20}deploy)[\s\S]{0,300}(?![\s\S]{0,200}verified_build|[\s\S]{0,200}solana_verify|[\s\S]{0,200}anchor_verify)/i,
+    description: "Program deployment process does not include verified build attestation. Without verified builds, users cannot confirm the deployed bytecode matches the published source code.",
+    recommendation: "Use solana-verify or Anchor verified builds to create reproducible build attestations. Publish verified build hashes alongside program deployments."
+  },
+  {
+    id: "SOL7613",
+    name: "Program Authority Not Set to Multisig After Deploy",
+    severity: "high",
+    pattern: /(?:program[\s\S]{0,30}deploy|upgrade_authority)[\s\S]{0,300}(?:keypair|wallet)[\s\S]{0,200}(?![\s\S]{0,200}multisig|[\s\S]{0,200}squads|[\s\S]{0,200}threshold)/i,
+    description: "Program upgrade authority remains a single keypair after deployment rather than a multisig. A compromised keypair gives an attacker full control to deploy malicious upgrades.",
+    recommendation: "Transfer program upgrade authority to a multisig (e.g., Squads) immediately after deployment. Require threshold signatures for any program upgrades."
+  },
+  {
+    id: "SOL7614",
+    name: "Upgrade Authority Timelock Too Short",
+    severity: "medium",
+    pattern: /(?:upgrade|program[\s\S]{0,20}update)[\s\S]{0,200}(?:timelock|delay)[\s\S]{0,100}(?:[0-9]{1,3}\s*(?:seconds|secs|minutes|mins)|0)/i,
+    description: "Program upgrade timelock is set to a trivially short duration, giving users insufficient time to review changes or exit positions before a potentially malicious upgrade takes effect.",
+    recommendation: "Set program upgrade timelocks to at least 48-72 hours for mainnet programs. For DeFi protocols holding significant TVL, consider 7+ day timelocks."
+  },
+  {
+    id: "SOL7615",
+    name: "Missing Emergency Pause in High-TVL Protocol",
+    severity: "high",
+    pattern: /(?:deposit|withdraw|swap|borrow|lend)[\s\S]{0,500}(?![\s\S]{0,300}paused|[\s\S]{0,300}is_paused|[\s\S]{0,300}emergency_stop|[\s\S]{0,300}circuit_breaker)/i,
+    description: "High-value protocol operations lack an emergency pause mechanism. When Loopscale detected its $5.8M exploit, the ability to immediately pause lending markets prevented further losses.",
+    recommendation: "Implement a circuit breaker / emergency pause flag checked at the start of every value-transferring instruction. Ensure pause authority is a fast-acting multisig."
+  }
+];
+function detectBatch111(input) {
+  const findings = [];
+  const content = input.rust?.content || "";
+  for (const pattern of BATCH_111_PATTERNS) {
+    if (pattern.pattern.test(content)) {
+      findings.push({
+        id: pattern.id,
+        title: pattern.name,
+        severity: pattern.severity,
+        description: pattern.description,
+        location: { file: input.path },
+        recommendation: pattern.recommendation
+      });
+    }
+  }
+  return findings;
+}
+
+// src/patterns/solana-batched-patterns-112.ts
+var BATCH_112_PATTERNS = [
+  // === TRANSFER HOOK ABUSE ===
+  {
+    id: "SOL7616",
+    title: "Transfer Hook Without Program Validation",
+    severity: "critical",
+    pattern: /transfer_hook|TransferHook/,
+    description: "Transfer hook configured without validating the hook program ID. Attacker can set a malicious transfer hook that drains tokens on every transfer or blocks transfers entirely (DoS).",
+    recommendation: "Validate transfer hook program ID against a known allowlist. Verify hook program is immutable or controlled by trusted authority."
+  },
+  {
+    id: "SOL7617",
+    title: "Transfer Hook Reentrancy via CPI",
+    severity: "critical",
+    pattern: /transfer_hook[\s\S]{0,500}invoke|execute[\s\S]{0,200}transfer_hook/,
+    description: "Transfer hook executes CPI back into the calling program, enabling reentrancy. Hook program can re-enter mid-transfer to manipulate balances or state.",
+    recommendation: "Add reentrancy guards before triggering transfers with hooks. Ensure state is finalized before the transfer CPI."
+  },
+  {
+    id: "SOL7618",
+    title: "Transfer Hook State Manipulation",
+    severity: "high",
+    pattern: /transfer_hook[\s\S]{0,300}(mut|write|set_data)/,
+    description: "Transfer hook modifies external state during transfer execution. Malicious hooks can alter protocol state, update oracles, or manipulate accounting during transfers.",
+    recommendation: "Treat transfer hook execution as untrusted. Re-validate all state after transfers complete. Never rely on pre-transfer state assumptions post-hook."
+  },
+  {
+    id: "SOL7619",
+    title: "Missing Transfer Hook Extra Account Validation",
+    severity: "high",
+    pattern: /ExtraAccountMeta|extra_account_metas/,
+    description: "Transfer hooks can require extra accounts (ExtraAccountMeta) that are not validated by the caller. Attacker can substitute malicious accounts in the extra accounts list.",
+    recommendation: "Validate all ExtraAccountMeta accounts against expected seeds and programs. Never pass unvalidated remaining_accounts to transfer hooks."
+  },
+  // === CONFIDENTIAL TRANSFERS ===
+  {
+    id: "SOL7620",
+    title: "Confidential Transfer Without Auditor",
+    severity: "high",
+    pattern: /confidential_transfer[\s\S]{0,200}(?!auditor)/,
+    description: "Confidential transfer extension enabled without configuring an auditor ElGamal key. Without an auditor, there is no way to verify transfer amounts for compliance or detect infinite mint exploits hidden behind encryption.",
+    recommendation: "Always configure an auditor public key for confidential transfer mints. Implement periodic auditor decryption to verify supply integrity."
+  },
+  {
+    id: "SOL7621",
+    title: "Confidential Transfer Pending Balance Overflow",
+    severity: "critical",
+    pattern: /pending_balance|apply_pending_balance/,
+    description: "Pending confidential balance not applied before subsequent operations. Encrypted pending amounts can accumulate and overflow when applied, creating tokens from nothing.",
+    recommendation: "Force apply_pending_balance before any withdrawal or transfer. Validate decrypted pending amounts against expected ranges before applying."
+  },
+  {
+    id: "SOL7622",
+    title: "ElGamal Proof Verification Skip",
+    severity: "critical",
+    pattern: /verify_proof|ProofVerification|ZkElGamal/,
+    description: "ZK ElGamal proofs not properly verified before processing confidential transfers. Skipping proof verification allows attackers to forge transfer amounts or create tokens out of thin air.",
+    recommendation: "Always verify all ZK proofs (range proofs, equality proofs, validity proofs) before processing. Use SPL proof verification program, never custom verification."
+  },
+  {
+    id: "SOL7623",
+    title: "Confidential Transfer Range Proof Missing",
+    severity: "critical",
+    pattern: /confidential[\s\S]{0,300}transfer[\s\S]{0,200}(?!range_proof|RangeProof)/,
+    description: "Confidential transfer without range proof allows negative or overflow amounts. Attacker can transfer negative values, effectively minting tokens on the receiving end.",
+    recommendation: "Require Bulletproof range proofs for all confidential transfer amounts. Verify proof covers the correct bit range (typically 64-bit)."
+  },
+  // === TRANSFER FEE EXPLOITS ===
+  {
+    id: "SOL7624",
+    title: "Transfer Fee Calculation Bypass",
+    severity: "high",
+    pattern: /transfer_fee|TransferFee[\s\S]{0,200}(calculate|compute|amount)/,
+    description: "Transfer fee calculation can be bypassed by splitting transfers into amounts below the fee threshold, or by using confidential transfers where fee calculation on encrypted amounts is incorrect.",
+    recommendation: "Enforce minimum transfer amounts. Validate fee calculation on confidential transfers separately. Use withheld fee harvesting to collect accumulated fees."
+  },
+  {
+    id: "SOL7625",
+    title: "Withheld Transfer Fee Theft",
+    severity: "high",
+    pattern: /withheld|harvest_withheld|withdraw_withheld/,
+    description: "Withheld transfer fees can be harvested by unauthorized parties if the withdraw_withheld_authority is not properly set or validated.",
+    recommendation: "Set withdraw_withheld_authority to a secure multisig. Validate authority on all fee withdrawal instructions."
+  },
+  // === METADATA POINTER ABUSE ===
+  {
+    id: "SOL7626",
+    title: "Metadata Pointer to External Account",
+    severity: "high",
+    pattern: /metadata_pointer|MetadataPointer/,
+    description: "Metadata pointer extension pointing to an external mutable account. Attacker who controls the metadata account can change token name/symbol/URI to impersonate legitimate tokens for phishing.",
+    recommendation: "Point metadata to the mint itself (self-referencing) when possible. If external, ensure metadata account is immutable or controlled by trusted authority."
+  },
+  {
+    id: "SOL7627",
+    title: "Group Pointer Authority Hijack",
+    severity: "high",
+    pattern: /group_pointer|GroupPointer|group_authority/,
+    description: "Token group pointer authority not properly secured. Attacker can modify group membership, adding malicious tokens to trusted groups or removing legitimate ones.",
+    recommendation: "Set group authority to a multisig or PDA. Validate group membership on-chain before trusting token groupings."
+  },
+  {
+    id: "SOL7628",
+    title: "Member Pointer Spoofing",
+    severity: "medium",
+    pattern: /member_pointer|MemberPointer|group_member/,
+    description: "Group member pointer can be set to claim membership in any group. Programs that check group membership without verifying bidirectional group<->member relationship can be spoofed.",
+    recommendation: "Verify both group->member and member->group pointers match. Check group authority signed the membership addition."
+  },
+  // === PERMANENT DELEGATE EXPLOITS ===
+  {
+    id: "SOL7629",
+    title: "Permanent Delegate Token Drain",
+    severity: "critical",
+    pattern: /permanent_delegate|PermanentDelegate/,
+    description: "Token mint with permanent delegate extension allows the delegate to transfer or burn tokens from ANY account holding that mint, at any time, without holder approval. Users receiving these tokens can lose them instantly.",
+    recommendation: "Warn users about permanent delegate mints. Never accept tokens with permanent delegate from untrusted sources. Check for this extension before any token swap."
+  },
+  {
+    id: "SOL7630",
+    title: "Non-Transferable Token Bypass via Delegate",
+    severity: "high",
+    pattern: /non_transferable|NonTransferable[\s\S]{0,200}delegate/,
+    description: "Non-transferable tokens can still be burned by permanent delegate, effectively enabling value extraction. Soulbound token implementations must account for delegate burn capability.",
+    recommendation: "For true soulbound tokens, ensure no permanent delegate is set. Validate both non-transferable AND no-delegate properties."
+  },
+  // === INTEREST-BEARING TOKEN EXPLOITS ===
+  {
+    id: "SOL7631",
+    title: "Interest-Bearing Token Rate Manipulation",
+    severity: "high",
+    pattern: /interest_bearing|InterestBearing|rate_authority/,
+    description: "Interest-bearing token rate authority can change interest rate arbitrarily. Malicious rate authority can set extreme rates to inflate token values before selling, or negative rates to drain holder value.",
+    recommendation: "Implement rate change timelock. Set maximum rate bounds. Use multisig for rate authority. Monitor rate changes on-chain."
+  },
+  {
+    id: "SOL7632",
+    title: "Interest Calculation Timestamp Gaming",
+    severity: "medium",
+    pattern: /interest[\s\S]{0,200}(timestamp|clock|slot|unix_timestamp)/,
+    description: "Interest calculations based on Solana clock can be gamed. Validators can manipulate slot timestamps within bounds, affecting interest accrual in lending protocols using interest-bearing tokens.",
+    recommendation: "Use slot-based intervals instead of unix timestamps for interest. Implement maximum interest accrual per period caps."
+  },
+  // === CPI GUARD BYPASS ===
+  {
+    id: "SOL7633",
+    title: "CPI Guard Disabled Before Malicious CPI",
+    severity: "critical",
+    pattern: /disable_cpi_guard|cpi_guard[\s\S]{0,100}disable/,
+    description: "CPI guard intentionally disabled before cross-program invocation. Programs that convince users to disable CPI guard can then drain tokens via delegated transfer within CPI.",
+    recommendation: "Never disable CPI guard in user-facing instructions. Warn users about any transaction that includes disable_cpi_guard. Treat guard-disabling as high-risk."
+  },
+  {
+    id: "SOL7634",
+    title: "CPI Guard Bypass via Wrapped SOL",
+    severity: "high",
+    pattern: /cpi_guard[\s\S]{0,300}(native|wrapped|wsol|So11111)/,
+    description: "CPI guard does not protect native SOL transfers (only SPL tokens). Attacker can bypass CPI guard by unwrapping to native SOL then transferring via system program within CPI.",
+    recommendation: "Monitor both SPL token and native SOL flows in CPI contexts. Implement additional checks for wrapped SOL unwrap+transfer patterns."
+  },
+  // === DEFAULT ACCOUNT STATE EXPLOITS ===
+  {
+    id: "SOL7635",
+    title: "Default Account State Frozen Without Thaw Path",
+    severity: "medium",
+    pattern: /default_account_state|DefaultAccountState[\s\S]{0,100}frozen/,
+    description: "Mint with default frozen account state but no clear thaw authority path. Users create token accounts that are immediately frozen with no way to unfreeze, permanently locking received tokens.",
+    recommendation: "When using default frozen state, implement clear thaw instructions. Document the thaw process. Ensure freeze authority is accessible and responsive."
+  },
+  // === CLOSE AUTHORITY EXPLOITS ===
+  {
+    id: "SOL7636",
+    title: "Mint Close Authority Token Supply Attack",
+    severity: "critical",
+    pattern: /close_authority|MintCloseAuthority/,
+    description: "Mint with close authority can be closed while tokens still exist in accounts. If mint is closed and recreated at same address (via seed manipulation), token supply accounting is corrupted.",
+    recommendation: "Verify mint supply is zero before allowing close. Never trust token amounts from mints that have close authority without verifying mint account is still active."
+  },
+  // === TOKEN EXTENSIONS INTERACTION PATTERNS ===
+  {
+    id: "SOL7637",
+    title: "Multiple Extension Interaction Conflict",
+    severity: "high",
+    pattern: /get_extension|ExtensionType[\s\S]{0,200}(transfer_hook|confidential|transfer_fee)/,
+    description: "Multiple token extensions interacting can create unexpected behaviors. Transfer hooks + confidential transfers can leak information. Transfer fees + hooks can double-charge or skip fees.",
+    recommendation: "Test all extension combinations thoroughly. Document expected behavior for multi-extension tokens. Add integration tests for every extension pair."
+  },
+  {
+    id: "SOL7638",
+    title: "Extension Type Length Overflow",
+    severity: "high",
+    pattern: /get_extension_types|ExtensionType.*len|extension.*size/,
+    description: "Token accounts with many extensions can exceed expected account size. Programs that allocate fixed-size buffers for token account data may truncate extension data or overflow.",
+    recommendation: "Use get_account_len_for_extensions() for dynamic sizing. Never assume fixed token account size when extensions are possible."
+  },
+  {
+    id: "SOL7639",
+    title: "Immutable Owner Bypass via Program Upgrade",
+    severity: "medium",
+    pattern: /immutable_owner|ImmutableOwner/,
+    description: "Immutable owner extension prevents owner changes but the token program itself could be upgraded (if using proxied/wrapped token program). Ensure immutability assumptions hold across program upgrades.",
+    recommendation: "Verify token program is the canonical SPL Token-2022 program. Do not trust immutable_owner from custom or upgradeable token programs."
+  },
+  // === REQUIRED MEMO BYPASS ===
+  {
+    id: "SOL7640",
+    title: "Required Memo Bypass via CPI",
+    severity: "medium",
+    pattern: /memo_transfer|MemoTransfer|required_memo/,
+    description: "Required memo extension can be bypassed when transfers are initiated via CPI. Programs performing transfers on behalf of users may not include memo, bypassing compliance requirements.",
+    recommendation: "Enforce memo requirement at the program level, not just token extension level. Validate memo presence in transfer hook if compliance is critical."
+  },
+  // === REALLOCATE EXPLOITS ===
+  {
+    id: "SOL7641",
+    title: "Token Account Reallocate Extension Injection",
+    severity: "high",
+    pattern: /reallocate|Reallocate[\s\S]{0,200}extension/,
+    description: "Reallocate instruction adds extensions to existing token accounts. Attacker can add transfer_hook or permanent_delegate extensions to existing accounts if they control the account owner.",
+    recommendation: "Monitor for unexpected reallocate instructions on token accounts. Validate extension set after any interaction with accounts that may have been reallocated."
+  },
+  // === CONFIDENTIAL TRANSFER FEE ===
+  {
+    id: "SOL7642",
+    title: "Confidential Transfer Fee Decryption Oracle",
+    severity: "high",
+    pattern: /confidential[\s\S]{0,200}(fee|withheld)[\s\S]{0,200}(decrypt|ElGamal)/,
+    description: "Confidential transfer fees require separate decryption by fee authority. If fee decryption key is leaked or fee authority is compromised, all historical fee amounts (and by extension transfer amounts) are revealed.",
+    recommendation: "Rotate fee decryption keys periodically. Use HSM for fee authority keys. Implement key rotation mechanism without disrupting fee collection."
+  },
+  {
+    id: "SOL7643",
+    title: "Sigma Proof Forgery in Confidential Transfer",
+    severity: "critical",
+    pattern: /sigma_proof|equality_proof|validity_proof|CiphertextCommitmentEquality/,
+    description: "Sigma proofs (equality proofs, validity proofs) in confidential transfers must be verified against the correct public keys and ciphertexts. Reusing proofs across different contexts enables forgery.",
+    recommendation: "Bind proofs to specific transaction context (accounts, amounts, nonces). Never accept proofs generated for a different instruction or account set."
+  },
+  {
+    id: "SOL7644",
+    title: "Confidential Mint Supply Inflation",
+    severity: "critical",
+    pattern: /confidential[\s\S]{0,200}mint[\s\S]{0,200}(supply|amount)/,
+    description: "Confidential minting can hide supply inflation if the mint authority is compromised. Since amounts are encrypted, standard supply checks cannot detect unauthorized minting.",
+    recommendation: "Implement regular auditor-based supply verification. Publish zero-knowledge proofs of supply consistency. Use multi-party computation for mint authority."
+  },
+  {
+    id: "SOL7645",
+    title: "Token Extension Account Confusion Attack",
+    severity: "high",
+    pattern: /Token-2022|spl_token_2022[\s\S]{0,300}(spl_token|TokenkegQ)/,
+    description: "Programs that support both SPL Token and Token-2022 can be confused by passing Token-2022 accounts to SPL Token instructions or vice versa. Extension data is invisible to the old program, enabling bypasses.",
+    recommendation: "Always check token program ID matches the token account owner. Route to correct program based on mint program ownership. Never mix token program versions in a single instruction."
+  }
+];
+function checkBatch112Patterns(input) {
+  const findings = [];
+  const content = input.rust?.content ?? "";
+  for (const p of BATCH_112_PATTERNS) {
+    if (p.pattern.test(content)) {
+      findings.push({
+        id: p.id,
+        title: p.title,
+        severity: p.severity,
+        description: p.description,
+        recommendation: p.recommendation,
+        location: { file: input.path }
+      });
+    }
+  }
+  return findings;
+}
+
+// src/patterns/solana-batched-patterns-113.ts
+var BATCH_113_PATTERNS = [
+  // === OWNER PERMISSION PHISHING (SlowMist Dec 2025) ===
+  {
+    id: "SOL7646",
+    title: "Unchecked Account Owner Reassignment",
+    severity: "critical",
+    pattern: /system_program::assign\s*\(/i,
+    description: "Detects use of system_program::assign which can reassign account ownership to an attacker-controlled program. SlowMist reported $3M+ stolen via owner permission phishing in Dec 2025 where victims signed transactions that silently reassigned account ownership.",
+    recommendation: "Never use assign() on user-owned accounts in normal program flows. If reassignment is needed, require explicit multi-step confirmation with clear user-facing warnings. Validate the target program_id is a known trusted program."
+  },
+  {
+    id: "SOL7647",
+    title: "Owner Field Modification Without Signer Validation",
+    severity: "critical",
+    pattern: /\.owner\s*=\s*[^;]+program_id|set_owner|change_owner/i,
+    description: "Detects patterns where account ownership is being modified. Attackers craft transactions that reassign the Owner field to a malicious program, permanently locking out the legitimate owner from their assets.",
+    recommendation: "Ensure any owner modification requires the current owner to be a verified signer. Add time-lock delays for ownership transfers. Emit events for all ownership changes."
+  },
+  {
+    id: "SOL7648",
+    title: "Assign Instruction to Arbitrary Program",
+    severity: "critical",
+    pattern: /Assign\s*\{[^}]*owner:\s*(?!system_program|spl_token)/i,
+    description: "Detects account assignment to non-standard programs. Phishing attacks use assign instructions to transfer account control to attacker programs that can then drain all assets.",
+    recommendation: "Whitelist allowed program owners. Reject assign instructions targeting unknown program IDs. Implement wallet-level warnings for ownership change transactions."
+  },
+  // === TRANSACTION SIMULATION BYPASS ===
+  {
+    id: "SOL7649",
+    title: "Conditional Logic Based on Simulation Detection",
+    severity: "critical",
+    pattern: /is_simul|simulate|dry.?run|preflight|skip.?preflight/i,
+    description: "Detects code that may behave differently during simulation vs execution. Attackers design transactions that appear harmless in wallet previews (simulation shows no token transfer) but execute malicious logic on-chain.",
+    recommendation: "Programs must behave identically in simulation and execution. Never branch on simulation detection. Wallets should warn users when transactions interact with unverified programs."
+  },
+  {
+    id: "SOL7650",
+    title: "Clock-Based Simulation Evasion",
+    severity: "high",
+    pattern: /Clock::get\(\).*?[<>]\s*\d{10}|unix_timestamp\s*[<>]/i,
+    description: "Detects time-based branching that could be used to evade wallet simulation. If a program checks whether the current timestamp is past a certain point, it may show benign behavior during simulation (which uses a slightly earlier time) and malicious behavior on-chain.",
+    recommendation: "Avoid time-based conditional logic that changes core transaction behavior. If time gates are needed, make them transparent and predictable."
+  },
+  {
+    id: "SOL7651",
+    title: "Slot-Based Execution Branching",
+    severity: "high",
+    pattern: /slot\s*[><=!]+\s*\d+|get_slot|Clock.*slot/i,
+    description: "Programs that branch on slot number can behave differently between simulation and execution since simulations may use a different slot context. Used in phishing to show safe behavior during preview.",
+    recommendation: "Do not use slot numbers to gate critical program logic. If slot checks are needed, ensure they do not affect security-critical code paths."
+  },
+  // === WALLET DRAIN PATTERNS (DEXX Nov 2024) ===
+  {
+    id: "SOL7652",
+    title: "Private Key Stored in Plaintext Memory",
+    severity: "critical",
+    pattern: /secret_key|private_key|seed_phrase|mnemonic.*=\s*["'`\[]/i,
+    description: "Detects potential plaintext storage of private keys or seed phrases. The DEXX exploit (Nov 2024, $30M, 9000+ wallets) was traced to private key exposure through insecure server-side storage. Never store keys in application memory or logs.",
+    recommendation: "Use hardware security modules (HSMs) or secure enclaves for key storage. Never log, serialize, or transmit private keys. Use Solana Keypair only in memory with immediate zeroing after use."
+  },
+  {
+    id: "SOL7653",
+    title: "Centralized Key Management for User Wallets",
+    severity: "critical",
+    pattern: /generate_keypair.*user|user.*keypair|custodial.*key|server.*sign/i,
+    description: "Detects server-side keypair generation for user wallets. DEXX stored user private keys centrally, enabling a single breach to drain 9,000+ wallets. Centralized custody is a single point of failure.",
+    recommendation: "Use non-custodial wallet architecture. Let users generate and control their own keypairs. If custodial, use MPC (multi-party computation) or threshold signatures to eliminate single-key risk."
+  },
+  {
+    id: "SOL7654",
+    title: "Bulk Transfer Without Rate Limiting",
+    severity: "high",
+    pattern: /for.*transfer|while.*transfer|batch.*transfer|drain.*all/i,
+    description: "Detects loop-based bulk transfers that could indicate a drain pattern. In wallet compromises, attackers iterate through all user accounts and transfer assets in rapid succession.",
+    recommendation: "Implement rate limiting on transfers. Add per-epoch transfer caps. Require multi-sig for transfers above threshold amounts. Add anomaly detection for unusual transfer patterns."
+  },
+  // === BRIDGE VALIDATION (NoOnes Jan 2025) ===
+  {
+    id: "SOL7655",
+    title: "Bridge Message Without Cross-Chain Signature Verification",
+    severity: "critical",
+    pattern: /bridge.*message|cross.?chain.*payload|relay.*msg/i,
+    description: "Detects bridge message handling without explicit signature verification. The NoOnes bridge exploit ($8M, Jan 2025) exploited weak cross-chain message validation to mint unauthorized tokens across multiple chains.",
+    recommendation: "Verify all bridge messages with multi-validator consensus signatures. Use Wormhole VAA-style attestation. Require minimum guardian threshold before processing any cross-chain message."
+  },
+  {
+    id: "SOL7656",
+    title: "Bridge Relayer Without Source Chain Validation",
+    severity: "critical",
+    pattern: /source_chain|emitter_chain|chain_id.*=\s*\d/i,
+    description: "Detects bridge relayer code that may not properly validate the source chain. Attackers can spoof chain IDs to trick bridges into processing forged messages from unexpected chains.",
+    recommendation: "Validate source chain ID against a strict whitelist. Cross-reference with guardian attestations. Reject messages from unknown or suspended chains."
+  },
+  {
+    id: "SOL7657",
+    title: "Bridge Amount Without Maximum Cap",
+    severity: "high",
+    pattern: /bridge.*amount|transfer.*amount.*bridge/i,
+    description: "Bridge transfers without maximum caps allow attackers to drain entire bridge reserves in a single transaction. Multiple bridge exploits have used uncapped amounts to maximize theft.",
+    recommendation: "Implement per-transaction and per-epoch transfer caps on bridge operations. Add time-delayed execution for large transfers. Require multi-sig approval above threshold."
+  },
+  {
+    id: "SOL7658",
+    title: "Bridge Nonce Replay Vulnerability",
+    severity: "critical",
+    pattern: /nonce.*bridge|bridge.*nonce|sequence.*bridge|bridge.*sequence/i,
+    description: "Bridge messages must include unique nonces to prevent replay attacks. Without proper nonce tracking, an attacker can replay a valid bridge message multiple times to drain funds.",
+    recommendation: "Store processed nonces on-chain and reject duplicates. Use monotonically increasing sequence numbers. Implement nonce expiration for time-bounded validity."
+  },
+  // === HOT WALLET SECURITY (Upbit Nov 2025) ===
+  {
+    id: "SOL7659",
+    title: "Hot Wallet Without Cold Storage Sweep",
+    severity: "high",
+    pattern: /hot.?wallet|warm.?wallet|operational.?wallet/i,
+    description: "Detects hot wallet patterns without automated cold storage sweeping. The Upbit breach ($36M, Nov 2025) targeted Solana hot wallets. Hot wallets should hold minimal balances with automatic sweeps to cold storage.",
+    recommendation: "Implement automated sweeps from hot to cold wallets when balance exceeds threshold. Use time-locked multi-sig for hot wallet replenishment. Monitor hot wallet balances with real-time alerts."
+  },
+  {
+    id: "SOL7660",
+    title: "Exchange Withdrawal Without Withdrawal Delay",
+    severity: "high",
+    pattern: /withdraw.*immediate|instant.*withdraw|no.?delay.*withdraw/i,
+    description: "Immediate withdrawal processing gives attackers a narrow window to drain accounts before detection. Adding configurable delays allows security teams to intervene.",
+    recommendation: "Implement configurable withdrawal delays (15-60 min for large amounts). Allow users to set trusted withdrawal addresses with instant access. Add anomaly detection that triggers automatic holds."
+  },
+  // === TOKEN-2022 MINT BUG PATTERNS (May 2025 Silent Patch) ===
+  {
+    id: "SOL7661",
+    title: "Token-2022 Confidential Transfer Without Proof Validation",
+    severity: "critical",
+    pattern: /confidential.*transfer(?!.*verify)|transfer.*confidential(?!.*proof)/i,
+    description: "Detects confidential transfer operations without ZK proof verification. A silently patched Solana bug (May 2025) could have allowed attackers to mint and steal certain tokens by bypassing proof validation in Token-2022 confidential transfers.",
+    recommendation: "Always verify ZK proofs before processing confidential transfers. Use the latest SPL Token-2022 library which includes the patch. Audit all confidential transfer handler code paths."
+  },
+  {
+    id: "SOL7662",
+    title: "Token Mint Authority Without Multi-Sig",
+    severity: "high",
+    pattern: /mint_authority\s*=\s*(?!.*multisig)|MintTo\s*\{[^}]*authority:\s*(?!.*multi)/i,
+    description: "Single-key mint authority creates a critical single point of failure. If the mint authority key is compromised, attackers can mint unlimited tokens, destroying token value.",
+    recommendation: "Use multi-sig (e.g., Squads Protocol) for mint authority. Consider using a PDA as mint authority controlled by governance. Implement mint caps and rate limits."
+  },
+  {
+    id: "SOL7663",
+    title: "Token-2022 Transfer Fee Bypass",
+    severity: "high",
+    pattern: /transfer_fee.*skip|bypass.*fee|fee.*exempt(?!.*check)/i,
+    description: "Detects patterns that may bypass Token-2022 transfer fees. Fee exemption without proper authorization can be exploited to avoid protocol revenue collection or manipulate tokenomics.",
+    recommendation: "Enforce transfer fees at the program level, not client level. Use Token-2022 TransferFeeConfig with properly validated fee authority. Audit all code paths that handle fee-bearing tokens."
+  },
+  // === PHISHING-RESISTANT PROGRAM DESIGN ===
+  {
+    id: "SOL7664",
+    title: "Missing Transaction Memo for User-Facing Operations",
+    severity: "medium",
+    pattern: /invoke.*(?!.*memo)|transfer.*(?!.*memo_program)/i,
+    description: "User-facing transactions without memos make it harder for wallets to display meaningful information during signing. Phishing attacks exploit opaque transactions that wallets cannot meaningfully describe.",
+    recommendation: "Include descriptive memos in all user-facing transactions. Use SPL Memo program to attach human-readable descriptions. This helps wallets display clear signing prompts."
+  },
+  {
+    id: "SOL7665",
+    title: "Multiple Instructions Without Atomic Grouping",
+    severity: "medium",
+    pattern: /add_instruction.*add_instruction|instructions\.push.*instructions\.push/i,
+    description: "Multiple ungrouped instructions in a transaction can be individually simulated vs executed differently. Phishing attacks embed malicious instructions alongside benign ones, relying on users only checking the first instruction in wallet preview.",
+    recommendation: "Group related instructions logically. Use transaction versioning. Wallets should display ALL instructions, not just the first. Developers should minimize instruction count per transaction."
+  },
+  {
+    id: "SOL7666",
+    title: "Approval Instruction Without Amount Display",
+    severity: "medium",
+    pattern: /approve\s*\{[^}]*(?!.*amount_display)|delegate.*approve(?!.*ui_amount)/i,
+    description: "Token approval/delegation without clear amount display in transaction data makes it easy for phishing attacks to request unlimited approvals that users unknowingly sign.",
+    recommendation: "Always include human-readable amount (ui_amount) in approval instructions. Set minimal required approval amounts rather than unlimited. Implement approval expiry timestamps."
+  },
+  // === AIRDROP AND CLAIM PHISHING ===
+  {
+    id: "SOL7667",
+    title: "Airdrop Claim Without Merkle Proof",
+    severity: "high",
+    pattern: /claim.*airdrop|airdrop.*claim(?!.*merkle|.*proof)/i,
+    description: "Airdrop claim mechanisms without Merkle proof verification are common phishing vectors. Fake airdrop sites prompt users to sign transactions that actually drain wallets or reassign account ownership.",
+    recommendation: "Use Merkle tree distribution for airdrops with on-chain proof verification. Never require users to sign transactions that include account assignment or approval instructions for claiming airdrops."
+  },
+  {
+    id: "SOL7668",
+    title: "Unconstrained Claim Destination",
+    severity: "high",
+    pattern: /claim.*destination|destination.*claim|claim_to\s*:/i,
+    description: "Claim instructions that allow arbitrary destination accounts can be exploited to redirect airdrop tokens to attacker wallets. The destination should be constrained to the claimant.",
+    recommendation: "Constrain claim destination to a PDA derived from the claimant pubkey. Reject claims where destination owner differs from the claimant. Log all claim destinations for audit."
+  },
+  // === MULTI-SIG AND GOVERNANCE ATTACKS ===
+  {
+    id: "SOL7669",
+    title: "Governance Proposal Without Timelock",
+    severity: "high",
+    pattern: /execute.*proposal(?!.*timelock|.*delay)|proposal.*execute.*immediate/i,
+    description: "Governance proposals that execute immediately allow malicious proposals to drain treasuries before community can react. The Saga DAO exploit used rapid proposal execution.",
+    recommendation: "Enforce minimum timelock delay (24-72 hours) between proposal approval and execution. Allow veto during timelock period. Implement emergency pause that requires higher threshold."
+  },
+  {
+    id: "SOL7670",
+    title: "Multi-Sig Threshold Too Low",
+    severity: "high",
+    pattern: /threshold\s*[:=]\s*[12]\s*[,;}\)]|min_signers\s*[:=]\s*[12]\b/i,
+    description: "Multi-sig wallets with threshold of 1 or 2 provide insufficient security. A single compromised key (threshold=1) or two colluding parties (threshold=2) can drain the entire treasury.",
+    recommendation: "Use minimum 3-of-5 or higher threshold for treasury multi-sigs. Distribute keys across different security domains (hardware wallet, cold storage, geographic separation). Implement key rotation schedules."
+  },
+  // === ACCOUNT VALIDATION DEEP PATTERNS ===
+  {
+    id: "SOL7671",
+    title: "Account Data Length Mismatch on Deserialization",
+    severity: "high",
+    pattern: /try_from_slice|deserialize.*data(?!.*len.*check)|from_account_info(?!.*data_len)/i,
+    description: "Deserializing account data without checking data length can lead to out-of-bounds reads or misinterpreted data. Attackers can pass accounts with unexpected data sizes to trigger undefined behavior.",
+    recommendation: "Always validate account data length before deserialization. Use Anchor account discriminators which automatically check data length. For native programs, compare data.len() against expected size."
+  },
+  {
+    id: "SOL7672",
+    title: "Missing Rent Exemption Check on New Accounts",
+    severity: "medium",
+    pattern: /create_account(?!.*rent)|init(?!.*rent_exempt|.*space)/i,
+    description: "Accounts created without ensuring rent exemption can be garbage collected by the runtime, causing loss of state. Attackers can exploit this to force-close accounts at inopportune times.",
+    recommendation: "Always ensure new accounts are rent-exempt by allocating sufficient lamports. Use Anchor init constraint which handles this automatically. Verify rent exemption with Rent::is_exempt()."
+  },
+  {
+    id: "SOL7673",
+    title: "PDA Seed Collision with User-Controlled Input",
+    severity: "critical",
+    pattern: /find_program_address.*user_input|seeds.*\[.*user.*\]|create_program_address.*input/i,
+    description: "Using user-controlled input directly as PDA seeds without sanitization can allow attackers to craft inputs that collide with existing PDA addresses, hijacking accounts.",
+    recommendation: "Sanitize and length-limit all user-provided PDA seed components. Use fixed-length hashes of user input as seeds. Include program-specific prefixes in seed derivation to prevent cross-program collisions."
+  },
+  // === LENDING AND DEFI ADVANCED ===
+  {
+    id: "SOL7674",
+    title: "Lending Protocol Without Borrow Factor",
+    severity: "high",
+    pattern: /collateral.*borrow(?!.*factor)|loan.?to.?value(?!.*cap)/i,
+    description: "Lending protocols without borrow factors for volatile assets allow over-borrowing against unstable collateral. Price drops can leave the protocol with bad debt if borrowing capacity is not risk-adjusted.",
+    recommendation: "Implement per-asset borrow factors that reduce effective collateral value for volatile assets. Set conservative LTV ratios. Use isolated lending pools for high-risk assets."
+  },
+  {
+    id: "SOL7675",
+    title: "Oracle Staleness Without Fallback",
+    severity: "high",
+    pattern: /oracle.*price(?!.*stale|.*fresh|.*fallback)|get_price(?!.*age_check)/i,
+    description: "Using oracle prices without checking staleness and having a fallback mechanism. Stale prices from Pyth/Switchboard can enable liquidation manipulation or arbitrage during network congestion.",
+    recommendation: "Check oracle price timestamps and reject stale data (>60s for volatile assets). Implement TWAP fallback oracles. Pause operations if no fresh price is available rather than using stale data."
+  },
+  {
+    id: "SOL7676",
+    title: "Interest Rate Model Without Utilization Cap",
+    severity: "medium",
+    pattern: /interest.*rate.*(?!.*util|.*cap)|borrow.*rate(?!.*maximum)/i,
+    description: "Interest rate models without utilization caps can lead to 100% utilization, preventing depositors from withdrawing and creating a bank-run scenario.",
+    recommendation: "Implement steep interest rate curves above 80% utilization to incentivize repayment. Add protocol-level reserve requirements. Enable emergency mode that halts new borrows at extreme utilization."
+  },
+  // === PROGRAM UPGRADE SECURITY ===
+  {
+    id: "SOL7677",
+    title: "Upgrade Authority Without Governance",
+    severity: "high",
+    pattern: /upgrade_authority\s*=\s*(?!.*governance|.*dao|.*multisig)/i,
+    description: "Programs with single-key upgrade authority can be silently upgraded to drain user funds. This is the most common rug-pull vector in DeFi protocols.",
+    recommendation: "Transfer upgrade authority to a governance-controlled multi-sig or DAO. Implement upgrade timelock with community notification period. Consider making programs immutable after sufficient audit."
+  },
+  {
+    id: "SOL7678",
+    title: "Program Upgrade Without State Migration",
+    severity: "high",
+    pattern: /upgrade.*program(?!.*migration|.*migrate)|deploy.*new(?!.*state.*check)/i,
+    description: "Upgrading a program without proper state migration can corrupt existing account data, leading to fund loss or protocol malfunction.",
+    recommendation: "Always implement state migration logic in program upgrades. Version account data structures with discriminators. Test upgrade paths on devnet with production-like state before mainnet deployment."
+  },
+  // === COMPUTE AND RESOURCE EXHAUSTION ===
+  {
+    id: "SOL7679",
+    title: "Unbounded Iteration Over Accounts",
+    severity: "high",
+    pattern: /remaining_accounts.*iter|for.*remaining|iter\(\).*accounts(?!.*limit|.*max)/i,
+    description: "Iterating over unbounded remaining_accounts can exhaust compute units, causing transaction failure. Attackers can pass many accounts to trigger DoS or exploit partial execution.",
+    recommendation: "Limit the number of remaining_accounts processed per instruction. Set explicit maximum iteration bounds. Use pagination for operations on many accounts."
+  },
+  {
+    id: "SOL7680",
+    title: "Missing Compute Budget Request",
+    severity: "medium",
+    pattern: /invoke(?!.*compute_budget)|process_instruction(?!.*compute)/i,
+    description: "Complex instructions without explicit compute budget requests may fail at default 200K CU limit. This can be exploited by attackers who craft inputs that maximize compute usage.",
+    recommendation: "Request appropriate compute budget for complex instructions using ComputeBudgetInstruction::set_compute_unit_limit. Profile instruction compute usage and set limits with safety margin."
+  },
+  // === CROSS-PROGRAM INVOCATION DEEP PATTERNS ===
+  {
+    id: "SOL7681",
+    title: "CPI to Unverified Program ID",
+    severity: "critical",
+    pattern: /invoke_signed?\s*\(\s*&[^,]*(?!.*check.*program_id|.*verify.*program)/i,
+    description: "Cross-program invocations to unverified program IDs allow attackers to substitute a malicious program that mimics the expected interface but steals funds.",
+    recommendation: "Always verify the program_id of CPI targets against known constants. Use Anchor Program<> type which validates program IDs automatically. Hardcode trusted program IDs as constants."
+  },
+  {
+    id: "SOL7682",
+    title: "CPI With Mutable Account Escalation",
+    severity: "high",
+    pattern: /invoke.*AccountMeta::new\(\s*[^,]*,\s*true/i,
+    description: "Passing accounts as mutable in CPI when they should be read-only can allow the invoked program to modify unexpected state. Attackers exploit this to manipulate balances or authorities.",
+    recommendation: "Use AccountMeta::new_readonly() for accounts that should not be modified by the CPI target. Audit all CPI AccountMeta mutability flags. Follow principle of least privilege."
+  },
+  // === STAKING AND REWARD PATTERNS ===
+  {
+    id: "SOL7683",
+    title: "Staking Reward Calculation Without Snapshot",
+    severity: "high",
+    pattern: /reward.*balance.*current|calculate.*reward(?!.*snapshot|.*checkpoint)/i,
+    description: "Calculating staking rewards based on current balance without snapshots allows flash-loan attacks where attackers temporarily inflate their stake to claim disproportionate rewards.",
+    recommendation: "Use checkpoint-based reward calculation that snapshots balances at reward distribution time. Implement minimum staking duration. Use cumulative reward-per-token tracking (like Synthetix model)."
+  },
+  {
+    id: "SOL7684",
+    title: "Unstake Without Cooldown Period",
+    severity: "medium",
+    pattern: /unstake.*immediate|instant.*unstake|withdraw.*stake(?!.*cooldown|.*delay)/i,
+    description: "Allowing immediate unstaking enables flash-loan-style attacks on reward distribution and can destabilize protocol security assumptions.",
+    recommendation: "Implement unstaking cooldown periods (typically 7-21 days). Allow partial unstaking with proportional cooldowns. Penalize early withdrawal to discourage gaming."
+  },
+  // === SERIALIZATION AND DATA INTEGRITY ===
+  {
+    id: "SOL7685",
+    title: "Borsh Deserialization Without Bounds Check",
+    severity: "high",
+    pattern: /BorshDeserialize.*(?!.*try_|.*Result)|from_slice(?!.*map_err)/i,
+    description: "Deserializing data without bounds checking can cause panics or read uninitialized memory. Attackers can craft malformed account data to crash programs or extract sensitive information.",
+    recommendation: "Always use try_from_slice or handle deserialization errors gracefully. Validate data lengths before deserialization. Use Anchor account types which handle this automatically."
+  },
+  {
+    id: "SOL7686",
+    title: "Account Data Padding Not Zeroed",
+    severity: "medium",
+    pattern: /realloc(?!.*zero)|resize.*account(?!.*zero|.*fill)/i,
+    description: "When reallocating account data, failing to zero new padding bytes can leak data from previously deallocated accounts, potentially exposing sensitive information.",
+    recommendation: "Zero-fill all new bytes when reallocating accounts. Use realloc::zero constraint in Anchor. For native programs, explicitly memset new space to zero."
+  },
+  // === LIQUIDITY POOL ADVANCED ===
+  {
+    id: "SOL7687",
+    title: "LP Token Mint Without Minimum Liquidity Lock",
+    severity: "high",
+    pattern: /mint.*lp(?!.*minimum|.*lock)|liquidity.*mint(?!.*min_amount)/i,
+    description: "Liquidity pools without minimum liquidity lock allow first-depositor attacks where an attacker manipulates the LP token ratio by depositing minimal amounts and inflating price.",
+    recommendation: "Lock minimum liquidity (e.g., 1000 LP tokens) on pool creation by sending to burn address. Implement minimum deposit amounts. Use virtual reserves to prevent manipulation at low liquidity."
+  },
+  {
+    id: "SOL7688",
+    title: "AMM Swap Without Slippage Protection",
+    severity: "high",
+    pattern: /swap(?!.*slippage|.*min_out|.*minimum)|exchange.*token(?!.*min)/i,
+    description: "Swaps without slippage protection are vulnerable to sandwich attacks where MEV bots front-run and back-run the trade, extracting value from the user.",
+    recommendation: "Enforce minimum output amount (slippage protection) on all swaps. Set reasonable default slippage (0.5-1%). Allow users to specify custom slippage tolerance. Reject stale price quotes."
+  },
+  // === INSTRUCTION INTROSPECTION ATTACKS ===
+  {
+    id: "SOL7689",
+    title: "Instruction Introspection Without Full Validation",
+    severity: "high",
+    pattern: /sysvar::instructions|get_instruction_relative|load_instruction_at/i,
+    description: "Using instruction introspection (reading other instructions in the same transaction) without full validation of all instruction fields allows attackers to construct transactions that pass superficial checks.",
+    recommendation: "When using instruction introspection, validate ALL fields: program_id, accounts, and data. Do not only check program_id \u2014 verify the specific instruction discriminator and account constraints."
+  },
+  {
+    id: "SOL7690",
+    title: "Flash Loan Detection Bypass via Instruction Ordering",
+    severity: "high",
+    pattern: /check.*flash.*loan|detect.*flash|anti.?flash/i,
+    description: "Anti-flash-loan checks based on instruction ordering can be bypassed by splitting the loan across multiple transactions within the same slot, or by using inner instructions.",
+    recommendation: "Use checkpoint-based detection rather than instruction introspection. Track balance changes across slots. Implement minimum holding periods for time-sensitive operations."
+  },
+  // === VERSIONED TRANSACTIONS AND ADDRESS LOOKUP ===
+  {
+    id: "SOL7691",
+    title: "Address Lookup Table Without Ownership Verification",
+    severity: "high",
+    pattern: /lookup.?table|AddressLookupTable(?!.*owner.*check)/i,
+    description: "Address Lookup Tables (ALTs) can be created by anyone. Using ALTs without verifying the table authority allows attackers to substitute malicious account addresses.",
+    recommendation: "Verify ALT authority/owner before trusting resolved addresses. For critical operations, prefer direct account references over ALT-resolved addresses. Monitor ALT modifications."
+  },
+  {
+    id: "SOL7692",
+    title: "Versioned Transaction Without Legacy Fallback",
+    severity: "low",
+    pattern: /VersionedTransaction(?!.*legacy|.*v0.*fallback)/i,
+    description: "Using versioned transactions (v0) without legacy fallback can cause interoperability issues with older wallets and programs that do not support ALTs.",
+    recommendation: "Support both legacy and versioned transaction formats. Implement graceful degradation for wallets that do not support v0 transactions. Test with both transaction versions."
+  },
+  // === ADVANCED PHISHING DEFENSE ===
+  {
+    id: "SOL7693",
+    title: "Transaction Lacks Human-Readable Metadata",
+    severity: "info",
+    pattern: /new Transaction\(\)(?!.*add.*memo)|Transaction::new(?!.*memo)/i,
+    description: "Transactions without human-readable metadata (memos, named instructions) are harder for users to evaluate when signing, increasing phishing success rates.",
+    recommendation: "Add descriptive memos to all user-facing transactions. Use well-named instruction variants. Support wallet-readable metadata standards for clear signing prompts."
+  },
+  {
+    id: "SOL7694",
+    title: "Durable Nonce Transaction Manipulation",
+    severity: "high",
+    pattern: /durable.*nonce|nonce.*advance|AdvanceNonceAccount/i,
+    description: "Durable nonce transactions remain valid indefinitely until the nonce is advanced. Attackers can trick users into signing a durable nonce transaction and hold it for execution at an advantageous time.",
+    recommendation: "Implement application-level expiry for durable nonce transactions. Warn users when signing durable nonce transactions. Monitor pending nonce transactions and auto-advance nonces for expired intents."
+  },
+  {
+    id: "SOL7695",
+    title: "Pre-Authorized Debit Without Spending Limit",
+    severity: "high",
+    pattern: /pre.?auth.*debit|delegate.*unlimited|approve.*max|approve.*u64::MAX/i,
+    description: "Pre-authorized debits or unlimited token delegations allow approved programs to drain entire token balances. Users often approve unlimited amounts for convenience, creating a persistent attack surface.",
+    recommendation: "Set minimal required approval amounts. Implement approval expiry timestamps. Use per-transaction approval rather than standing delegations. Warn users about unlimited approval requests."
+  }
+];
+function checkBatch113Patterns(input) {
+  const findings = [];
+  const content = input.rust?.content ?? "";
+  for (const p of BATCH_113_PATTERNS) {
+    if (p.pattern.test(content)) {
+      findings.push({
+        id: p.id,
+        title: p.title,
+        severity: p.severity,
+        description: p.description,
+        recommendation: p.recommendation,
+        location: { file: input.path }
+      });
+    }
+  }
+  return findings;
+}
+
+// src/patterns/solana-batched-patterns-114.ts
+var BATCH_114_PATTERNS = [
+  // === ACCOUNT REVIVAL ATTACKS ===
+  {
+    id: "SOL7696",
+    title: "Account Revival After Close \u2014 Lamport Re-funding",
+    severity: "critical",
+    pattern: /close\s*=|close_account|AccountInfo.*lamports.*=\s*0/,
+    description: "After closing an account by zeroing lamports, an attacker can re-fund the address with lamports in the same transaction, reviving the account with stale data. The runtime only garbage-collects zero-lamport accounts at slot boundaries.",
+    recommendation: "Zero out all account data AND lamports when closing. Use a discriminator/is_initialized flag checked on every instruction. Consider using Anchor close constraint which handles data zeroing."
+  },
+  {
+    id: "SOL7697",
+    title: "Account Revival \u2014 Missing Data Zeroing on Close",
+    severity: "critical",
+    pattern: /\.to_account_info\(\)\.lamports\.borrow_mut\(\)|sub_lamports/,
+    description: "Draining lamports without zeroing account data leaves the data intact if the account is revived. An attacker re-funding the account gets access to the previous state, potentially re-using spent tokens or replaying completed operations.",
+    recommendation: 'Always zero all account data bytes before draining lamports: account.data.borrow_mut().fill(0). Set discriminator to a "closed" sentinel value.'
+  },
+  {
+    id: "SOL7698",
+    title: "Deterministic Address Pre-funding DoS",
+    severity: "high",
+    pattern: /create_account|CreateAccount|find_program_address.*create/,
+    description: "When a program creates accounts at deterministic (PDA) addresses, an attacker can pre-fund that address with 1 lamport before the program runs. The create_account instruction fails because the account already exists, causing denial of service.",
+    recommendation: "Use init_if_needed with proper discriminator checks, or use try_create patterns that handle pre-existing accounts. Alternatively, derive addresses with user-controlled seeds to prevent prediction."
+  },
+  {
+    id: "SOL7699",
+    title: "Rent Epoch Drainage \u2014 Sub-Exempt Balance Decay",
+    severity: "medium",
+    pattern: /lamports.*<.*rent|minimum_balance|rent_exempt|is_rent_exempt/,
+    description: "Accounts with lamport balances below the rent-exempt minimum lose lamports each epoch. An attacker who drains an account to just below rent-exemption threshold causes slow balance decay, eventually zeroing and garbage-collecting the account.",
+    recommendation: "Always ensure accounts maintain rent-exempt minimum balance after any lamport transfer. Use Rent::get()?.minimum_balance(data_len) to calculate and enforce the floor."
+  },
+  {
+    id: "SOL7700",
+    title: "Rent Exemption Check Bypass via Data Reallocation",
+    severity: "high",
+    pattern: /realloc|set_len|AccountInfo.*data_len/,
+    description: "Increasing account data size via realloc increases the rent-exempt minimum. If the lamport balance is not topped up accordingly, the account falls below rent exemption and begins decaying, potentially causing unexpected account deletion.",
+    recommendation: "After any realloc, recalculate and enforce the new rent-exempt minimum. Transfer additional lamports from the payer to cover the increased data size."
+  },
+  // === VALIDATOR GOSSIP / NETWORK LEVEL ===
+  {
+    id: "SOL7701",
+    title: "Gossip Protocol \u2014 Fake Vote Injection",
+    severity: "critical",
+    pattern: /vote_account|VoteInstruction|process_vote|vote_state/,
+    description: "Validators gossip votes to reach consensus. A malicious validator can inject fake votes referencing non-existent slots to confuse fork choice in other validators, potentially causing temporary chain splits or delayed finality.",
+    recommendation: "Implement strict vote validation: verify slot exists, bank hash matches, and vote account authority. Rate-limit gossip messages per validator identity."
+  },
+  {
+    id: "SOL7702",
+    title: "Turbine Block Propagation \u2014 Shred Withholding",
+    severity: "high",
+    pattern: /shred|turbine|block_production|leader_schedule/,
+    description: "A leader producing a block can selectively withhold shreds from specific validators via Turbine tree manipulation, creating an information asymmetry that can be exploited for MEV or to cause missed votes.",
+    recommendation: "Implement redundant shred repair paths. Monitor for systematic shred loss patterns from specific leaders. Use erasure coding recovery aggressively."
+  },
+  {
+    id: "SOL7703",
+    title: "Gossip Protocol \u2014 Eclipse Attack via Peer Table Poisoning",
+    severity: "high",
+    pattern: /gossip|contact_info|cluster_info|peer|node_pubkey/,
+    description: "Attacker floods the gossip network with fake ContactInfo entries pointing to attacker-controlled IPs. This can eclipse a validator from legitimate peers, feeding it a false view of the chain.",
+    recommendation: "Implement stake-weighted peer selection. Validate ContactInfo signatures against known validator identities. Maintain minimum connections to high-stake validators."
+  },
+  // === ZK COMPRESSION EXPLOITS ===
+  {
+    id: "SOL7704",
+    title: "ZK Compressed Account \u2014 Merkle Proof Manipulation",
+    severity: "critical",
+    pattern: /compressed|merkle_tree|state_tree|CompressedAccount|light_protocol/,
+    description: "ZK compressed accounts store state in Merkle trees. If proof verification is incomplete or the nullifier set is not checked, an attacker can provide valid-looking proofs for already-spent compressed accounts, enabling double-spend.",
+    recommendation: "Always verify the full Merkle proof path AND check the nullifier/sequence number to prevent replay. Use Light Protocol SDK which handles proof verification correctly."
+  },
+  {
+    id: "SOL7705",
+    title: "ZK Compression \u2014 Concurrent Merkle Tree Race Condition",
+    severity: "high",
+    pattern: /ConcurrentMerkleTree|concurrent.*merkle|changelog|canopy/,
+    description: "Concurrent Merkle trees allow parallel updates but have a bounded changelog. If more updates occur than the changelog depth allows between a proof generation and verification, the proof becomes invalid, causing transaction failures or requiring expensive retries.",
+    recommendation: "Set adequate maxDepth and maxBufferSize for expected throughput. Implement retry logic with proof refresh. Monitor changelog utilization."
+  },
+  {
+    id: "SOL7706",
+    title: "ZK Compression \u2014 Forester Manipulation",
+    severity: "high",
+    pattern: /forester|nullifier_queue|address_queue|rollover/,
+    description: "Foresters (off-chain indexers) process nullifier queues and roll over state trees. A malicious forester could selectively delay or reorder nullifier processing, temporarily allowing double-spend windows for compressed accounts.",
+    recommendation: "Use multiple independent foresters. Implement on-chain verification of forester actions. Set maximum queue age limits with automatic fallback foresters."
+  },
+  // === ECONOMIC / DeFi LOGIC ===
+  {
+    id: "SOL7707",
+    title: "Token-2022 Transfer Hook \u2014 Reentrancy via CPI",
+    severity: "critical",
+    pattern: /transfer_hook|TransferHook|execute.*hook|ExtraAccountMetaList/,
+    description: "Token-2022 transfer hooks execute arbitrary program logic during transfers via CPI. A malicious hook program can call back into the invoking program, creating a reentrancy vector. The hook runs with the caller's context.",
+    recommendation: "Implement reentrancy guards (mutex/lock flags) in any program that triggers Token-2022 transfers with hooks. Validate the hook program ID matches expected. Use check-effects-interactions pattern."
+  },
+  {
+    id: "SOL7708",
+    title: "Confidential Transfer \u2014 Balance Encryption Mismatch",
+    severity: "critical",
+    pattern: /confidential_transfer|ElGamal|Pedersen|decrypt.*balance|ConfidentialTransferMint/,
+    description: "Token-2022 confidential transfers use ElGamal encryption for balances. If the decryption key is compromised or the encryption proof is not verified, an attacker can forge encrypted balance proofs to mint tokens or transfer more than their actual balance.",
+    recommendation: "Verify all zero-knowledge proofs on-chain. Never trust client-provided decrypted balances. Ensure auditor keys are properly configured for compliance monitoring."
+  },
+  {
+    id: "SOL7709",
+    title: "Permanent Delegate \u2014 Unauthorized Token Seizure",
+    severity: "high",
+    pattern: /permanent_delegate|PermanentDelegate|set_authority.*delegate/,
+    description: "Token-2022 permanent delegate extension allows a designated authority to transfer or burn any holder's tokens without consent. If the delegate authority private key is compromised, all token holders are at risk.",
+    recommendation: "Use multisig for permanent delegate authority. Implement time-locked delegate actions. Clearly disclose permanent delegate to token holders. Consider governance-controlled delegate."
+  },
+  {
+    id: "SOL7710",
+    title: "Non-Transferable Token \u2014 Bypass via Delegate Burn and Re-mint",
+    severity: "medium",
+    pattern: /non_transferable|NonTransferable|soulbound/,
+    description: "Non-transferable (soulbound) tokens on Token-2022 can potentially be circumvented if the mint authority can burn from any holder and re-mint to a new address. This defeats the non-transferability guarantee.",
+    recommendation: "If using non-transferable tokens, ensure mint authority is revoked or controlled by immutable governance. Implement burn restrictions alongside non-transferability."
+  },
+  // === INSTRUCTION INTROSPECTION & SIMULATION ===
+  {
+    id: "SOL7711",
+    title: "Transaction Simulation Divergence \u2014 Conditional Logic Based on Cluster",
+    severity: "high",
+    pattern: /simulation|simulate|SanitizedMessage|is_simulation|cluster.*type/,
+    description: "Programs that behave differently based on whether they detect simulation (via cluster type, slot number heuristics, or instruction introspection) can show benign behavior during wallet preview but execute malicious logic on-chain.",
+    recommendation: "Wallets should use recent blockhashes and realistic fee payers for simulation. Programs should never branch on simulation detection. Users should verify on-chain results independently."
+  },
+  {
+    id: "SOL7712",
+    title: "Instruction Introspection \u2014 Sysvar Manipulation for Authorization",
+    severity: "high",
+    pattern: /instructions_sysvar|load_instruction_at|get_instruction_relative|Sysvar.*Instructions/,
+    description: "Programs using instruction introspection (checking adjacent instructions in the transaction) for authorization can be fooled. An attacker can construct transactions that include the expected adjacent instructions alongside malicious ones.",
+    recommendation: "Do not rely solely on instruction introspection for authorization. Use proper signer checks and PDA authority. If introspection is needed, verify the entire transaction instruction set, not just adjacent instructions."
+  },
+  {
+    id: "SOL7713",
+    title: "Versioned Transaction \u2014 Address Lookup Table Swap",
+    severity: "high",
+    pattern: /AddressLookupTable|lookup_table|v0.*transaction|VersionedTransaction/,
+    description: "Versioned transactions (v0) use Address Lookup Tables (ALTs) to compress account lists. If an ALT is modified between transaction construction and execution, the resolved addresses may differ from what the user intended, leading to interactions with wrong accounts.",
+    recommendation: "Freeze critical ALTs after initialization. Wallets should resolve ALT entries at simulation time and verify they match expected accounts. Use deactivation slots to prevent mid-flight ALT modifications."
+  },
+  // === ACCESS CONTROL EDGE CASES ===
+  {
+    id: "SOL7714",
+    title: "Authority Transfer Race \u2014 Concurrent Update Authority Change",
+    severity: "high",
+    pattern: /set_authority|update_authority|transfer_authority|AuthorityType/,
+    description: "If two authority transfer transactions are submitted concurrently (e.g., admin rotation), the second may fail or succeed depending on ordering, potentially locking out the intended new authority or leaving authority with an unintended party.",
+    recommendation: "Implement nonce-based authority transfers where the new authority must acknowledge acceptance. Use two-phase authority transfer: propose then accept."
+  },
+  {
+    id: "SOL7715",
+    title: "PDA Authority \u2014 Seeds Containing User-Controlled Data",
+    severity: "high",
+    pattern: /find_program_address|create_program_address|seeds.*\[.*user|seeds.*\[.*input/,
+    description: "When PDA seeds include user-controlled data (strings, pubkeys), an attacker can craft inputs that collide with other legitimate PDAs or create PDAs that mimic authority accounts, bypassing signer checks.",
+    recommendation: "Prefix all user-controlled seeds with fixed discriminator bytes. Validate seed lengths. Use canonical bump (the one returned by find_program_address). Hash long or variable-length user inputs before using as seeds."
+  },
+  {
+    id: "SOL7716",
+    title: "Multi-Instruction Atomic Exploit \u2014 Split Authorization",
+    severity: "high",
+    pattern: /invoke_signed|invoke\s*\(|instruction.*\[.*instruction/,
+    description: "Attackers can split exploit logic across multiple instructions in a single atomic transaction. Instruction 1 sets up state, instruction 2 exploits it, instruction 3 cleans up \u2014 all atomically. This evades per-instruction monitoring.",
+    recommendation: "Implement invariant checks that verify global state consistency at the end of each instruction, not just at transaction boundaries. Use post-instruction assertion patterns."
+  },
+  // === CROSS-PROGRAM / COMPOSABILITY ===
+  {
+    id: "SOL7717",
+    title: "CPI to Unverified Program \u2014 Dynamic Program ID from Account Data",
+    severity: "critical",
+    pattern: /invoke\s*\(&|invoke_signed\s*\(&|program_id.*from.*data|Pubkey::new_from_array/,
+    description: "Loading a program ID from on-chain account data to make a CPI call is dangerous. An attacker who controls that account can redirect the CPI to a malicious program that mimics the expected interface.",
+    recommendation: "Hardcode expected program IDs or verify them against known constants. Never load target program IDs from mutable account data. Use Anchor program type checks."
+  },
+  {
+    id: "SOL7718",
+    title: "Return Data Spoofing via CPI Chain",
+    severity: "high",
+    pattern: /set_return_data|get_return_data|sol_set_return_data|return_data/,
+    description: "When program A calls B which calls C, the return data is set by the last CPI that called set_return_data. Program A reading return data may get C's data instead of B's expected response, enabling spoofing.",
+    recommendation: "Always verify the program_id returned alongside return data matches the expected callee. Do not trust return data without program identity verification."
+  },
+  // === MEV / ORDERING ===
+  {
+    id: "SOL7719",
+    title: "Priority Fee Manipulation \u2014 Fee Bidding War Drainage",
+    severity: "medium",
+    pattern: /ComputeBudgetInstruction|set_compute_unit_price|priority.*fee|compute_budget/,
+    description: "In competitive MEV scenarios, bots engage in priority fee bidding wars. A user's transaction can be sandwiched between attacker transactions that both outbid and benefit from the user's price impact, with the user paying inflated fees for worse execution.",
+    recommendation: "Use Jito bundles for MEV-protected transaction submission. Implement slippage controls in DeFi programs. Consider using private transaction submission channels."
+  },
+  {
+    id: "SOL7720",
+    title: "Jito Bundle Atomic Arbitrage \u2014 Cross-Market Extraction",
+    severity: "medium",
+    pattern: /jito|bundle|tip.*instruction|searcher|backrun/,
+    description: "Jito bundles enable atomic multi-instruction arbitrage. A searcher can bundle: 1) observe user's pending swap, 2) front-run with opposite position, 3) user's swap executes, 4) back-run to capture profit \u2014 all atomically guaranteed.",
+    recommendation: "DeFi protocols should implement commit-reveal schemes or use batch auctions. Users should use MEV-protected RPC endpoints. Set tight slippage bounds."
+  },
+  // === SUPPLY CHAIN / DEPENDENCY ===
+  {
+    id: "SOL7721",
+    title: "Anchor Version Pinning \u2014 IDL Mismatch After Upgrade",
+    severity: "medium",
+    pattern: /anchor-lang.*=|anchor_lang.*version|declare_id|program.*mod/,
+    description: 'When upgrading Anchor versions, the IDL generation may change instruction discriminators (first 8 bytes of sha256). If the client SDK uses an old IDL, instructions will fail with "unknown instruction" or worse, match a different instruction.',
+    recommendation: "Pin Anchor versions in Cargo.toml. Regenerate and distribute IDL after every program upgrade. Version IDL files alongside deployed program versions."
+  },
+  {
+    id: "SOL7722",
+    title: "Crate Supply Chain \u2014 Malicious Proc Macro in Build Dependency",
+    severity: "critical",
+    pattern: /proc-macro|proc_macro|build\.rs|custom_derive/,
+    description: "Rust proc macros execute arbitrary code at compile time. A compromised crate dependency with a proc macro can inject malicious code into the compiled program binary, undetectable by source code review of the main project.",
+    recommendation: "Audit proc macro dependencies thoroughly. Use cargo-vet or cargo-crev for supply chain verification. Pin exact crate versions with hash verification. Minimize proc macro dependencies."
+  },
+  // === ORACLE / PRICE FEED ===
+  {
+    id: "SOL7723",
+    title: "Pyth Price Feed \u2014 Confidence Interval Exploitation",
+    severity: "high",
+    pattern: /pyth|price_feed|get_price|confidence|price_account|PriceUpdateV2/,
+    description: "Pyth price feeds include a confidence interval. During volatile markets, confidence intervals widen significantly. An attacker can exploit wide confidence by choosing the most favorable price within the interval for lending/borrowing operations.",
+    recommendation: "Always check and enforce maximum confidence interval relative to price (e.g., conf/price < 2%). Reject prices with abnormally wide confidence. Use TWAP alongside spot for critical operations."
+  },
+  {
+    id: "SOL7724",
+    title: "Switchboard Oracle \u2014 Stale Feed with Valid Timestamp",
+    severity: "high",
+    pattern: /switchboard|aggregator|AggregatorAccountData|latest_confirmed_round/,
+    description: "Switchboard oracle feeds can appear fresh (recent timestamp) but contain stale data if the oracle queue is congested or manipulated. The timestamp reflects when the round was recorded, not when the actual price was observed.",
+    recommendation: "Check both the timestamp AND the round open/close slots. Compare against multiple oracle sources. Implement maximum staleness based on slot difference, not just timestamp."
+  },
+  // === FINAL: AUDIT READINESS ===
+  {
+    id: "SOL7725",
+    title: "Missing Event Emission \u2014 Unauditable State Changes",
+    severity: "medium",
+    pattern: /invoke_signed|transfer|mint_to|burn|close_account/,
+    description: "Critical state changes (transfers, mints, burns, authority changes) without corresponding event emission make the program unauditable. Off-chain monitoring cannot detect exploits in progress without events.",
+    recommendation: "Emit events (via msg! or Anchor events) for every state-changing operation. Include before/after values, actor pubkeys, and operation type. This is essential for incident response."
+  },
+  {
+    id: "SOL7726",
+    title: "Program Upgrade Without Timelock \u2014 Instant Rug Vector",
+    severity: "critical",
+    pattern: /upgrade_authority|BpfLoaderUpgradeab|programdata|set_authority.*UpgradeAuthority/,
+    description: "Programs with an active upgrade authority and no timelock can be instantly replaced with malicious code. Users interacting with the program have no warning period to withdraw funds before a malicious upgrade takes effect.",
+    recommendation: "Implement governance-controlled upgrades with minimum 48-hour timelock. Emit events on upgrade authority changes. Consider making programs immutable after audit, or use multisig upgrade authority with public transparency."
+  }
+];
+function detectBatch114(input) {
+  const findings = [];
+  const code = input.content;
+  for (const p of BATCH_114_PATTERNS) {
+    if (p.pattern.test(code)) {
+      findings.push({
+        id: p.id,
+        title: p.title,
+        severity: p.severity,
+        description: p.description,
+        recommendation: p.recommendation,
+        lineNumber: 0
       });
     }
   }
@@ -45170,6 +46490,31 @@ async function runPatterns(input) {
     findings.push(...batch110Results);
   } catch (error) {
   }
+  try {
+    const batch111Results = detectBatch111(input);
+    findings.push(...batch111Results);
+  } catch {
+  }
+  try {
+    const batch112Results = checkBatch112Patterns(input);
+    findings.push(...batch112Results);
+  } catch {
+  }
+  try {
+    const batch113Results = checkBatch113Patterns(input);
+    findings.push(...batch113Results);
+  } catch {
+  }
+  try {
+    const batch114Results = detectBatch114(input);
+    findings.push(...batch114Results);
+  } catch {
+  }
+  try {
+    const batch55ZealynxResults = checkBatch55ZealynxPatterns(input);
+    findings.push(...batch55ZealynxResults);
+  } catch (error) {
+  }
   const seen = /* @__PURE__ */ new Set();
   const deduped = findings.filter((f) => {
     const key = `${f.id}-${f.location.line}`;
@@ -45213,11 +46558,120 @@ function listPatterns() {
     // Placeholder
   }));
 }
-var PATTERN_COUNT = ALL_PATTERNS2.length + 7555;
+var PATTERN_COUNT = ALL_PATTERNS2.length + 7695;
 
 // src/sdk.ts
-import { existsSync, readdirSync, statSync } from "fs";
+import { existsSync, readdirSync, statSync, readFileSync as readFileSync2 } from "fs";
 import { join, basename } from "path";
+
+// src/context-notices.ts
+import chalk from "chalk";
+var KNOWN_AUDITED_PROTOCOLS = [
+  { name: "Jupiter", patterns: ["jup-ag", "jupiter-exchange", "jupiterproject"] },
+  { name: "Kamino", patterns: ["kamino-finance", "hubbleprotocol"] },
+  { name: "Marinade", patterns: ["marinade-finance", "marinade"] },
+  { name: "Orca", patterns: ["orca-so"] },
+  { name: "Raydium", patterns: ["raydium-io"] },
+  { name: "Mango v4", patterns: ["blockworks-foundation", "mango-v4"] },
+  { name: "Pyth", patterns: ["pyth-network", "pythnet"] },
+  { name: "Metaplex", patterns: ["metaplex-foundation", "metaplex"] },
+  { name: "Sanctum", patterns: ["sanctumfi", "sanctum-so"] },
+  { name: "Drift", patterns: ["drift-labs"] },
+  { name: "Phoenix", patterns: ["ellipsis-labs", "phoenix-dex"] },
+  { name: "Tensor", patterns: ["tensor-hq", "tensor-foundation"] },
+  { name: "Jito", patterns: ["jito-foundation", "jito-labs"] }
+];
+function detectCpiWrapper(code) {
+  const lines = code.split("\n");
+  const totalLines = lines.length;
+  let cpiPatterns = 0;
+  let businessLogicPatterns = 0;
+  const cpiIndicators = [
+    /\bcpi::/g,
+    /\binvoke\b/g,
+    /\binvoke_signed\b/g,
+    /\bCpiContext\b/g,
+    /\bCpiAccount\b/g,
+    /pub\s+fn\s+\w+.*CpiContext/g,
+    /instruction::/g
+  ];
+  const businessLogicIndicators = [
+    /\bif\s+.*\{/g,
+    /\bmatch\s+/g,
+    /\bfor\s+.*\bin\b/g,
+    /\bwhile\s+/g,
+    /checked_add|checked_sub|checked_mul|checked_div/g,
+    /require!\s*\(/g,
+    /\.try_borrow_mut/g
+  ];
+  for (const line of lines) {
+    for (const pat of cpiIndicators) {
+      pat.lastIndex = 0;
+      if (pat.test(line)) cpiPatterns++;
+    }
+    for (const pat of businessLogicIndicators) {
+      pat.lastIndex = 0;
+      if (pat.test(line)) businessLogicPatterns++;
+    }
+  }
+  const hasCpiModuleName = /mod\s+cpi\b|crate.*cpi|\/cpi\/|_cpi\b/.test(code);
+  const highCpiRatio = cpiPatterns > 3 && cpiPatterns > businessLogicPatterns * 2;
+  return hasCpiModuleName || highCpiRatio;
+}
+function detectAuditedProtocol(path, code) {
+  const lowerPath = path.toLowerCase();
+  for (const protocol of KNOWN_AUDITED_PROTOCOLS) {
+    for (const pattern of protocol.patterns) {
+      if (lowerPath.includes(pattern.toLowerCase())) {
+        return protocol.name;
+      }
+    }
+  }
+  if (code) {
+    const lowerCode = code.toLowerCase().substring(0, 2e3);
+    for (const protocol of KNOWN_AUDITED_PROTOCOLS) {
+      for (const pattern of protocol.patterns) {
+        if (lowerCode.includes(pattern.toLowerCase())) {
+          return protocol.name;
+        }
+      }
+    }
+  }
+  return null;
+}
+function getContextNotices(path, code) {
+  return {
+    isCpiWrapper: detectCpiWrapper(code),
+    auditedProtocol: detectAuditedProtocol(path, code)
+  };
+}
+function displayContextNotices(notices) {
+  if (notices.isCpiWrapper) {
+    console.log(chalk.yellow.bold("\n\u26A0\uFE0F  CPI Interface Detected"));
+    console.log(chalk.yellow("   This appears to be a cross-program invocation wrapper, not the core program."));
+    console.log(chalk.yellow("   Findings are informational and may not represent actual vulnerabilities.\n"));
+  }
+  if (notices.auditedProtocol) {
+    console.log(chalk.green.bold(`
+\u2705 Known Audited Protocol \u2014 ${notices.auditedProtocol}`));
+    console.log(chalk.green("   This protocol has undergone professional security audits."));
+    console.log(chalk.green("   Findings are informational and intended for educational purposes.\n"));
+  }
+}
+function displayDisclaimer() {
+  console.log(chalk.gray("\u2500".repeat(70)));
+  console.log(chalk.gray("\u{1F4CB} Note: SolShield uses pattern-matching against known vulnerability"));
+  console.log(chalk.gray("   signatures. Findings require manual review. Pattern matches in"));
+  console.log(chalk.gray("   audited, battle-tested protocols are typically informational."));
+  console.log(chalk.gray("\u2500".repeat(70)));
+}
+var DISCLAIMER_TEXT = "\u{1F4CB} Note: SolShield uses pattern-matching against known vulnerability signatures. Findings require manual review. Pattern matches in audited, battle-tested protocols are typically informational.";
+var CPI_NOTICE_TEXT = "\u26A0\uFE0F CPI Interface Detected \u2014 This appears to be a cross-program invocation wrapper, not the core program. Findings are informational and may not represent actual vulnerabilities.";
+function auditedProtocolNoticeText(name) {
+  return `\u2705 Known Audited Protocol \u2014 ${name} has undergone professional security audits. Findings are informational and intended for educational purposes.`;
+}
+
+// src/sdk.ts
 async function scan(path, options = {}) {
   const startTime = Date.now();
   const programName = basename(path);
@@ -45290,6 +46744,18 @@ async function scan(path, options = {}) {
       passed = summary.critical === 0;
       break;
   }
+  const allCode = rustFiles.map((f) => {
+    try {
+      return readFileSync2(f, "utf-8");
+    } catch {
+      return "";
+    }
+  }).join("\n");
+  const notices = getContextNotices(path, allCode);
+  const contextMessages = [];
+  if (notices.isCpiWrapper) contextMessages.push(CPI_NOTICE_TEXT);
+  if (notices.auditedProtocol) contextMessages.push(auditedProtocolNoticeText(notices.auditedProtocol));
+  contextMessages.push(DISCLAIMER_TEXT);
   return {
     programPath: path,
     programName,
@@ -45297,7 +46763,10 @@ async function scan(path, options = {}) {
     duration,
     findings: allFindings,
     summary,
-    passed
+    passed,
+    notices,
+    disclaimer: DISCLAIMER_TEXT,
+    contextMessages
   };
 }
 
@@ -45653,14 +47122,14 @@ function formatGithubAuditResult(result, format = "text") {
 }
 
 // src/commands/fetch.ts
-import chalk2 from "chalk";
+import chalk3 from "chalk";
 import ora from "ora";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { writeFileSync, mkdirSync, existsSync as existsSync4 } from "fs";
 import { join as join5 } from "path";
 
 // src/commands/audit.ts
-import chalk from "chalk";
+import chalk2 from "chalk";
 async function auditCommand(path, options = {}) {
   const result = await scan(path, {
     ai: options.ai,
@@ -45688,38 +47157,42 @@ async function auditCommand(path, options = {}) {
   };
   const outputMode = options.output || options.format || "terminal";
   if (outputMode === "terminal" || outputMode === "text") {
-    displayAuditResult(auditResult);
+    displayAuditResult(auditResult, result.notices);
   } else if (outputMode === "json") {
-    console.log(JSON.stringify(auditResult, null, 2));
+    console.log(JSON.stringify({ ...auditResult, notices: result.notices }, null, 2));
   }
   return auditResult;
 }
-function displayAuditResult(result) {
+function displayAuditResult(result, notices) {
+  if (notices) {
+    displayContextNotices(notices);
+  }
   if (result.findings.length === 0) {
-    console.log(chalk.green("\u2705 No vulnerabilities found!"));
+    console.log(chalk2.green("\u2705 No vulnerabilities found!"));
   } else {
-    console.log(chalk.yellow(`\u26A0\uFE0F  Found ${result.findings.length} potential issues:
+    console.log(chalk2.yellow(`\u26A0\uFE0F  Found ${result.findings.length} potential issues:
 `));
     for (const finding of result.findings) {
-      const severityColor = finding.severity === "critical" ? chalk.red : finding.severity === "high" ? chalk.yellow : finding.severity === "medium" ? chalk.cyan : chalk.gray;
+      const severityColor = finding.severity === "critical" ? chalk2.red : finding.severity === "high" ? chalk2.yellow : finding.severity === "medium" ? chalk2.cyan : chalk2.gray;
       const loc = typeof finding.location === "string" ? finding.location : `${finding.location.file}${finding.location.line ? `:${finding.location.line}` : ""}`;
       console.log(`${severityColor(`[${finding.severity.toUpperCase()}]`)} ${finding.id}: ${finding.title}`);
-      console.log(chalk.gray(`  \u2514\u2500 ${loc}`));
-      console.log(chalk.gray(`     ${finding.description}`));
+      console.log(chalk2.gray(`  \u2514\u2500 ${loc}`));
+      console.log(chalk2.gray(`     ${finding.description}`));
       if (finding.suggestion) {
-        console.log(chalk.green(`     \u{1F4A1} ${finding.suggestion}`));
+        console.log(chalk2.green(`     \u{1F4A1} ${finding.suggestion}`));
       }
       console.log();
     }
   }
-  console.log(chalk.bold("\n\u{1F4CA} Summary:"));
-  console.log(`  ${chalk.red("Critical:")} ${result.summary.critical}`);
-  console.log(`  ${chalk.yellow("High:")} ${result.summary.high}`);
-  console.log(`  ${chalk.cyan("Medium:")} ${result.summary.medium}`);
-  console.log(`  ${chalk.gray("Low:")} ${result.summary.low}`);
-  console.log(`  ${chalk.blue("Total:")} ${result.summary.total}`);
-  console.log(chalk.gray(`  Duration: ${result.duration}ms
+  console.log(chalk2.bold("\n\u{1F4CA} Summary:"));
+  console.log(`  ${chalk2.red("Critical:")} ${result.summary.critical}`);
+  console.log(`  ${chalk2.yellow("High:")} ${result.summary.high}`);
+  console.log(`  ${chalk2.cyan("Medium:")} ${result.summary.medium}`);
+  console.log(`  ${chalk2.gray("Low:")} ${result.summary.low}`);
+  console.log(`  ${chalk2.blue("Total:")} ${result.summary.total}`);
+  console.log(chalk2.gray(`  Duration: ${result.duration}ms
 `));
+  displayDisclaimer();
 }
 
 // src/commands/fetch.ts
@@ -45754,8 +47227,8 @@ async function fetchAndAuditCommand(programId, options) {
     const idlAccount = await connection.getAccountInfo(idlAddress);
     if (!idlAccount) {
       spinner.warn("No Anchor IDL found on-chain");
-      console.log(chalk2.yellow("\n  This program may not be an Anchor program, or IDL was not published."));
-      console.log(chalk2.yellow("  Try auditing the source code directly instead.\n"));
+      console.log(chalk3.yellow("\n  This program may not be an Anchor program, or IDL was not published."));
+      console.log(chalk3.yellow("  Try auditing the source code directly instead.\n"));
       process.exit(1);
     }
     const idlData = idlAccount.data.slice(12);
@@ -45774,7 +47247,7 @@ async function fetchAndAuditCommand(programId, options) {
     const idlPath = join5(tempDir, `${programId}.json`);
     writeFileSync(idlPath, idlJson);
     spinner.succeed(`IDL fetched for ${programId}`);
-    console.log(chalk2.gray(`  Saved to: ${idlPath}
+    console.log(chalk3.gray(`  Saved to: ${idlPath}
 `));
     await auditCommand(idlPath, {
       output: options.output || "terminal",
@@ -45802,26 +47275,26 @@ function listKnownPrograms() {
     { name: "Jupiter Aggregator", id: "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4" },
     { name: "Squads V3", id: "SMPLecH534NA9acpos4G6x7uf3LWbCAwZQE9e8ZekMu" }
   ];
-  console.log(chalk2.bold("\n  Known Solana Programs:\n"));
+  console.log(chalk3.bold("\n  Known Solana Programs:\n"));
   for (const program2 of programs) {
-    console.log(chalk2.cyan(`  ${program2.name}`));
-    console.log(chalk2.gray(`    ${program2.id}
+    console.log(chalk3.cyan(`  ${program2.name}`));
+    console.log(chalk3.gray(`    ${program2.id}
 `));
   }
-  console.log(chalk2.dim("  Use: solguard fetch <program-id> to audit\n"));
+  console.log(chalk3.dim("  Use: solguard fetch <program-id> to audit\n"));
 }
 
 // src/commands/watch.ts
-import chalk3 from "chalk";
+import chalk4 from "chalk";
 import { watch } from "fs";
 import { join as join6, relative } from "path";
 import { readdirSync as readdirSync3, statSync as statSync3, existsSync as existsSync5 } from "fs";
 async function watchCommand(path, options) {
-  console.log(chalk3.cyan("\n  \u{1F50D} SolGuard Watch Mode\n"));
-  console.log(chalk3.gray(`  Watching: ${path}`));
-  console.log(chalk3.gray("  Press Ctrl+C to stop\n"));
+  console.log(chalk4.cyan("\n  \u{1F50D} SolGuard Watch Mode\n"));
+  console.log(chalk4.gray(`  Watching: ${path}`));
+  console.log(chalk4.gray("  Press Ctrl+C to stop\n"));
   if (!existsSync5(path)) {
-    console.error(chalk3.red(`  Error: Path not found: ${path}`));
+    console.error(chalk4.red(`  Error: Path not found: ${path}`));
     process.exit(1);
   }
   const dirsToWatch = /* @__PURE__ */ new Set();
@@ -45851,9 +47324,9 @@ async function watchCommand(path, options) {
       return;
     }
     lastAuditTime = now;
-    console.log(chalk3.yellow("\n  \u2500".repeat(30)));
-    console.log(chalk3.yellow(`  \u{1F504} Re-auditing at ${(/* @__PURE__ */ new Date()).toLocaleTimeString()}`));
-    console.log(chalk3.yellow("  \u2500".repeat(30)));
+    console.log(chalk4.yellow("\n  \u2500".repeat(30)));
+    console.log(chalk4.yellow(`  \u{1F504} Re-auditing at ${(/* @__PURE__ */ new Date()).toLocaleTimeString()}`));
+    console.log(chalk4.yellow("  \u2500".repeat(30)));
     try {
       await auditCommand(path, {
         output: options.output || "terminal",
@@ -45863,7 +47336,7 @@ async function watchCommand(path, options) {
     } catch (error) {
     }
   }
-  console.log(chalk3.green("  Running initial audit...\n"));
+  console.log(chalk4.green("  Running initial audit...\n"));
   await runAudit();
   for (const dir of dirsToWatch) {
     try {
@@ -45871,7 +47344,7 @@ async function watchCommand(path, options) {
         if (!filename) return;
         if (!filename.endsWith(".rs")) return;
         if (filename.startsWith(".")) return;
-        console.log(chalk3.blue(`
+        console.log(chalk4.blue(`
   \u{1F4DD} Changed: ${relative(path, join6(dir, filename))}`));
         if (debounceTimer) {
           clearTimeout(debounceTimer);
@@ -45882,7 +47355,7 @@ async function watchCommand(path, options) {
     }
   }
   process.on("SIGINT", () => {
-    console.log(chalk3.gray("\n\n  \u{1F44B} Watch mode stopped\n"));
+    console.log(chalk4.gray("\n\n  \u{1F44B} Watch mode stopped\n"));
     process.exit(0);
   });
   await new Promise(() => {
@@ -46086,7 +47559,7 @@ function findRustFilesRecursive(dir) {
 }
 
 // src/commands/certificate.ts
-import chalk4 from "chalk";
+import chalk5 from "chalk";
 import ora2 from "ora";
 import { writeFileSync as writeFileSync3 } from "fs";
 import { join as join8 } from "path";
@@ -46268,25 +47741,25 @@ async function certificateCommand(path, options) {
     writeFileSync3(svgPath, svg);
     spinner.succeed("Certificate generated!");
     console.log("");
-    console.log(chalk4.bold("  Certificate Summary"));
-    console.log(chalk4.gray("  \u2500".repeat(25)));
+    console.log(chalk5.bold("  Certificate Summary"));
+    console.log(chalk5.gray("  \u2500".repeat(25)));
     console.log("");
-    console.log(`  Status: ${result.passed ? chalk4.green("\u2705 PASSED") : chalk4.red("\u274C FAILED")}`);
-    console.log(`  Severity Score: ${chalk4.yellow(severityScore + "/100")} ${severityScore === 0 ? "(Perfect!)" : ""}`);
+    console.log(`  Status: ${result.passed ? chalk5.green("\u2705 PASSED") : chalk5.red("\u274C FAILED")}`);
+    console.log(`  Severity Score: ${chalk5.yellow(severityScore + "/100")} ${severityScore === 0 ? "(Perfect!)" : ""}`);
     console.log("");
     console.log(`  Findings:`);
-    console.log(`    ${chalk4.red("Critical:")} ${result.summary.critical}`);
-    console.log(`    ${chalk4.yellow("High:")} ${result.summary.high}`);
-    console.log(`    ${chalk4.blue("Medium:")} ${result.summary.medium}`);
-    console.log(`    ${chalk4.gray("Low:")} ${result.summary.low}`);
+    console.log(`    ${chalk5.red("Critical:")} ${result.summary.critical}`);
+    console.log(`    ${chalk5.yellow("High:")} ${result.summary.high}`);
+    console.log(`    ${chalk5.blue("Medium:")} ${result.summary.medium}`);
+    console.log(`    ${chalk5.gray("Low:")} ${result.summary.low}`);
     console.log("");
-    console.log(chalk4.gray(`  Metadata: ${metadataPath}`));
-    console.log(chalk4.gray(`  SVG: ${svgPath}`));
+    console.log(chalk5.gray(`  Metadata: ${metadataPath}`));
+    console.log(chalk5.gray(`  SVG: ${svgPath}`));
     console.log("");
     if (result.passed) {
-      console.log(chalk4.green("  \u{1F3C6} This program is ready for NFT certificate minting!"));
+      console.log(chalk5.green("  \u{1F3C6} This program is ready for NFT certificate minting!"));
     } else {
-      console.log(chalk4.yellow("  \u26A0\uFE0F  Fix the issues above before minting a certificate."));
+      console.log(chalk5.yellow("  \u26A0\uFE0F  Fix the issues above before minting a certificate."));
     }
     console.log("");
   } catch (error) {
@@ -46892,15 +48365,15 @@ ${COLORS.cyan}\u{1F4A1} Pro tip:${COLORS.reset} Use 'solshield learn ${query} --
 }
 
 // src/commands/stats.ts
-import chalk5 from "chalk";
+import chalk6 from "chalk";
 function statsCommand() {
   const patterns = listPatterns();
   console.log("");
-  console.log(chalk5.bold("  \u{1F4CA} SolGuard Statistics"));
-  console.log(chalk5.gray("  \u2500".repeat(25)));
+  console.log(chalk6.bold("  \u{1F4CA} SolGuard Statistics"));
+  console.log(chalk6.gray("  \u2500".repeat(25)));
   console.log("");
-  console.log(chalk5.cyan("  Version:"), "0.1.0");
-  console.log(chalk5.cyan("  Patterns:"), patterns.length);
+  console.log(chalk6.cyan("  Version:"), "0.1.0");
+  console.log(chalk6.cyan("  Patterns:"), patterns.length);
   console.log("");
   const bySeverity = {
     critical: patterns.filter((p) => p.severity === "critical"),
@@ -46908,67 +48381,67 @@ function statsCommand() {
     medium: patterns.filter((p) => p.severity === "medium"),
     low: patterns.filter((p) => p.severity === "low")
   };
-  console.log(chalk5.bold("  Vulnerability Patterns:"));
+  console.log(chalk6.bold("  Vulnerability Patterns:"));
   console.log("");
   if (bySeverity.critical.length > 0) {
-    console.log(chalk5.red("  \u{1F534} Critical:"));
+    console.log(chalk6.red("  \u{1F534} Critical:"));
     for (const p of bySeverity.critical) {
-      console.log(chalk5.gray(`     ${p.id}: ${p.name}`));
+      console.log(chalk6.gray(`     ${p.id}: ${p.name}`));
     }
     console.log("");
   }
   if (bySeverity.high.length > 0) {
-    console.log(chalk5.yellow("  \u{1F7E0} High:"));
+    console.log(chalk6.yellow("  \u{1F7E0} High:"));
     for (const p of bySeverity.high) {
-      console.log(chalk5.gray(`     ${p.id}: ${p.name}`));
+      console.log(chalk6.gray(`     ${p.id}: ${p.name}`));
     }
     console.log("");
   }
   if (bySeverity.medium.length > 0) {
-    console.log(chalk5.blue("  \u{1F7E1} Medium:"));
+    console.log(chalk6.blue("  \u{1F7E1} Medium:"));
     for (const p of bySeverity.medium) {
-      console.log(chalk5.gray(`     ${p.id}: ${p.name}`));
+      console.log(chalk6.gray(`     ${p.id}: ${p.name}`));
     }
     console.log("");
   }
-  console.log(chalk5.bold("  Capabilities:"));
+  console.log(chalk6.bold("  Capabilities:"));
   console.log("");
-  console.log(chalk5.green("  \u2713"), "Anchor IDL + Rust parsing");
-  console.log(chalk5.green("  \u2713"), "GitHub repo/PR auditing");
-  console.log(chalk5.green("  \u2713"), "CI/CD with SARIF output");
-  console.log(chalk5.green("  \u2713"), "HTML report generation");
-  console.log(chalk5.green("  \u2713"), "NFT certificate generation");
-  console.log(chalk5.green("  \u2713"), "Watch mode for development");
-  console.log(chalk5.green("  \u2713"), "Git pre-commit/push hooks");
-  console.log(chalk5.green("  \u2713"), "Config file support");
-  console.log(chalk5.green("  \u2713"), "JSON/Markdown/Terminal output");
-  console.log(chalk5.green("  \u2713"), "LLM-ready Solana docs integration");
+  console.log(chalk6.green("  \u2713"), "Anchor IDL + Rust parsing");
+  console.log(chalk6.green("  \u2713"), "GitHub repo/PR auditing");
+  console.log(chalk6.green("  \u2713"), "CI/CD with SARIF output");
+  console.log(chalk6.green("  \u2713"), "HTML report generation");
+  console.log(chalk6.green("  \u2713"), "NFT certificate generation");
+  console.log(chalk6.green("  \u2713"), "Watch mode for development");
+  console.log(chalk6.green("  \u2713"), "Git pre-commit/push hooks");
+  console.log(chalk6.green("  \u2713"), "Config file support");
+  console.log(chalk6.green("  \u2713"), "JSON/Markdown/Terminal output");
+  console.log(chalk6.green("  \u2713"), "LLM-ready Solana docs integration");
   console.log("");
-  console.log(chalk5.bold("  Available Commands (15):"));
+  console.log(chalk6.bold("  Available Commands (15):"));
   console.log("");
-  console.log(chalk5.cyan("  solguard audit <path>"), "       Audit a program");
-  console.log(chalk5.cyan("  solguard fetch <id>"), "         Fetch and audit on-chain");
-  console.log(chalk5.cyan("  solguard github <repo>"), "      Audit GitHub repo/PR");
-  console.log(chalk5.cyan("  solguard compare <a> <b>"), "    Compare two versions");
-  console.log(chalk5.cyan("  solguard list"), "               List all patterns");
-  console.log(chalk5.cyan("  solguard learn <pattern>"), "    Learn with Solana docs");
-  console.log(chalk5.cyan("  solguard check <path>"), "       Quick pass/fail check");
-  console.log(chalk5.cyan("  solguard ci <path>"), "          CI mode with SARIF");
-  console.log(chalk5.cyan("  solguard watch <path>"), "       Watch and auto-audit");
-  console.log(chalk5.cyan("  solguard report <path>"), "      Generate HTML report");
-  console.log(chalk5.cyan("  solguard certificate <path>"), " Generate NFT certificate");
-  console.log(chalk5.cyan("  solguard init"), "               Create config file");
-  console.log(chalk5.cyan("  solguard programs"), "           List known programs");
-  console.log(chalk5.cyan("  solguard parse <idl>"), "        Parse IDL file");
-  console.log(chalk5.cyan("  solguard stats"), "              Show this info");
+  console.log(chalk6.cyan("  solguard audit <path>"), "       Audit a program");
+  console.log(chalk6.cyan("  solguard fetch <id>"), "         Fetch and audit on-chain");
+  console.log(chalk6.cyan("  solguard github <repo>"), "      Audit GitHub repo/PR");
+  console.log(chalk6.cyan("  solguard compare <a> <b>"), "    Compare two versions");
+  console.log(chalk6.cyan("  solguard list"), "               List all patterns");
+  console.log(chalk6.cyan("  solguard learn <pattern>"), "    Learn with Solana docs");
+  console.log(chalk6.cyan("  solguard check <path>"), "       Quick pass/fail check");
+  console.log(chalk6.cyan("  solguard ci <path>"), "          CI mode with SARIF");
+  console.log(chalk6.cyan("  solguard watch <path>"), "       Watch and auto-audit");
+  console.log(chalk6.cyan("  solguard report <path>"), "      Generate HTML report");
+  console.log(chalk6.cyan("  solguard certificate <path>"), " Generate NFT certificate");
+  console.log(chalk6.cyan("  solguard init"), "               Create config file");
+  console.log(chalk6.cyan("  solguard programs"), "           List known programs");
+  console.log(chalk6.cyan("  solguard parse <idl>"), "        Parse IDL file");
+  console.log(chalk6.cyan("  solguard stats"), "              Show this info");
   console.log("");
-  console.log(chalk5.gray("  Built by Midir for Solana Agent Hackathon 2026"));
-  console.log(chalk5.gray("  https://github.com/oh-ashen-one/solguard"));
+  console.log(chalk6.gray("  Built by Midir for Solana Agent Hackathon 2026"));
+  console.log(chalk6.gray("  https://github.com/oh-ashen-one/solguard"));
   console.log("");
 }
 
 // src/commands/list.ts
-import chalk6 from "chalk";
+import chalk7 from "chalk";
 var PATTERN_DESCRIPTIONS = {
   SOL001: "Detects accounts accessed without validating the owner field. An attacker could pass a fake account owned by a different program.",
   SOL002: "Detects authority/admin accounts that are not declared as Signers. Without signer verification, anyone can claim to be the authority.",
@@ -47042,8 +48515,8 @@ function listCommand(options = {}) {
     return;
   }
   console.log("");
-  console.log(chalk6.bold("  \u{1F6E1}\uFE0F SolGuard Vulnerability Patterns"));
-  console.log(chalk6.gray("  \u2500".repeat(30)));
+  console.log(chalk7.bold("  \u{1F6E1}\uFE0F SolGuard Vulnerability Patterns"));
+  console.log(chalk7.gray("  \u2500".repeat(30)));
   console.log("");
   const bySeverity = {
     critical: filtered.filter((p) => p.severity === "critical"),
@@ -47051,34 +48524,34 @@ function listCommand(options = {}) {
     medium: filtered.filter((p) => p.severity === "medium")
   };
   if (bySeverity.critical.length > 0) {
-    console.log(chalk6.red.bold("  \u{1F534} CRITICAL"));
+    console.log(chalk7.red.bold("  \u{1F534} CRITICAL"));
     console.log("");
     for (const p of bySeverity.critical) {
-      console.log(chalk6.white(`  ${p.id}: ${p.name}`));
-      console.log(chalk6.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
+      console.log(chalk7.white(`  ${p.id}: ${p.name}`));
+      console.log(chalk7.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
       console.log("");
     }
   }
   if (bySeverity.high.length > 0) {
-    console.log(chalk6.yellow.bold("  \u{1F7E0} HIGH"));
+    console.log(chalk7.yellow.bold("  \u{1F7E0} HIGH"));
     console.log("");
     for (const p of bySeverity.high) {
-      console.log(chalk6.white(`  ${p.id}: ${p.name}`));
-      console.log(chalk6.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
+      console.log(chalk7.white(`  ${p.id}: ${p.name}`));
+      console.log(chalk7.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
       console.log("");
     }
   }
   if (bySeverity.medium.length > 0) {
-    console.log(chalk6.blue.bold("  \u{1F7E1} MEDIUM"));
+    console.log(chalk7.blue.bold("  \u{1F7E1} MEDIUM"));
     console.log("");
     for (const p of bySeverity.medium) {
-      console.log(chalk6.white(`  ${p.id}: ${p.name}`));
-      console.log(chalk6.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
+      console.log(chalk7.white(`  ${p.id}: ${p.name}`));
+      console.log(chalk7.gray(`     ${truncate(PATTERN_DESCRIPTIONS[p.id] || "", 60)}`));
       console.log("");
     }
   }
-  console.log(chalk6.gray("  \u2500".repeat(30)));
-  console.log(chalk6.dim(`  Total: ${filtered.length} patterns`));
+  console.log(chalk7.gray("  \u2500".repeat(30)));
+  console.log(chalk7.dim(`  Total: ${filtered.length} patterns`));
   console.log("");
 }
 function truncate(str, len) {
@@ -48081,14 +49554,171 @@ async function swarmAudit(options) {
   };
 }
 
+// src/commands/fix.ts
+import chalk8 from "chalk";
+import { writeFileSync as writeFileSync5, readFileSync as readFileSync6 } from "fs";
+import { extname } from "path";
+var FIX_RULES = [
+  {
+    id: "SOL001",
+    description: "Add owner check to unchecked AccountInfo",
+    search: /(\/\/\/\s*CHECK:.*\n\s*)(pub\s+\w+:\s*AccountInfo<'info>)/g,
+    replace: (match, comment, field) => {
+      const name = field.match(/pub\s+(\w+)/)?.[1] || "account";
+      return `${comment}#[account(owner = crate::ID)]
+    ${field}`;
+    }
+  },
+  {
+    id: "SOL002",
+    description: "Replace unchecked AccountInfo with Signer for authority accounts",
+    search: /(\/\/\/\s*CHECK:.*\n\s*pub\s+(authority|admin|owner|caller):\s*)AccountInfo<'info>/g,
+    replace: "$1Signer<'info>"
+  },
+  {
+    id: "SOL003",
+    description: "Replace unsafe arithmetic with checked operations",
+    search: /(\w+\.\w+)\s*=\s*(\w+\.\w+)\s*\+\s*(\w+)/g,
+    replace: "$1 = $2.checked_add($3).unwrap()"
+  },
+  {
+    id: "SOL003-sub",
+    description: "Replace unsafe subtraction with checked_sub",
+    search: /(\w+\.\w+)\s*=\s*(\w+\.\w+)\s*-\s*(\w+)/g,
+    replace: "$1 = $2.checked_sub($3).unwrap()"
+  },
+  {
+    id: "SOL005",
+    description: "Add has_one constraint to vault/state accounts near authority",
+    search: /(#\[account\(\s*(?:mut\s*,?\s*)?seeds\s*=.*?\n\s*bump\s*\n\s*\)\])\n(\s*pub vault:)/gs,
+    replace: "$1\n    // FIXED: Added authority constraint\n    #[account(\n        has_one = authority,\n    )]\n$2"
+  },
+  {
+    id: "SOL006",
+    description: "Add initialization guard",
+    search: /(\/\/\s*SOL006:.*\n\s*)(let\s+vault\s*=\s*&mut\s+ctx\.accounts\.vault;)/g,
+    replace: "$1// FIXED: Add init check\n        require!(!vault.is_initialized, ErrorCode::AlreadyInitialized);\n        $2"
+  },
+  {
+    id: "SOL010",
+    description: "Zero out data before closing account",
+    search: /(\/\/\s*Data NOT zeroed.*)\n/g,
+    replace: "// FIXED: Zero out account data to prevent revival\n        ctx.accounts.vault.authority = Pubkey::default();\n        ctx.accounts.vault.token_account = Pubkey::default();\n        ctx.accounts.vault.total_deposited = 0;\n"
+  },
+  {
+    id: "SOL013",
+    description: "Add constraint ensuring accounts are different",
+    search: /(#\[account\(mut\)\]\s*\n\s*pub from_account:)/g,
+    replace: "// FIXED: Ensure from != to\n    #[account(mut, constraint = from_account.key() != to_account.key() @ ErrorCode::DuplicateAccount)]\n    pub from_account:"
+  }
+];
+function applyFixes(findings, options = {}) {
+  const fileFindings = /* @__PURE__ */ new Map();
+  for (const f of findings) {
+    const file = typeof f.location === "string" ? f.location : f.location?.file;
+    if (!file) continue;
+    if (!fileFindings.has(file)) fileFindings.set(file, /* @__PURE__ */ new Set());
+    const baseId = f.id.replace(/-\d+$/, "");
+    fileFindings.get(file).add(baseId);
+  }
+  const results = [];
+  for (const [filePath, patternIds] of fileFindings) {
+    let source;
+    try {
+      source = readFileSync6(filePath, "utf-8");
+    } catch {
+      continue;
+    }
+    let patched = source;
+    const changes = [];
+    for (const rule of FIX_RULES) {
+      const ruleBaseId = rule.id.replace(/-\w+$/, "");
+      if (!patternIds.has(ruleBaseId) && !patternIds.has(rule.id)) continue;
+      const before = patched;
+      if (typeof rule.replace === "string") {
+        patched = patched.replace(rule.search, rule.replace);
+      } else {
+        patched = patched.replace(rule.search, rule.replace);
+      }
+      if (patched !== before) {
+        const beforeLines = before.split("\n");
+        const afterLines = patched.split("\n");
+        let changeLine = 1;
+        for (let i = 0; i < Math.min(beforeLines.length, afterLines.length); i++) {
+          if (beforeLines[i] !== afterLines[i]) {
+            changeLine = i + 1;
+            break;
+          }
+        }
+        changes.push({
+          rule: rule.id,
+          description: rule.description,
+          line: changeLine,
+          before: getContext(before, changeLine),
+          after: getContext(patched, changeLine)
+        });
+      }
+    }
+    if (changes.length === 0) continue;
+    const ext = extname(filePath);
+    const base = filePath.slice(0, -ext.length);
+    const outputPath = options.fixOutput || `${base}.fixed${ext}`;
+    writeFileSync5(outputPath, patched, "utf-8");
+    results.push({
+      filePath,
+      outputPath,
+      changes,
+      totalFixes: changes.length
+    });
+  }
+  return results;
+}
+function getContext(source, line) {
+  const lines = source.split("\n");
+  const start = Math.max(0, line - 2);
+  const end = Math.min(lines.length, line + 2);
+  return lines.slice(start, end).join("\n");
+}
+function displayFixResults(results) {
+  if (results.length === 0) {
+    console.log(chalk8.yellow("\n\u{1F527} No auto-fixes could be applied."));
+    return;
+  }
+  const totalFixes = results.reduce((sum, r) => sum + r.totalFixes, 0);
+  console.log(chalk8.green(`
+\u{1F527} Applied ${totalFixes} auto-fix(es) across ${results.length} file(s):
+`));
+  for (const result of results) {
+    console.log(chalk8.bold(`  \u{1F4C4} ${result.filePath}`));
+    console.log(chalk8.gray(`     \u2192 ${result.outputPath}
+`));
+    for (const change of result.changes) {
+      console.log(chalk8.cyan(`  [${change.rule}] ${change.description} (line ~${change.line})`));
+      const beforeLines = change.before.split("\n");
+      const afterLines = change.after.split("\n");
+      for (const l of beforeLines) {
+        if (!afterLines.includes(l)) {
+          console.log(chalk8.red(`    - ${l.trim()}`));
+        }
+      }
+      for (const l of afterLines) {
+        if (!beforeLines.includes(l)) {
+          console.log(chalk8.green(`    + ${l.trim()}`));
+        }
+      }
+      console.log();
+    }
+  }
+}
+
 // src/index.ts
-import chalk7 from "chalk";
+import chalk9 from "chalk";
 var program = new Command();
 program.name("solshield").description("AI-Powered Smart Contract Security Auditor for Solana \u2014 6,800+ patterns").version("0.1.0");
-program.command("audit").description("Run a full security audit on a Solana program").argument("<path>", "Path to program directory or Rust file").option("-f, --format <format>", "Output format (text|json|markdown)", "text").option("--ai", "Include AI-powered explanations").option("--fail-on <severity>", "Exit with error on severity level (critical|high|medium|low|any)", "critical").action(async (path, options) => {
+program.command("audit").description("Run a full security audit on a Solana program").argument("<path>", "Path to program directory or Rust file").option("-f, --format <format>", "Output format (text|json|markdown)", "text").option("--ai", "Include AI-powered explanations").option("--fail-on <severity>", "Exit with error on severity level (critical|high|medium|low|any)", "critical").option("--fix", "Auto-generate patched source files with vulnerability fixes applied").option("--fix-output <path>", "Output path for fixed file (default: <file>.fixed.rs)").action(async (path, options) => {
   try {
-    console.log(chalk7.blue("\u{1F6E1}\uFE0F  SolShield Security Audit"));
-    console.log(chalk7.gray(`Scanning: ${path}
+    console.log(chalk9.blue("\u{1F6E1}\uFE0F  SolShield Security Audit"));
+    console.log(chalk9.gray(`Scanning: ${path}
 `));
     const results = await scan(path, {
       format: options.format === "json" ? "json" : "object",
@@ -48096,41 +49726,47 @@ program.command("audit").description("Run a full security audit on a Solana prog
       failOn: options.failOn
     });
     if (results.findings.length === 0) {
-      console.log(chalk7.green("\u2705 No vulnerabilities found!"));
+      console.log(chalk9.green("\u2705 No vulnerabilities found!"));
     } else {
-      console.log(chalk7.yellow(`\u26A0\uFE0F  Found ${results.findings.length} potential issues:
+      console.log(chalk9.yellow(`\u26A0\uFE0F  Found ${results.findings.length} potential issues:
 `));
       for (const finding of results.findings) {
-        const severityColor = finding.severity === "critical" ? chalk7.red : finding.severity === "high" ? chalk7.yellow : finding.severity === "medium" ? chalk7.cyan : chalk7.gray;
+        const severityColor = finding.severity === "critical" ? chalk9.red : finding.severity === "high" ? chalk9.yellow : finding.severity === "medium" ? chalk9.cyan : chalk9.gray;
         console.log(`${severityColor(`[${finding.severity.toUpperCase()}]`)} ${finding.id}: ${finding.title}`);
-        console.log(chalk7.gray(`  \u2514\u2500 ${finding.location.file}${finding.location.line ? `:${finding.location.line}` : ""}`));
-        console.log(chalk7.gray(`     ${finding.description}`));
+        console.log(chalk9.gray(`  \u2514\u2500 ${finding.location.file}${finding.location.line ? `:${finding.location.line}` : ""}`));
+        console.log(chalk9.gray(`     ${finding.description}`));
         if (finding.suggestion) {
-          console.log(chalk7.green(`     \u{1F4A1} ${finding.suggestion}`));
+          console.log(chalk9.green(`     \u{1F4A1} ${finding.suggestion}`));
         }
         console.log();
       }
     }
-    console.log(chalk7.bold("\n\u{1F4CA} Summary:"));
-    console.log(`  ${chalk7.red("Critical:")} ${results.summary.critical}`);
-    console.log(`  ${chalk7.yellow("High:")} ${results.summary.high}`);
-    console.log(`  ${chalk7.cyan("Medium:")} ${results.summary.medium}`);
-    console.log(`  ${chalk7.gray("Low:")} ${results.summary.low}`);
-    console.log(`  ${chalk7.blue("Total:")} ${results.summary.total}`);
-    console.log(chalk7.gray(`  Duration: ${results.duration}ms
+    console.log(chalk9.bold("\n\u{1F4CA} Summary:"));
+    console.log(`  ${chalk9.red("Critical:")} ${results.summary.critical}`);
+    console.log(`  ${chalk9.yellow("High:")} ${results.summary.high}`);
+    console.log(`  ${chalk9.cyan("Medium:")} ${results.summary.medium}`);
+    console.log(`  ${chalk9.gray("Low:")} ${results.summary.low}`);
+    console.log(`  ${chalk9.blue("Total:")} ${results.summary.total}`);
+    console.log(chalk9.gray(`  Duration: ${results.duration}ms
 `));
+    if (options.fix && results.findings.length > 0) {
+      const fixResults = applyFixes(results.findings, {
+        fixOutput: options.fixOutput
+      });
+      displayFixResults(fixResults);
+    }
     if (!results.passed) {
       process.exit(1);
     }
   } catch (error) {
-    console.error(chalk7.red(`Error: ${error.message}`));
+    console.error(chalk9.red(`Error: ${error.message}`));
     process.exit(2);
   }
 });
 program.command("github").description("Audit a Solana program directly from a GitHub repo").argument("<repo>", "GitHub repo (owner/repo or full URL)").option("--pr <number>", "Audit a specific pull request").option("--branch <name>", "Audit a specific branch").option("-f, --format <format>", "Output format (text|json|markdown)", "text").option("-v, --verbose", "Verbose output").action(async (repo, options) => {
   try {
-    console.log(chalk7.blue("\u{1F6E1}\uFE0F  SolShield GitHub Audit"));
-    console.log(chalk7.gray(`Repository: ${repo}
+    console.log(chalk9.blue("\u{1F6E1}\uFE0F  SolShield GitHub Audit"));
+    console.log(chalk9.gray(`Repository: ${repo}
 `));
     const result = await auditGithub(repo, {
       pr: options.pr ? parseInt(options.pr) : void 0,
@@ -48144,7 +49780,7 @@ program.command("github").description("Audit a Solana program directly from a Gi
       if (criticals > 0) process.exit(1);
     }
   } catch (error) {
-    console.error(chalk7.red(`Error: ${error.message}`));
+    console.error(chalk9.red(`Error: ${error.message}`));
     process.exit(2);
   }
 });
@@ -48209,7 +49845,7 @@ program.command("patterns").description('List all available security patterns (a
   if (options.json) {
     console.log(JSON.stringify(filtered, null, 2));
   } else {
-    console.log(chalk7.blue(`
+    console.log(chalk9.blue(`
 \u{1F6E1}\uFE0F  SolShield Security Patterns (${filtered.length} total)
 `));
     const bySeverity = {
@@ -48219,28 +49855,28 @@ program.command("patterns").description('List all available security patterns (a
       low: filtered.filter((p) => p.severity === "low"),
       info: filtered.filter((p) => p.severity === "info")
     };
-    console.log(chalk7.red(`Critical (${bySeverity.critical.length}):`));
+    console.log(chalk9.red(`Critical (${bySeverity.critical.length}):`));
     bySeverity.critical.slice(0, 10).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
-    if (bySeverity.critical.length > 10) console.log(chalk7.gray(`  ... and ${bySeverity.critical.length - 10} more`));
-    console.log(chalk7.yellow(`
+    if (bySeverity.critical.length > 10) console.log(chalk9.gray(`  ... and ${bySeverity.critical.length - 10} more`));
+    console.log(chalk9.yellow(`
 High (${bySeverity.high.length}):`));
     bySeverity.high.slice(0, 10).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
-    if (bySeverity.high.length > 10) console.log(chalk7.gray(`  ... and ${bySeverity.high.length - 10} more`));
-    console.log(chalk7.cyan(`
+    if (bySeverity.high.length > 10) console.log(chalk9.gray(`  ... and ${bySeverity.high.length - 10} more`));
+    console.log(chalk9.cyan(`
 Medium (${bySeverity.medium.length}):`));
     bySeverity.medium.slice(0, 10).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
-    if (bySeverity.medium.length > 10) console.log(chalk7.gray(`  ... and ${bySeverity.medium.length - 10} more`));
-    console.log(chalk7.gray(`
+    if (bySeverity.medium.length > 10) console.log(chalk9.gray(`  ... and ${bySeverity.medium.length - 10} more`));
+    console.log(chalk9.gray(`
 Low (${bySeverity.low.length}):`));
     bySeverity.low.slice(0, 5).forEach((p) => console.log(`  ${p.id}: ${p.name}`));
-    if (bySeverity.low.length > 5) console.log(chalk7.gray(`  ... and ${bySeverity.low.length - 5} more`));
+    if (bySeverity.low.length > 5) console.log(chalk9.gray(`  ... and ${bySeverity.low.length - 5} more`));
   }
 });
 program.command("swarm").description("Run multi-agent security audit with specialized AI agents").argument("<path>", "Path to program directory or Rust file").option("--mode <mode>", "Execution mode (api|agent-teams|subprocess|auto)", "auto").option("--specialists <list>", "Comma-separated specialists (reentrancy,access-control,arithmetic,oracle)", "").option("-v, --verbose", "Verbose output").option("--markdown", "Output as markdown report").action(async (path, options) => {
   try {
-    console.log(chalk7.blue("\u{1F41D} SolShield Multi-Agent Security Swarm"));
-    console.log(chalk7.gray(`Target: ${path}`));
-    console.log(chalk7.gray(`Mode: ${options.mode}
+    console.log(chalk9.blue("\u{1F41D} SolShield Multi-Agent Security Swarm"));
+    console.log(chalk9.gray(`Target: ${path}`));
+    console.log(chalk9.gray(`Mode: ${options.mode}
 `));
     const specialists = options.specialists ? options.specialists.split(",").map((s) => s.trim()) : void 0;
     const result = await swarmAudit({
@@ -48253,32 +49889,32 @@ program.command("swarm").description("Run multi-agent security audit with specia
     if (result.markdownReport) {
       console.log(result.markdownReport);
     } else {
-      console.log(chalk7.bold(`
+      console.log(chalk9.bold(`
 \u2705 Swarm Audit Complete`));
-      console.log(chalk7.gray(`  Mode: ${result.mode}`));
-      console.log(chalk7.gray(`  Duration: ${result.duration}ms`));
-      console.log(chalk7.gray(`  Agents: ${result.agentResults.length}`));
+      console.log(chalk9.gray(`  Mode: ${result.mode}`));
+      console.log(chalk9.gray(`  Duration: ${result.duration}ms`));
+      console.log(chalk9.gray(`  Agents: ${result.agentResults.length}`));
       if (result.synthesis) {
         const s = result.synthesis.summary;
-        console.log(chalk7.bold("\n\u{1F4CA} Findings Summary:"));
-        console.log(`  ${chalk7.red("Critical:")} ${s.critical}`);
-        console.log(`  ${chalk7.yellow("High:")} ${s.high}`);
-        console.log(`  ${chalk7.cyan("Medium:")} ${s.medium}`);
-        console.log(`  ${chalk7.gray("Low:")} ${s.low}`);
-        console.log(`  ${chalk7.blue("Total:")} ${result.findings.length}`);
+        console.log(chalk9.bold("\n\u{1F4CA} Findings Summary:"));
+        console.log(`  ${chalk9.red("Critical:")} ${s.critical}`);
+        console.log(`  ${chalk9.yellow("High:")} ${s.high}`);
+        console.log(`  ${chalk9.cyan("Medium:")} ${s.medium}`);
+        console.log(`  ${chalk9.gray("Low:")} ${s.low}`);
+        console.log(`  ${chalk9.blue("Total:")} ${result.findings.length}`);
       }
       if (result.errors && result.errors.length > 0) {
-        console.log(chalk7.yellow("\n\u26A0\uFE0F  Warnings:"));
-        result.errors.forEach((err) => console.log(chalk7.gray(`  - ${err}`)));
+        console.log(chalk9.yellow("\n\u26A0\uFE0F  Warnings:"));
+        result.errors.forEach((err) => console.log(chalk9.gray(`  - ${err}`)));
       }
     }
     if (result.synthesis && result.synthesis.summary.critical > 0) {
       process.exit(1);
     }
   } catch (error) {
-    console.error(chalk7.red(`Error: ${error.message}`));
+    console.error(chalk9.red(`Error: ${error.message}`));
     if (options.verbose && error.stack) {
-      console.error(chalk7.gray(error.stack));
+      console.error(chalk9.gray(error.stack));
     }
     process.exit(2);
   }

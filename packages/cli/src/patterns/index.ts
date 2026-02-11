@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Registry
+ * SolShield Pattern Registry
  * 
  * 6800+ security patterns for Solana smart contract auditing
  * Updated: Feb 6, 2026 12:30 PM - Added Batch 109 (Helius Complete Exploit Mechanics Deep Dive)
