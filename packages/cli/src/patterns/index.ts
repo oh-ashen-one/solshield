@@ -59,6 +59,8 @@ import { detectBatch111 } from './solana-batched-patterns-111.js';
 
 // Import Batch 112 patterns (Feb 11, 2026) - Token Extensions Exploits, Confidential Transfers, ZK Proof Abuse (SOL7616-SOL7645)
 import { checkBatch112Patterns } from './solana-batched-patterns-112.js';
+// Import Batch 113 patterns (Feb 11, 2026) - Owner Permission Phishing, Simulation Bypass, Wallet Drain (SOL7646-SOL7695)
+import { checkBatch113Patterns } from './solana-batched-patterns-113.js';
 
 // Import Batch 68 patterns (Feb 5, 2026 9:00 PM) - January 2026 Threats: Owner Phishing, Trust Wallet, Consensus Vulns
 import { checkBatch68Patterns } from './solana-batched-patterns-68.js';
@@ -1163,6 +1165,14 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 112 patterns fail
   }
   
+  // Run Batch 113 patterns (50 patterns: Owner Permission Phishing, Simulation Bypass, Wallet Drain - SOL7646-SOL7695)
+  try {
+    const batch113Results = checkBatch113Patterns(input);
+    findings.push(...batch113Results);
+  } catch {
+    // Skip if Batch 113 patterns fail
+  }
+
   // Run Batch 55 Zealynx Checklist patterns (30 patterns: Token-2022, CPI, Oracle, Real Exploits - SOL7556-SOL7585)
   try {
     const batch55ZealynxResults = checkBatch55ZealynxPatterns(input);
@@ -1291,4 +1301,4 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-110.ts (SOL7526-SOL7555): Zealynx 45-Check Deep Dive + Pinocchio Native Safety + 2025-2026 Advanced Attack Vectors
 //   - solana-batched-patterns-111.ts (SOL7586-SOL7615): Jan 2026 Agave Gossip/Vote Vulns + Loopscale PT Token Pricing + LISA Governance + RPC Privacy + Validator Coordination
 // 111 batched/pattern files × ~70-100 patterns each + 50 core + 250+ individual patterns = 6889+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 7645; // 6919+ total with Batch 112 (Token Extensions, Confidential Transfers, ZK Proofs)
+export const PATTERN_COUNT = ALL_PATTERNS.length + 7695; // 6969+ total with Batch 113 (Owner Phishing, Simulation Bypass, Wallet Drain)

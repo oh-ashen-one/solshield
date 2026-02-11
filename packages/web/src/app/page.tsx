@@ -354,7 +354,7 @@ pub enum VaultError {
           
           <p className="text-xl text-zinc-400 text-center max-w-2xl mx-auto mb-12">
             AI-powered vulnerability detection for Anchor programs. 
-            6,919+ patterns. Instant analysis. Ship secure code.
+            6,969+ patterns. Instant analysis. Ship secure code.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
