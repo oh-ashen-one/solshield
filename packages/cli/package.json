@@ -1,8 +1,8 @@
 {
-  "name": "@solguard/cli",
-  "version": "0.1.0",
+  "name": "@solshield/cli",
+  "version": "0.2.0",
   "description": "SolShield CLI - The first security check for vibe-coded Solana programs. 7,000+ vulnerability patterns.",
-  "author": "SolGuard Team",
+  "author": "SolShield Team",
   "license": "MIT",
   "homepage": "https://github.com/oh-ashen-one/solguard",
   "repository": {
@@ -21,14 +21,14 @@
     "vulnerability",
     "scanner",
     "cli",
-    "solguard"
+    "solshield"
   ],
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "solguard": "dist/index.js"
+    "solshield": "dist/index.js"
   },
   "exports": {
     ".": {
