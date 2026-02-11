@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
  * SolShield CLI - AI-Powered Smart Contract Security Auditor for Solana
- * 
- * 6,800+ security patterns covering real-world exploits and common vulnerabilities.
- * 
+ *
+ * 5,916 security patterns covering real-world exploits and common vulnerabilities.
+ *
  * Usage:
  *   solshield audit ./programs/my-vault
  *   solshield github owner/repo
@@ -36,7 +36,7 @@ const program = new Command();
 
 program
   .name('solshield')
-  .description('AI-Powered Smart Contract Security Auditor for Solana — 6,800+ patterns')
+  .description('AI-Powered Smart Contract Security Auditor for Solana - 5,916 patterns')
   .version('0.1.0');
 
 // ─── audit ───────────────────────────────────────────────────────────
@@ -53,25 +53,25 @@ program
     try {
       console.log(chalk.blue('🛡️  SolShield Security Audit'));
       console.log(chalk.gray(`Scanning: ${path}\n`));
-      
+
       const results = await scan(path, {
         format: options.format === 'json' ? 'json' : 'object',
         ai: options.ai,
         failOn: options.failOn,
       } as ScanOptions);
-      
+
       if (results.findings.length === 0) {
         console.log(chalk.green('✅ No vulnerabilities found!'));
       } else {
         console.log(chalk.yellow(`⚠️  Found ${results.findings.length} potential issues:\n`));
-        
+
         for (const finding of results.findings) {
-          const severityColor = 
+          const severityColor =
             finding.severity === 'critical' ? chalk.red :
             finding.severity === 'high' ? chalk.yellow :
             finding.severity === 'medium' ? chalk.cyan :
             chalk.gray;
-          
+
           console.log(`${severityColor(`[${finding.severity.toUpperCase()}]`)} ${finding.id}: ${finding.title}`);
           console.log(chalk.gray(`  └─ ${finding.location.file}${finding.location.line ? `:${finding.location.line}` : ''}`));
           console.log(chalk.gray(`     ${finding.description}`));
@@ -81,7 +81,7 @@ program
           console.log();
         }
       }
-      
+
       console.log(chalk.bold('\n📊 Summary:'));
       console.log(`  ${chalk.red('Critical:')} ${results.summary.critical}`);
       console.log(`  ${chalk.yellow('High:')} ${results.summary.high}`);
@@ -89,7 +89,7 @@ program
       console.log(`  ${chalk.gray('Low:')} ${results.summary.low}`);
       console.log(`  ${chalk.blue('Total:')} ${results.summary.total}`);
       console.log(chalk.gray(`  Duration: ${results.duration}ms\n`));
-      
+
       // Apply fixes if --fix flag is set
       if (options.fix && results.findings.length > 0) {
         const fixResults = applyFixes(results.findings, {
@@ -120,7 +120,7 @@ program
     try {
       console.log(chalk.blue('🛡️  SolShield GitHub Audit'));
       console.log(chalk.gray(`Repository: ${repo}\n`));
-      
+
       const result = await auditGithub(repo, {
         pr: options.pr ? parseInt(options.pr) : undefined,
         branch: options.branch,
@@ -183,7 +183,7 @@ program
 // ─── ci ──────────────────────────────────────────────────────────────
 program
   .command('ci')
-  .description('CI mode — GitHub Actions annotations, SARIF output, exit codes')
+  .description('CI mode - GitHub Actions annotations, SARIF output, exit codes')
   .argument('<path>', 'Path to program directory')
   .option('--fail-on <severity>', 'Fail threshold (critical|high|medium|low|any)', 'critical')
   .option('--sarif <file>', 'Write SARIF report to file')
@@ -269,17 +269,17 @@ program
   .option('-s, --severity <severity>', 'Filter by severity')
   .action((options: any) => {
     const patterns = listPatterns();
-    
+
     let filtered = patterns;
     if (options.severity) {
       filtered = patterns.filter(p => p.severity === options.severity);
     }
-    
+
     if (options.json) {
       console.log(JSON.stringify(filtered, null, 2));
     } else {
       console.log(chalk.blue(`\n🛡️  SolShield Security Patterns (${filtered.length} total)\n`));
-      
+
       const bySeverity = {
         critical: filtered.filter(p => p.severity === 'critical'),
         high: filtered.filter(p => p.severity === 'high'),
@@ -287,19 +287,19 @@ program
         low: filtered.filter(p => p.severity === 'low'),
         info: filtered.filter(p => p.severity === 'info'),
       };
-      
+
       console.log(chalk.red(`Critical (${bySeverity.critical.length}):`));
       bySeverity.critical.slice(0, 10).forEach(p => console.log(`  ${p.id}: ${p.name}`));
       if (bySeverity.critical.length > 10) console.log(chalk.gray(`  ... and ${bySeverity.critical.length - 10} more`));
-      
+
       console.log(chalk.yellow(`\nHigh (${bySeverity.high.length}):`));
       bySeverity.high.slice(0, 10).forEach(p => console.log(`  ${p.id}: ${p.name}`));
       if (bySeverity.high.length > 10) console.log(chalk.gray(`  ... and ${bySeverity.high.length - 10} more`));
-      
+
       console.log(chalk.cyan(`\nMedium (${bySeverity.medium.length}):`));
       bySeverity.medium.slice(0, 10).forEach(p => console.log(`  ${p.id}: ${p.name}`));
       if (bySeverity.medium.length > 10) console.log(chalk.gray(`  ... and ${bySeverity.medium.length - 10} more`));
-      
+
       console.log(chalk.gray(`\nLow (${bySeverity.low.length}):`));
       bySeverity.low.slice(0, 5).forEach(p => console.log(`  ${p.id}: ${p.name}`));
       if (bySeverity.low.length > 5) console.log(chalk.gray(`  ... and ${bySeverity.low.length - 5} more`));
@@ -320,11 +320,11 @@ program
       console.log(chalk.blue('🐝 SolShield Multi-Agent Security Swarm'));
       console.log(chalk.gray(`Target: ${path}`));
       console.log(chalk.gray(`Mode: ${options.mode}\n`));
-      
-      const specialists = options.specialists 
+
+      const specialists = options.specialists
         ? options.specialists.split(',').map((s: string) => s.trim())
         : undefined;
-      
+
       const result = await swarmAudit({
         target: path,
         mode: options.mode,
@@ -332,7 +332,7 @@ program
         verbose: options.verbose,
         markdown: options.markdown,
       });
-      
+
       if (result.markdownReport) {
         console.log(result.markdownReport);
       } else {
@@ -340,7 +340,7 @@ program
         console.log(chalk.gray(`  Mode: ${result.mode}`));
         console.log(chalk.gray(`  Duration: ${result.duration}ms`));
         console.log(chalk.gray(`  Agents: ${result.agentResults.length}`));
-        
+
         if (result.synthesis) {
           const s = result.synthesis.summary;
           console.log(chalk.bold('\n📊 Findings Summary:'));
@@ -350,13 +350,13 @@ program
           console.log(`  ${chalk.gray('Low:')} ${s.low}`);
           console.log(`  ${chalk.blue('Total:')} ${result.findings.length}`);
         }
-        
+
         if (result.errors && result.errors.length > 0) {
           console.log(chalk.yellow('\n⚠️  Warnings:'));
           result.errors.forEach(err => console.log(chalk.gray(`  - ${err}`)));
         }
       }
-      
+
       if (result.synthesis && result.synthesis.summary.critical > 0) {
         process.exit(1);
       }

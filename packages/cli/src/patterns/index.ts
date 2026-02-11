@@ -1,7 +1,7 @@
 /**
  * SolShield Pattern Registry
  * 
- * 6800+ security patterns for Solana smart contract auditing
+ * 5,916 security patterns for Solana smart contract auditing
  * Updated: Feb 6, 2026 12:30 PM - Added Batch 109 (Helius Complete Exploit Mechanics Deep Dive)
  */
 
@@ -1294,7 +1294,7 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-80.ts (SOL4026-SOL4100): Helius Complete Exploit History + 2024-2026 Emerging Threats (AI Agents, Token-2022, MEV, Governance)
 //   - solana-batched-patterns-83.ts (SOL4301-SOL4400): Helius 38 Verified Incidents + Sealevel Attacks + Audit Firm Patterns (Wormhole, Cashio, Crema, Mango, Nirvana, etc.)
 //   - solana-batched-patterns-84.ts (SOL4401-SOL4500): Protocol Audits (Mango, Marinade, Orca, Drift, Phoenix) + Advanced DeFi (Lending, AMM, Options, Staking, Bridges, NFT, Governance)
-// 87 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 7000+
+// 87 batched/pattern files × ~70 patterns each + 50 core + 250+ individual patterns = 5,916 total
 //   - solana-batched-patterns-85.ts (SOL4501-SOL4600): Sec3 2025 Report + Solsec PoC Deep Dives (Cope Roulette, Port Finance, Jet Bug) + 2026 Threats
 //   - solana-batched-patterns-86.ts (SOL4601-SOL4700): Helius Supply Chain (Web3.js, Parcl) + Network Attacks (Grape, Jito DDoS) + Core Protocol (Turbine, rBPF) + Insider Threats (Pump.fun, Cypher, DEXX)
 //   - solana-batched-patterns-87.ts (SOL4701-SOL4800): Helius 38 Incidents Deep Dive + Solsec PoC (Cope Roulette, Port, Jet) + Armani Sealevel Attacks + DeFi + 2026 Emerging Threats

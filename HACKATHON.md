@@ -18,7 +18,7 @@ Manual audits cost $10K-$100K and take weeks. Vibe coders aren't getting audits.
 
 **SolShield is the first security checkpoint for vibe-coded Solana programs.**
 
-Paste your code, run one command, get instant results. We scan against **7,000+ vulnerability patterns** covering every major Solana security risk — from critical exploits to subtle logic bugs. Analysis completes in under a second with actionable fix suggestions.
+Paste your code, run one command, get instant results. We scan against **5,916 vulnerability patterns** covering every major Solana security risk — from critical exploits to subtle logic bugs. Analysis completes in under a second with actionable fix suggestions.
 
 > **Vibe code it. SolShield it. Ship it.**
 
@@ -35,7 +35,7 @@ We're not replacing professional audits — we're the **seatbelt**. The first la
 
 ## 📊 By The Numbers
 
-- **7,000+** vulnerability patterns (SOL001–SOL7525)
+- **5,916** vulnerability patterns (SOL001–SOL7525)
 - **150+** autonomous commits
 - **<1s** analysis time
 - **100%** AI-built (zero human code)
@@ -98,7 +98,7 @@ This project demonstrates what's possible when AI agents build autonomously:
 ### What the Agent Built (Autonomously):
 1. ✅ Researched Solana security vulnerabilities across 50+ real exploits
 2. ✅ Designed full-stack architecture (monorepo, TypeScript, Next.js, Anchor)
-3. ✅ Implemented **7,000+ detection patterns** with regex matching
+3. ✅ Implemented **5,916 detection patterns** with regex matching
 4. ✅ Built CLI with **17 commands** (audit, fetch, github, watch, ci, stats, list, learn, and more)
 5. ✅ Created web UI with GitHub URL input, file upload, syntax highlighting
 6. ✅ Published **npm SDK** (`solshield`) for programmatic access
