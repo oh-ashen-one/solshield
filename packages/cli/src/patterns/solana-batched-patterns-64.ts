@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 64: Infrastructure & Off-Chain Security
+ * SolShield Pattern Batch 64: Infrastructure & Off-Chain Security
  * 
  * Based on:
  * - Web3.js supply chain attack (Dec 2024)

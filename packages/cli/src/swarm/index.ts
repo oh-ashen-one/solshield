@@ -1,5 +1,5 @@
 /**
- * SolGuard Multi-Agent Security Swarm
+ * SolShield Multi-Agent Security Swarm
  * 
  * Integrates with Claude Code's Agent Teams (Opus 4.6+) or Claude API directly
  * for parallel, specialized security auditing of Solana/Anchor programs.

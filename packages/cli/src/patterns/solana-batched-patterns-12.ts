@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 12 (SOL401-SOL450)
+ * SolShield Security Patterns - Batch 12 (SOL401-SOL450)
  * Advanced vulnerability patterns from recent exploits and audit findings
  * Focus: DeFi-specific attacks, economic exploits, and protocol design flaws
  */

@@ -131,9 +131,9 @@ export class SwarmOrchestrator {
       model: config.model || 'claude-sonnet-4-20250514',
       maxParallel: config.maxParallel || 4,
       timeout: config.timeout || 120000, // 2 minutes
-      teamName: config.teamName || `solguard-audit-${Date.now()}`,
+      teamName: config.teamName || `solshield-audit-${Date.now()}`,
       useSynthesis: config.useSynthesis ?? true,
-      outputDir: config.outputDir || './solguard-reports',
+      outputDir: config.outputDir || './solshield-reports',
       verbose: config.verbose || false,
     };
 
@@ -510,7 +510,7 @@ export class SwarmOrchestrator {
    */
   private log(message: string): void {
     if (this.config.verbose) {
-      console.log(`[SolGuard Swarm] ${message}`);
+      console.log(`[SolShield Swarm] ${message}`);
     }
   }
 }

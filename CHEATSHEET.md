@@ -1,4 +1,4 @@
-# 📋 SolGuard CLI Cheatsheet
+# 📋 SolShield CLI Cheatsheet
 
 Quick reference for all commands and options.
 
@@ -8,8 +8,8 @@ Quick reference for all commands and options.
 
 ```bash
 # From source (npm package coming soon)
-git clone https://github.com/oh-ashen-one/solguard.git
-cd solguard/packages/cli
+git clone https://github.com/oh-ashen-one/solshield.git
+cd solshield/packages/cli
 npm install && npm run build && npm link
 ```
 
@@ -21,96 +21,96 @@ npm install && npm run build && npm link
 
 ```bash
 # Basic usage
-solguard audit ./path/to/program
+solshield audit ./path/to/program
 
 # Current directory
-solguard audit .
+solshield audit .
 
 # Multiple paths
-solguard audit ./program1 ./program2
+solshield audit ./program1 ./program2
 
 # Options
-solguard audit . --verbose          # Detailed output
-solguard audit . --format json      # JSON output
-solguard audit . --format markdown  # Markdown report
-solguard audit . --min-severity high # Only high+ findings
-solguard audit . --patterns SOL001,SOL002  # Specific patterns
-solguard audit . --exclude SOL028   # Skip patterns
+solshield audit . --verbose          # Detailed output
+solshield audit . --format json      # JSON output
+solshield audit . --format markdown  # Markdown report
+solshield audit . --min-severity high # Only high+ findings
+solshield audit . --patterns SOL001,SOL002  # Specific patterns
+solshield audit . --exclude SOL028   # Skip patterns
 ```
 
 ### `github` — Audit from GitHub
 
 ```bash
 # Audit a repo
-solguard github owner/repo
+solshield github owner/repo
 
 # Specific branch
-solguard github owner/repo --branch develop
+solshield github owner/repo --branch develop
 
 # Specific PR
-solguard github owner/repo --pr 123
+solshield github owner/repo --pr 123
 
 # Subdirectory
-solguard github owner/repo --path programs/my-program
+solshield github owner/repo --path programs/my-program
 ```
 
 ### `fetch` — Audit on-chain programs
 
 ```bash
 # Mainnet
-solguard fetch <PROGRAM_ID>
+solshield fetch <PROGRAM_ID>
 
 # Devnet
-solguard fetch <PROGRAM_ID> --rpc https://api.devnet.solana.com
+solshield fetch <PROGRAM_ID> --rpc https://api.devnet.solana.com
 
 # Custom RPC
-solguard fetch <PROGRAM_ID> --rpc https://my-rpc.com
+solshield fetch <PROGRAM_ID> --rpc https://my-rpc.com
 ```
 
 ### `watch` — Continuous monitoring
 
 ```bash
 # Watch directory
-solguard watch ./program
+solshield watch ./program
 
 # Watch with options
-solguard watch . --min-severity critical
+solshield watch . --min-severity critical
 ```
 
 ### `ci` — CI/CD mode
 
 ```bash
 # Fail on critical
-solguard ci . --fail-on critical
+solshield ci . --fail-on critical
 
 # Fail on high or above
-solguard ci . --fail-on high
+solshield ci . --fail-on high
 
 # Generate SARIF for GitHub
-solguard ci . --sarif results.sarif
+solshield ci . --sarif results.sarif
 
 # Combined
-solguard ci . --fail-on high --sarif results.sarif
+solshield ci . --fail-on high --sarif results.sarif
 ```
 
 ### `list` — Show all patterns
 
 ```bash
 # All patterns
-solguard list
+solshield list
 
 # Filter by severity
-solguard list --severity critical
-solguard list --severity high
+solshield list --severity critical
+solshield list --severity high
 
 # Filter by category
-solguard list --category cpi
+solshield list --category cpi
 ```
 
 ### `stats` — Show statistics
 
 ```bash
-solguard stats
+solshield stats
 ```
 
 ---
@@ -164,10 +164,10 @@ solguard stats
 
 ```bash
 # Custom RPC
-SOLANA_RPC_URL=https://my-rpc.com solguard fetch <ID>
+SOLANA_RPC_URL=https://my-rpc.com solshield fetch <ID>
 
 # Verbose by default
-SOLGUARD_VERBOSE=1 solguard audit .
+SOLSHIELD_VERBOSE=1 solshield audit .
 ```
 
 ---
@@ -176,16 +176,16 @@ SOLGUARD_VERBOSE=1 solguard audit .
 
 ```bash
 # Quick audit before commit
-solguard audit . --min-severity high
+solshield audit . --min-severity high
 
 # Full audit with report
-solguard audit . --format markdown > audit-report.md
+solshield audit . --format markdown > audit-report.md
 
 # CI pipeline
-solguard ci . --fail-on critical --sarif results.sarif
+solshield ci . --fail-on critical --sarif results.sarif
 
 # Audit competitor's code
-solguard github coral-xyz/anchor --path programs/
+solshield github coral-xyz/anchor --path programs/
 ```
 
 ---

@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 42
+ * SolShield Pattern Batch 42
  * DeFi Protocol Security Patterns
  * Patterns SOL1231-SOL1300
  * 

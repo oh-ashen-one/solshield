@@ -1,5 +1,5 @@
 /**
- * SolGuard Batched Patterns - Batch 49
+ * SolShield Batched Patterns - Batch 49
  * Helius Exploit Database 2020-2023
  * SOL1721-SOL1790 (70 patterns)
  * 

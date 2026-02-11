@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 59: 2025 Latest Exploits + Advanced Attack Vectors (SOL2421-SOL2490)
+ * SolShield Pattern Batch 59: 2025 Latest Exploits + Advanced Attack Vectors (SOL2421-SOL2490)
  * 
  * Source: Helius Complete History (Updated Q1 2025), Sec3 2025 Report
  * 

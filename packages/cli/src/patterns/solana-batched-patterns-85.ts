@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 85 Patterns
+ * SolShield Batch 85 Patterns
  * Added: Feb 6, 2026 3:30 AM
  * Source: Sec3 2025 Report Analysis + Solsec PoC Deep Dives + 2026 Emerging Threats
  * Patterns: SOL4501-SOL4600

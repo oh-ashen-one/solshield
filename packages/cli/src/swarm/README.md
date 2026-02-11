@@ -1,4 +1,4 @@
-# SolGuard Multi-Agent Security Swarm
+# SolShield Multi-Agent Security Swarm
 
 > 🔬 Parallel, specialized security auditing using Claude AI agents
 
@@ -9,7 +9,7 @@ The swarm module enables multi-agent security auditing of Solana/Anchor programs
 ## Quick Start
 
 ```typescript
-import { swarmAudit } from '@solguard/cli/swarm';
+import { swarmAudit } from '@solshield/cli/swarm';
 
 const result = await swarmAudit({
   target: './programs/my-vault/src/lib.rs',
@@ -74,7 +74,7 @@ The swarm produces:
 ### Example Report
 
 ```markdown
-# SolGuard Multi-Agent Security Audit Report
+# SolShield Multi-Agent Security Audit Report
 
 ## Executive Summary
 
@@ -116,13 +116,13 @@ interface SwarmConfig {
 4. **Synthesize** - Combine, deduplicate, and cross-reference findings
 5. **Report** - Generate unified security report
 
-## Integration with SolGuard
+## Integration with SolShield
 
 The swarm module complements the pattern-based scanner:
 
 ```typescript
-import { scan } from '@solguard/cli';
-import { swarmAudit } from '@solguard/cli/swarm';
+import { scan } from '@solshield/cli';
+import { swarmAudit } from '@solshield/cli/swarm';
 
 // Run pattern-based scan first
 const patternResults = await scan('./program');
@@ -147,17 +147,17 @@ When running inside Claude Code with Agent Teams enabled:
 ```
 // The orchestrator generates TeammateTool operations:
 
-Teammate({ operation: "spawnTeam", team_name: "solguard-audit" })
+Teammate({ operation: "spawnTeam", team_name: "solshield-audit" })
 
 Task({
-  team_name: "solguard-audit",
+  team_name: "solshield-audit",
   name: "reentrancy-specialist",
   prompt: "Analyze for CPI state bugs...",
   run_in_background: true
 })
 
 Task({
-  team_name: "solguard-audit",
+  team_name: "solshield-audit",
   name: "access-control-specialist",
   prompt: "Check permissions and authorities...",
   run_in_background: true
@@ -192,4 +192,4 @@ Task({
 
 ## License
 
-MIT - Part of SolGuard security toolkit
+MIT - Part of SolShield security toolkit

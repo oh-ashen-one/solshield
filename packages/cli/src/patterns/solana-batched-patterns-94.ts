@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 94 Patterns
+ * SolShield Batch 94 Patterns
  * 
  * Source: Helius Complete Exploit History + Solsec PoC Research + Feb 2026 Deep Dive
  * Patterns: SOL5601-SOL5700

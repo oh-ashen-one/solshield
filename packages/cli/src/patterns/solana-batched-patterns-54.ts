@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 54
+ * SolShield Security Patterns - Batch 54
  * 
  * 70 Patterns (SOL2071-SOL2140)
  * Source: Helius Complete Exploit History + 2025 Security Research

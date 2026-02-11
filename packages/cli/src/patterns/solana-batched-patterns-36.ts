@@ -1,7 +1,7 @@
 import { SecurityPattern } from '../types';
 
 /**
- * SolGuard Security Patterns - Batch 36
+ * SolShield Security Patterns - Batch 36
  * SOL875-SOL904: Data Integrity, DoS, and Advanced Attack Vectors
  * 
  * Source: Sec3 2025 Report, Neodyme/OtterSec Research

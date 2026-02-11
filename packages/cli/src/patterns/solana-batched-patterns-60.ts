@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 60: Real-World Exploit Deep Analysis + Protocol-Specific (SOL2491-SOL2560)
+ * SolShield Pattern Batch 60: Real-World Exploit Deep Analysis + Protocol-Specific (SOL2491-SOL2560)
  * 
  * Source: In-depth analysis of 38 verified Helius incidents, Protocol audits
  * 

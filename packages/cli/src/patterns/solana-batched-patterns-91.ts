@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 91
+ * SolShield Security Patterns - Batch 91
  * 
  * Feb 6, 2026 5:30 AM - Fresh Research from Latest Sources
  * Sources:

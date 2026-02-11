@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 100 🎉
+ * SolShield Security Patterns - Batch 100 🎉
  * 
  * Feb 6, 2026 9:30 AM - 100th Batch Milestone!
  * 

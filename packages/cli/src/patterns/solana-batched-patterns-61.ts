@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 61: Advanced 2025-2026 Attack Vectors
+ * SolShield Pattern Batch 61: Advanced 2025-2026 Attack Vectors
  * 
  * Based on:
  * - Sec3 2025 Security Ecosystem Review (163 audits, 1,669 vulnerabilities)

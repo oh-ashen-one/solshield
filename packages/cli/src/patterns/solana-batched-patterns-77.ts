@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 77 Security Patterns
+ * SolShield Batch 77 Security Patterns
  * Based on: arXiv:2504.07419 Academic Research + Armani Sealevel + Audit Firm Reports
  * 
  * Pattern IDs: SOL3776 - SOL3875 (100 patterns)

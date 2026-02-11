@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 97
+ * SolShield Security Patterns - Batch 97
  * 
  * Feb 6, 2026 8:00 AM - Protocol-Specific Deep Dives + Solsec PoC Research
  * 

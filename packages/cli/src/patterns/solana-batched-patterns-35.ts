@@ -1,7 +1,7 @@
 import { SecurityPattern } from '../types';
 
 /**
- * SolGuard Security Patterns - Batch 35
+ * SolShield Security Patterns - Batch 35
  * SOL845-SOL874: 2024-2025 Real-World Exploits & Business Logic
  * 
  * Source: Helius Blog "Solana Hacks Complete History", Sec3 2025 Report

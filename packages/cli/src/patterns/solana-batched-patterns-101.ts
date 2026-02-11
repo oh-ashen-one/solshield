@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 101 Patterns
+ * SolShield Batch 101 Patterns
  * 
  * Feb 6, 2026 10:00 AM - Solsec Deep Dive + Armani Sealevel + Neodyme PoC Framework + Cope Roulette + Port Finance
  * Sources: github.com/sannykim/solsec, Armani's Sealevel Attacks, OtterSec, Neodyme workshops

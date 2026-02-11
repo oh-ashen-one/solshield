@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 43
+ * SolShield Pattern Batch 43
  * Real-World Exploit Patterns from 2024-2025
  * Patterns SOL1301-SOL1370
  * 

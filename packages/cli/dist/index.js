@@ -46925,7 +46925,7 @@ function parseGithubUrl(input) {
   return null;
 }
 async function cloneRepo(owner, repo, options) {
-  const tempDir = join4(tmpdir(), `solguard-${Date.now()}`);
+  const tempDir = join4(tmpdir(), `solshield-${Date.now()}`);
   await mkdir(tempDir, { recursive: true });
   const repoUrl = `https://github.com/${owner}/${repo}.git`;
   await execAsync(`git clone --depth 1 ${repoUrl} ${tempDir}`, {
@@ -47061,7 +47061,7 @@ function formatGithubAuditResult(result, format = "text") {
   }
   if (format === "markdown") {
     const lines2 = [
-      `# SolGuard Audit: ${result.repo}`,
+      `# SolShield Audit: ${result.repo}`,
       "",
       `**Ref:** ${result.ref}`,
       `**Files Scanned:** ${result.files}`,
@@ -47101,7 +47101,7 @@ function formatGithubAuditResult(result, format = "text") {
     return lines2.join("\n");
   }
   const lines = [
-    `SolGuard Audit: ${result.repo} (${result.ref})`,
+    `SolShield Audit: ${result.repo} (${result.ref})`,
     `Files: ${result.files} | Duration: ${result.duration}ms`,
     ""
   ];
@@ -47240,7 +47240,7 @@ async function fetchAndAuditCommand(programId, options) {
       spinner.fail("IDL appears to be compressed. Decompression not yet supported.");
       process.exit(1);
     }
-    const tempDir = join5(process.cwd(), ".solguard-temp");
+    const tempDir = join5(process.cwd(), ".solshield-temp");
     if (!existsSync4(tempDir)) {
       mkdirSync(tempDir, { recursive: true });
     }
@@ -47281,7 +47281,7 @@ function listKnownPrograms() {
     console.log(chalk3.gray(`    ${program2.id}
 `));
   }
-  console.log(chalk3.dim("  Use: solguard fetch <program-id> to audit\n"));
+  console.log(chalk3.dim("  Use: solshield fetch <program-id> to audit\n"));
 }
 
 // src/commands/watch.ts
@@ -47290,7 +47290,7 @@ import { watch } from "fs";
 import { join as join6, relative } from "path";
 import { readdirSync as readdirSync3, statSync as statSync3, existsSync as existsSync5 } from "fs";
 async function watchCommand(path, options) {
-  console.log(chalk4.cyan("\n  \u{1F50D} SolGuard Watch Mode\n"));
+  console.log(chalk4.cyan("\n  \u{1F50D} SolShield Watch Mode\n"));
   console.log(chalk4.gray(`  Watching: ${path}`));
   console.log(chalk4.gray("  Press Ctrl+C to stop\n"));
   if (!existsSync5(path)) {
@@ -47431,7 +47431,7 @@ async function ciCommand(path, options) {
   const summaryPath = process.env.GITHUB_STEP_SUMMARY || options.summary;
   if (summaryPath) {
     const summaryLines = [
-      "## \u{1F6E1}\uFE0F SolGuard Security Audit",
+      "## \u{1F6E1}\uFE0F SolShield Security Audit",
       "",
       `| Severity | Count |`,
       `|----------|-------|`,
@@ -47467,7 +47467,7 @@ async function ciCommand(path, options) {
     writeFileSync2(options.sarif, JSON.stringify(sarif, null, 2));
     console.log(`::notice::SARIF report written to ${options.sarif}`);
   }
-  console.log("\n--- SolGuard CI Summary ---");
+  console.log("\n--- SolShield CI Summary ---");
   console.log(`Files: ${rustFiles.length} | Findings: ${allFindings.length} | Duration: ${duration}ms`);
   console.log(`Critical: ${counts.critical} | High: ${counts.high} | Medium: ${counts.medium} | Low: ${counts.low}`);
   const failOn = options.failOn || "critical";
@@ -47529,9 +47529,9 @@ function generateSarif(findings, basePath) {
     runs: [{
       tool: {
         driver: {
-          name: "SolGuard",
+          name: "SolShield",
           version: "0.1.0",
-          informationUri: "https://github.com/oh-ashen-one/solguard",
+          informationUri: "https://github.com/oh-ashen-one/solshield",
           rules
         }
       },
@@ -47610,7 +47610,7 @@ function generateCertificateMetadata(result, programId, imageUri = "https://sols
       },
       {
         trait_type: "Auditor",
-        value: "SolGuard AI"
+        value: "SolShield AI"
       },
       {
         trait_type: "Version",
@@ -47668,7 +47668,7 @@ function generateCertificateSvg(programId, passed, summary, timestamp) {
   <rect x="8" y="8" width="384" height="484" fill="none" stroke="${statusColor}" stroke-width="2" rx="12" opacity="0.5"/>
   
   <!-- Header -->
-  <text x="200" y="50" text-anchor="middle" fill="#FAFAFA" font-family="system-ui" font-size="24" font-weight="bold">\u{1F6E1}\uFE0F SolGuard</text>
+  <text x="200" y="50" text-anchor="middle" fill="#FAFAFA" font-family="system-ui" font-size="24" font-weight="bold">\u{1F6E1}\uFE0F SolShield</text>
   <text x="200" y="75" text-anchor="middle" fill="#71717A" font-family="system-ui" font-size="12">Security Audit Certificate</text>
   
   <!-- Status Badge -->
@@ -48369,7 +48369,7 @@ import chalk6 from "chalk";
 function statsCommand() {
   const patterns = listPatterns();
   console.log("");
-  console.log(chalk6.bold("  \u{1F4CA} SolGuard Statistics"));
+  console.log(chalk6.bold("  \u{1F4CA} SolShield Statistics"));
   console.log(chalk6.gray("  \u2500".repeat(25)));
   console.log("");
   console.log(chalk6.cyan("  Version:"), "0.1.0");
@@ -48419,24 +48419,24 @@ function statsCommand() {
   console.log("");
   console.log(chalk6.bold("  Available Commands (15):"));
   console.log("");
-  console.log(chalk6.cyan("  solguard audit <path>"), "       Audit a program");
-  console.log(chalk6.cyan("  solguard fetch <id>"), "         Fetch and audit on-chain");
-  console.log(chalk6.cyan("  solguard github <repo>"), "      Audit GitHub repo/PR");
-  console.log(chalk6.cyan("  solguard compare <a> <b>"), "    Compare two versions");
-  console.log(chalk6.cyan("  solguard list"), "               List all patterns");
-  console.log(chalk6.cyan("  solguard learn <pattern>"), "    Learn with Solana docs");
-  console.log(chalk6.cyan("  solguard check <path>"), "       Quick pass/fail check");
-  console.log(chalk6.cyan("  solguard ci <path>"), "          CI mode with SARIF");
-  console.log(chalk6.cyan("  solguard watch <path>"), "       Watch and auto-audit");
-  console.log(chalk6.cyan("  solguard report <path>"), "      Generate HTML report");
-  console.log(chalk6.cyan("  solguard certificate <path>"), " Generate NFT certificate");
-  console.log(chalk6.cyan("  solguard init"), "               Create config file");
-  console.log(chalk6.cyan("  solguard programs"), "           List known programs");
-  console.log(chalk6.cyan("  solguard parse <idl>"), "        Parse IDL file");
-  console.log(chalk6.cyan("  solguard stats"), "              Show this info");
+  console.log(chalk6.cyan("  solshield audit <path>"), "       Audit a program");
+  console.log(chalk6.cyan("  solshield fetch <id>"), "         Fetch and audit on-chain");
+  console.log(chalk6.cyan("  solshield github <repo>"), "      Audit GitHub repo/PR");
+  console.log(chalk6.cyan("  solshield compare <a> <b>"), "    Compare two versions");
+  console.log(chalk6.cyan("  solshield list"), "               List all patterns");
+  console.log(chalk6.cyan("  solshield learn <pattern>"), "    Learn with Solana docs");
+  console.log(chalk6.cyan("  solshield check <path>"), "       Quick pass/fail check");
+  console.log(chalk6.cyan("  solshield ci <path>"), "          CI mode with SARIF");
+  console.log(chalk6.cyan("  solshield watch <path>"), "       Watch and auto-audit");
+  console.log(chalk6.cyan("  solshield report <path>"), "      Generate HTML report");
+  console.log(chalk6.cyan("  solshield certificate <path>"), " Generate NFT certificate");
+  console.log(chalk6.cyan("  solshield init"), "               Create config file");
+  console.log(chalk6.cyan("  solshield programs"), "           List known programs");
+  console.log(chalk6.cyan("  solshield parse <idl>"), "        Parse IDL file");
+  console.log(chalk6.cyan("  solshield stats"), "              Show this info");
   console.log("");
   console.log(chalk6.gray("  Built by Midir for Solana Agent Hackathon 2026"));
-  console.log(chalk6.gray("  https://github.com/oh-ashen-one/solguard"));
+  console.log(chalk6.gray("  https://github.com/oh-ashen-one/solshield"));
   console.log("");
 }
 
@@ -48490,7 +48490,7 @@ function listCommand(options = {}) {
     return;
   }
   if (format === "markdown") {
-    console.log("# SolGuard Vulnerability Patterns\n");
+    console.log("# SolShield Vulnerability Patterns\n");
     console.log(`Total: ${filtered.length} patterns
 `);
     for (const p of filtered) {
@@ -48515,7 +48515,7 @@ function listCommand(options = {}) {
     return;
   }
   console.log("");
-  console.log(chalk7.bold("  \u{1F6E1}\uFE0F SolGuard Vulnerability Patterns"));
+  console.log(chalk7.bold("  \u{1F6E1}\uFE0F SolShield Vulnerability Patterns"));
   console.log(chalk7.gray("  \u2500".repeat(30)));
   console.log("");
   const bySeverity = {
@@ -49121,7 +49121,7 @@ function generateSummary(findings, crossRefs) {
 }
 function formatSynthesisAsMarkdown(result) {
   const lines = [];
-  lines.push("# SolGuard Multi-Agent Security Audit Report\n");
+  lines.push("# SolShield Multi-Agent Security Audit Report\n");
   lines.push(`Generated: ${(/* @__PURE__ */ new Date()).toISOString()}
 `);
   lines.push("## Executive Summary\n");
@@ -49220,9 +49220,9 @@ var SwarmOrchestrator = class {
       maxParallel: config.maxParallel || 4,
       timeout: config.timeout || 12e4,
       // 2 minutes
-      teamName: config.teamName || `solguard-audit-${Date.now()}`,
+      teamName: config.teamName || `solshield-audit-${Date.now()}`,
       useSynthesis: config.useSynthesis ?? true,
-      outputDir: config.outputDir || "./solguard-reports",
+      outputDir: config.outputDir || "./solshield-reports",
       verbose: config.verbose || false
     };
     this.agents = this.config.specialists.map(
@@ -49527,7 +49527,7 @@ var SwarmOrchestrator = class {
    */
   log(message) {
     if (this.config.verbose) {
-      console.log(`[SolGuard Swarm] ${message}`);
+      console.log(`[SolShield Swarm] ${message}`);
     }
   }
 };

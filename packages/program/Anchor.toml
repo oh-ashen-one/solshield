@@ -3,10 +3,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-solguard = "SoLGUARD1111111111111111111111111111111111"
+solshield = "SoLGUARD1111111111111111111111111111111111"
 
 [programs.devnet]
-solguard = "SoLGUARD1111111111111111111111111111111111"
+solshield = "SoLGUARD1111111111111111111111111111111111"
 
 [registry]
 url = "https://api.apr.dev"

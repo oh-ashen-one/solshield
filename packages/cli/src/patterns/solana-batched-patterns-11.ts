@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 11 (SOL341-SOL400)
+ * SolShield Security Patterns - Batch 11 (SOL341-SOL400)
  * Advanced DeFi vulnerability patterns from real exploits and audits
  * Sources: Helius, Sec3, OtterSec, Neodyme research
  */

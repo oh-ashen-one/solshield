@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 72 - Solsec Deep Dive + Audit Methodology Patterns
+ * SolShield Pattern Batch 72 - Solsec Deep Dive + Audit Methodology Patterns
  * 
  * Based on:
  * 1. sannykim/solsec repository - comprehensive exploit collection

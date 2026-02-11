@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 89 Patterns
+ * SolShield Batch 89 Patterns
  * 
  * Source: Zellic Anchor Vulnerabilities + Cantina Security Guide + Advanced DeFi Patterns + 2026 Threats
  * Patterns SOL4901-SOL5000

@@ -1,4 +1,4 @@
-# 🗺️ SolGuard Roadmap
+# 🗺️ SolShield Roadmap
 
 Where we're heading after the hackathon.
 
@@ -24,7 +24,7 @@ Where we're heading after the hackathon.
 - [ ] Deploy Anchor program to devnet
 - [ ] Deploy Anchor program to mainnet
 - [ ] Launch hosted web UI (solshieldai.netlify.app)
-- [ ] Publish `@solguard/cli` to npm
+- [ ] Publish `@solshield/cli` to npm
 
 ### Features
 - [ ] NFT audit certificates via Metaplex
@@ -99,13 +99,13 @@ Where we're heading after the hackathon.
 1. **Try it** — Audit your programs, report issues
 2. **Contribute** — Add patterns, fix bugs
 3. **Spread** — Star the repo, share on Twitter
-4. **Integrate** — Build on top of SolGuard
+4. **Integrate** — Build on top of SolShield
 
 ---
 
 ## Connect
 
-- **GitHub:** https://github.com/oh-ashen-one/solguard
+- **GitHub:** https://github.com/oh-ashen-one/solshield
 - **Twitter:** [@ashen_one](https://twitter.com/ashen_one)
 - **Discord:** Coming soon
 

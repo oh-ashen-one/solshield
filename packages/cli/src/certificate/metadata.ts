@@ -83,7 +83,7 @@ export function generateCertificateMetadata(
       },
       {
         trait_type: 'Auditor',
-        value: 'SolGuard AI',
+        value: 'SolShield AI',
       },
       {
         trait_type: 'Version',
@@ -158,7 +158,7 @@ export function generateCertificateSvg(
   <rect x="8" y="8" width="384" height="484" fill="none" stroke="${statusColor}" stroke-width="2" rx="12" opacity="0.5"/>
   
   <!-- Header -->
-  <text x="200" y="50" text-anchor="middle" fill="#FAFAFA" font-family="system-ui" font-size="24" font-weight="bold">🛡️ SolGuard</text>
+  <text x="200" y="50" text-anchor="middle" fill="#FAFAFA" font-family="system-ui" font-size="24" font-weight="bold">🛡️ SolShield</text>
   <text x="200" y="75" text-anchor="middle" fill="#71717A" font-family="system-ui" font-size="12">Security Audit Certificate</text>
   
   <!-- Status Badge -->

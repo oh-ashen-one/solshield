@@ -1,5 +1,5 @@
 /**
- * SolGuard Batched Patterns 46 - Phishing, Social Engineering & Advanced Attack Vectors
+ * SolShield Batched Patterns 46 - Phishing, Social Engineering & Advanced Attack Vectors
  * 
  * Based on SlowMist Research (Dec 2025), Solana Phishing Attacks Analysis
  * and CyberPress security reports

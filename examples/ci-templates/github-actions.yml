@@ -1,7 +1,7 @@
-# SolGuard GitHub Actions Template
-# Copy this to .github/workflows/solguard.yml in your repo
+# SolShield GitHub Actions Template
+# Copy this to .github/workflows/solshield.yml in your repo
 
-name: SolGuard Security Audit
+name: SolShield Security Audit
 
 on:
   push:
@@ -31,13 +31,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install SolGuard
+      - name: Install SolShield
         run: |
-          git clone https://github.com/oh-ashen-one/solguard.git /tmp/solguard
-          cd /tmp/solguard/packages/cli && npm install && npm run build && npm link
+          git clone https://github.com/oh-ashen-one/solshield.git /tmp/solshield
+          cd /tmp/solshield/packages/cli && npm install && npm run build && npm link
 
       - name: Run Security Audit
-        run: solguard ci . --fail-on high --sarif results.sarif
+        run: solshield ci . --fail-on high --sarif results.sarif
         continue-on-error: true
 
       - name: Upload SARIF to GitHub
@@ -70,13 +70,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install SolGuard
+      - name: Install SolShield
         run: |
-          git clone https://github.com/oh-ashen-one/solguard.git /tmp/solguard
-          cd /tmp/solguard/packages/cli && npm install && npm run build && npm link
+          git clone https://github.com/oh-ashen-one/solshield.git /tmp/solshield
+          cd /tmp/solshield/packages/cli && npm install && npm run build && npm link
 
       - name: Generate Markdown Report
-        run: solguard audit . --format markdown > report.md
+        run: solshield audit . --format markdown > report.md
 
       - name: Comment on PR
         uses: actions/github-script@v7
@@ -89,5 +89,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🛡️ SolGuard Security Report\n\n${report}`
+              body: `## 🛡️ SolShield Security Report\n\n${report}`
             });

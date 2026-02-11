@@ -1,5 +1,5 @@
 /**
- * SolGuard Batched Patterns 33 - Network & Infrastructure Security
+ * SolShield Batched Patterns 33 - Network & Infrastructure Security
  * Based on Helius research: Network-Level Attacks + Core Protocol Vulnerabilities
  * Feb 5, 2026 - 6:30 AM CST
  */

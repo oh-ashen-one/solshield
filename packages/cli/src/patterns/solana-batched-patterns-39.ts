@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 39
+ * SolShield Pattern Batch 39
  * Sec3 2025 Security Report Patterns & Recent Exploit Analysis
  * Patterns SOL1021-SOL1100
  * 

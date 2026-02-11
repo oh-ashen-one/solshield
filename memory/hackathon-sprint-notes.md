@@ -1,4 +1,4 @@
-# SolGuard Hackathon Sprint Notes
+# SolShield Hackathon Sprint Notes
 
 ## Session: Feb 6, 2026 - 12:30 PM CST (75 NEW PATTERNS!)
 
@@ -215,7 +215,7 @@
 
 ### ✅ Verification
 - Build: ✅ All packages build successfully (CLI, Web, SDK)
-- CLI: ✅ `solguard audit` command works correctly
+- CLI: ✅ `solshield audit` command works correctly
 - Pattern Detection: ✅ Detects arithmetic issues in test files
 - Git: ✅ Fix committed and pushed to main (3deda7d)
 

@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 10 (SOL291-SOL350)
+ * SolShield Security Patterns - Batch 10 (SOL291-SOL350)
  * Real exploit patterns from 2022-2025 major Solana hacks
  * Based on: Helius "Solana Hacks Complete History", Sec3 2025 Report
  */

@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "SolShield — AI-Powered Solana Smart Contract Security Audit Tool",
-  description: "Free Solana smart contract audit tool with 5,916 vulnerability patterns. Detect security flaws in Anchor programs and vibe-coded Rust instantly. No signup required.",
+  description: "Free Solana smart contract audit tool with 5,916+ vulnerability patterns. Detect security flaws in Anchor programs and vibe-coded Rust instantly. No signup required.",
   keywords: ["solana smart contract audit", "solana security scanner", "anchor program audit", "vibe coded crypto security", "solana vulnerability detector", "rust smart contract security", "AI code audit", "SolShield"],
   authors: [{ name: "Ashen One", url: "https://www.youtube.com/@ashenonesol" }],
   robots: "index, follow",
@@ -28,14 +28,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "SolShield — AI-Powered Solana Smart Contract Security Audit",
-    description: "Free Solana smart contract audit tool with 5,916 vulnerability patterns. Detect security flaws in Anchor programs and vibe-coded Rust instantly.",
+    description: "Free Solana smart contract audit tool with 5,916+ vulnerability patterns. Detect security flaws in Anchor programs and vibe-coded Rust instantly.",
     type: "website",
     url: "https://solshieldai.netlify.app",
   },
   twitter: {
     card: "summary_large_image",
     title: "SolShield — Solana Smart Contract Security Scanner",
-    description: "Free AI-powered security audits for Solana smart contracts. 5,916 vulnerability patterns from real exploits. Built for the vibe coding era.",
+    description: "Free AI-powered security audits for Solana smart contracts. 5,916+ vulnerability patterns from real exploits. Built for the vibe coding era.",
     creator: "@ashen_one",
   },
 };
@@ -66,7 +66,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
               "name": "SolShield",
-              "description": "Free AI-powered Solana smart contract security audit tool with 5,916 vulnerability patterns from real exploits.",
+              "description": "Free AI-powered Solana smart contract security audit tool with 5,916+ vulnerability patterns from real exploits.",
               "url": "https://solshieldai.netlify.app",
               "applicationCategory": "DeveloperApplication",
               "operatingSystem": "Web",
@@ -87,7 +87,7 @@ export default function RootLayout({
                   "name": "What is SolShield?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "SolShield is a free AI-powered security audit tool for Solana smart contracts. It scans Anchor programs and Rust code against 5,916 vulnerability patterns derived from real exploits, detecting issues like missing signer checks, integer overflow, PDA validation errors, and reentrancy vulnerabilities. According to DeFiLlama, over $3 billion has been lost to DeFi exploits since 2020."
+                    "text": "SolShield is a free AI-powered security audit tool for Solana smart contracts. It scans Anchor programs and Rust code against 5,916+ vulnerability patterns derived from real exploits, detecting issues like missing signer checks, integer overflow, PDA validation errors, and reentrancy vulnerabilities. According to DeFiLlama, over $3 billion has been lost to DeFi exploits since 2020."
                   }
                 },
                 {
@@ -95,7 +95,7 @@ export default function RootLayout({
                   "name": "How does SolShield audit Solana smart contracts?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Paste your Solana program code, upload a file, or link a GitHub repository. SolShield analyzes the code using pattern matching against 5,916 known vulnerability signatures, including missing owner checks, unsafe arithmetic, improper PDA derivation, and account validation gaps. Results include severity ratings (Critical, High, Medium, Low) with specific code locations and remediation suggestions."
+                    "text": "Paste your Solana program code, upload a file, or link a GitHub repository. SolShield analyzes the code using pattern matching against 5,916+ known vulnerability signatures, including missing owner checks, unsafe arithmetic, improper PDA derivation, and account validation gaps. Results include severity ratings (Critical, High, Medium, Low) with specific code locations and remediation suggestions."
                   }
                 },
                 {

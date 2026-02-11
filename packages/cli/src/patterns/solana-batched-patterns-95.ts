@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 95 Patterns
+ * SolShield Batch 95 Patterns
  * 
  * Source: OtterSec Audits + Neodyme Research + Sec3 Workshop + Zellic Deep Dive + Feb 2026 Final
  * Patterns: SOL5701-SOL5800

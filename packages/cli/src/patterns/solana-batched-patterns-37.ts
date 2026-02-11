@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 37
+ * SolShield Pattern Batch 37
  * Based on Helius "Solana Hacks, Bugs, and Exploits: A Complete History" (Q1 2025)
  * Patterns SOL905-SOL960
  */

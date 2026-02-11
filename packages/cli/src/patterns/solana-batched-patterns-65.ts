@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 65 - Latest 2025-2026 Exploits & Emerging Threats
+ * SolShield Batch 65 - Latest 2025-2026 Exploits & Emerging Threats
  * SOL2901-SOL3000 (100 patterns)
  * 
  * Sources:

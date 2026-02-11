@@ -4,13 +4,13 @@
   "description": "SolShield CLI - The first security check for vibe-coded Solana programs. 5,916 vulnerability patterns.",
   "author": "SolShield Team",
   "license": "MIT",
-  "homepage": "https://github.com/oh-ashen-one/solguard",
+  "homepage": "https://github.com/oh-ashen-one/solshield",
   "repository": {
     "type": "git",
-    "url": "https://github.com/oh-ashen-one/solguard.git"
+    "url": "https://github.com/oh-ashen-one/solshield.git"
   },
   "bugs": {
-    "url": "https://github.com/oh-ashen-one/solguard/issues"
+    "url": "https://github.com/oh-ashen-one/solshield/issues"
   },
   "keywords": [
     "solana",

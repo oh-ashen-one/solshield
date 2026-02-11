@@ -1,5 +1,5 @@
 /**
- * SolGuard Patterns Batch 53 - Sec3 2025 Enhanced + Latest Exploits
+ * SolShield Patterns Batch 53 - Sec3 2025 Enhanced + Latest Exploits
  * 
  * 70 patterns covering:
  * - Business Logic Deep Patterns (38.5% of all Solana vulns)

@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 41
+ * SolShield Pattern Batch 41
  * Cross-Program Invocation (CPI) Security Patterns
  * Patterns SOL1161-SOL1230
  * 

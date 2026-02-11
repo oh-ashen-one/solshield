@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 66 - Advanced Exploit Patterns & Protocol Security
+ * SolShield Batch 66 - Advanced Exploit Patterns & Protocol Security
  * SOL2951-SOL3050 (100 patterns)
  * 
  * Sources:

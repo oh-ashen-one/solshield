@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 96
+ * SolShield Security Patterns - Batch 96
  * 
  * Feb 6, 2026 8:00 AM - Latest 2026 Exploits + Sec3 2025 Final + Helius Complete History
  * 

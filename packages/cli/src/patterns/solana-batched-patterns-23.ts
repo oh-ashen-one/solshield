@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns SOL697-SOL716 (20 patterns)
+ * SolShield Security Patterns SOL697-SOL716 (20 patterns)
  * Based on Real-World Exploits + Sec3 2025 Report Categories
  * Focus: Input Validation & Data Hygiene (25% of all vulns)
  */

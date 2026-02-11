@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns SOL717-SOL736 (20 patterns)
+ * SolShield Security Patterns SOL717-SOL736 (20 patterns)
  * Based on Sec3 2025 Report + Real Exploits
  * Focus: Access Control & Authorization (19% of all vulns)
  */

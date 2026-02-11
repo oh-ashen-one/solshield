@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 21
+ * SolShield Security Patterns - Batch 21
  * SOL657-SOL676: Latest 2025 Exploits from Helius Research
  * 
  * Based on: https://www.helius.dev/blog/solana-hacks

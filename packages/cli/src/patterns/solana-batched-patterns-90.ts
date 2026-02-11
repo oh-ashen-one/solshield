@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 90
+ * SolShield Security Patterns - Batch 90
  * 
  * Feb 6, 2026 5:00 AM - Latest 2025-2026 Research + Sec3 Final + Academic Deep Dive
  * Sources:

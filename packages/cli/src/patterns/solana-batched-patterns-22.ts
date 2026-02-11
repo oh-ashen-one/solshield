@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns SOL677-SOL696 (20 patterns)
+ * SolShield Security Patterns SOL677-SOL696 (20 patterns)
  * Based on Sec3 2025 Report + sannykim/solsec Research
  * Focus: Business Logic Flaws (38.5% of all vulns)
  */

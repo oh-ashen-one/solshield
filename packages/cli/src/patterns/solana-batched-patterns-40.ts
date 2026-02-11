@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 40
+ * SolShield Pattern Batch 40
  * Protocol-Specific Deep Patterns & Edge Cases
  * Patterns SOL1081-SOL1160
  * 

@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 92
+ * SolShield Security Patterns - Batch 92
  * 
  * Feb 6, 2026 6:00 AM - Solsec Deep Dive + PoC Exploits
  * Sources:

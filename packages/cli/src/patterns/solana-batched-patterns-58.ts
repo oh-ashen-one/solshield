@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 58: 2025-2026 Latest Exploits + Infrastructure Security
+ * SolShield Batch 58: 2025-2026 Latest Exploits + Infrastructure Security
  * 
  * 70 patterns (SOL2351-SOL2420) based on:
  * - Feb 2026 latest security incidents

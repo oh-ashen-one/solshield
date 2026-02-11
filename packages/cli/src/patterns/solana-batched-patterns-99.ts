@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 99
+ * SolShield Security Patterns - Batch 99
  * 
  * Feb 6, 2026 9:00 AM - Latest Feb 2026 Emerging Threats
  * 

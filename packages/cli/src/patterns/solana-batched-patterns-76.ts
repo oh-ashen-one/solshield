@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 76
+ * SolShield Security Patterns - Batch 76
  * 
  * Feb 2026 Final Comprehensive Batch
  * SOL3676-SOL3750 (75 patterns)

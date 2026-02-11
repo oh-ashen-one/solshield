@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 73 - DeFi Protocol Deep Dive + Cross-Chain Security
+ * SolShield Pattern Batch 73 - DeFi Protocol Deep Dive + Cross-Chain Security
  * 
  * Based on:
  * 1. Wormhole $326M exploit analysis

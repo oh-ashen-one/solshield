@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 56
+ * SolShield Security Patterns - Batch 56
  * 
  * 70 Patterns (SOL2211-SOL2280)
  * Sources:

@@ -1,11 +1,11 @@
 {
   "json.schemas": [
     {
-      "fileMatch": ["solguard.config.json", ".solguardrc", ".solguardrc.json"],
-      "url": "./schemas/solguard.schema.json"
+      "fileMatch": ["solshield.config.json", ".solshieldrc", ".solshieldrc.json"],
+      "url": "./schemas/solshield.schema.json"
     }
   ],
   "files.associations": {
-    ".solguardrc": "json"
+    ".solshieldrc": "json"
   }
 }

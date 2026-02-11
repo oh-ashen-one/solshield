@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 63: 2025-2026 Latest Exploits & Advanced Security
+ * SolShield Pattern Batch 63: 2025-2026 Latest Exploits & Advanced Security
  * 
  * Based on:
  * - Helius "Solana Hacks, Bugs, and Exploits: A Complete History" (Jun 2025)

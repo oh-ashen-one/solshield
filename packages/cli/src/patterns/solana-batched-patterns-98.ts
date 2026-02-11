@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 98
+ * SolShield Security Patterns - Batch 98
  * 
  * Feb 6, 2026 8:30 AM - Helius Complete History Deep Dive + Response Evolution
  * 

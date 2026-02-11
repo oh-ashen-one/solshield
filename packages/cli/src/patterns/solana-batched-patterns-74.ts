@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 74 - Comprehensive Protocol Security + Latest Research
+ * SolShield Pattern Batch 74 - Comprehensive Protocol Security + Latest Research
  * 
  * Based on:
  * 1. Certora formal verification findings

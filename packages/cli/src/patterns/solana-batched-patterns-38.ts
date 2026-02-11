@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 38
+ * SolShield Pattern Batch 38
  * Deep DeFi and Protocol-Specific Vulnerabilities
  * Patterns SOL961-SOL1020
  */

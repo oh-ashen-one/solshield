@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 78 Security Patterns
+ * SolShield Batch 78 Security Patterns
  * Based on: Step Finance $30M Hack (Jan 31, 2026), DEV.to Deep Dive, NoOnes Bridge, Feb 2026 Threats
  * 
  * Pattern IDs: SOL3876 - SOL3975 (100 patterns)

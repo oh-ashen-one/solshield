@@ -1,5 +1,5 @@
 /**
- * SolGuard Batched Patterns 45 - 2025 Developer Education Security
+ * SolShield Batched Patterns 45 - 2025 Developer Education Security
  * 
  * Based on DEV.to "Solana Vulnerabilities Every Developer Should Know" (Feb 2025)
  * and Sec3 2025 Ecosystem Review findings

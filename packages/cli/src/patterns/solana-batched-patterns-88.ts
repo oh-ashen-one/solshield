@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 88 Patterns
+ * SolShield Batch 88 Patterns
  * 
  * Source: Helius Complete History (38 Incidents) + Solsec PoC Deep Dives + 2026 Advanced Patterns
  * Patterns SOL4801-SOL4900

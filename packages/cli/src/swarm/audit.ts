@@ -42,7 +42,7 @@ export interface SwarmAuditResult extends SwarmResult {
  * 
  * @example
  * ```typescript
- * import { swarmAudit } from '@solguard/cli/swarm';
+ * import { swarmAudit } from '@solshield/cli/swarm';
  * 
  * const result = await swarmAudit({
  *   target: './programs/my-vault/src/lib.rs',
@@ -104,13 +104,13 @@ export async function quickAudit(target: string) {
 /**
  * CLI command handler for swarm audit
  * 
- * Usage: solguard swarm <path> [options]
+ * Usage: solshield swarm <path> [options]
  */
 export async function swarmCommand(args: string[]): Promise<void> {
   const target = args[0];
   
   if (!target) {
-    console.error('Usage: solguard swarm <path> [--mode api|agent-teams] [--verbose]');
+    console.error('Usage: solshield swarm <path> [--mode api|agent-teams] [--verbose]');
     process.exit(1);
   }
 
@@ -119,7 +119,7 @@ export async function swarmCommand(args: string[]): Promise<void> {
     : args.includes('--agent-teams') ? 'agent-teams'
     : 'auto';
 
-  console.log('🔍 Starting SolGuard Multi-Agent Security Audit...\n');
+  console.log('🔍 Starting SolShield Multi-Agent Security Audit...\n');
   
   const result = await swarmAudit({
     target,
@@ -167,7 +167,7 @@ export const AGENT_TEAMS_EXAMPLE = `
 // === STEP 1: Create the team ===
 Teammate({
   operation: "spawnTeam",
-  team_name: "solguard-audit",
+  team_name: "solshield-audit",
   description: "Security audit of Solana program"
 })
 
@@ -198,7 +198,7 @@ TaskCreate({
 
 // === STEP 3: Spawn specialist agents ===
 Task({
-  team_name: "solguard-audit",
+  team_name: "solshield-audit",
   name: "reentrancy-specialist",
   subagent_type: "general-purpose",
   prompt: \`You are a reentrancy specialist. 
@@ -208,7 +208,7 @@ Task({
 })
 
 Task({
-  team_name: "solguard-audit",
+  team_name: "solshield-audit",
   name: "access-control-specialist",
   subagent_type: "general-purpose",
   prompt: \`You are an access control specialist.
@@ -221,7 +221,7 @@ Task({
 
 // === STEP 4: Wait for results ===
 // Specialists will send findings via Teammate.write()
-// Check inbox: ~/.claude/teams/solguard-audit/inboxes/team-lead.json
+// Check inbox: ~/.claude/teams/solshield-audit/inboxes/team-lead.json
 
 // === STEP 5: Synthesize and cleanup ===
 Teammate({ operation: "requestShutdown", target_agent_id: "reentrancy-specialist" })

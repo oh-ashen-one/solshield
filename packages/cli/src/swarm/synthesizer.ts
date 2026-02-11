@@ -338,7 +338,7 @@ function generateSummary(
 export function formatSynthesisAsMarkdown(result: SynthesisResult): string {
   const lines: string[] = [];
   
-  lines.push('# SolGuard Multi-Agent Security Audit Report\n');
+  lines.push('# SolShield Multi-Agent Security Audit Report\n');
   lines.push(`Generated: ${new Date().toISOString()}\n`);
   
   // Summary

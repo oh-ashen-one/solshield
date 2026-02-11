@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 44
+ * SolShield Pattern Batch 44
  * Infrastructure & Runtime Security Patterns
  * Patterns SOL1371-SOL1440
  * 

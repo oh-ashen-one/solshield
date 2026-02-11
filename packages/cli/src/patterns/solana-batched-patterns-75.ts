@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 75 Security Patterns
+ * SolShield Batch 75 Security Patterns
  * Based on: Sec3 2025 Final Deep Dive + helius.dev Complete Exploit History + arXiv Research
  * 
  * Pattern IDs: SOL3576 - SOL3675 (100 patterns)

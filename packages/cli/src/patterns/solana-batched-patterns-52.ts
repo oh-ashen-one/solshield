@@ -1,5 +1,5 @@
 /**
- * SolGuard Batched Patterns 52 - SOL1931-SOL2000
+ * SolShield Batched Patterns 52 - SOL1931-SOL2000
  * Real-World Exploit Deep Dives + Advanced Attack Vectors
  * Added: Feb 5, 2026 1:30 PM CST
  * 

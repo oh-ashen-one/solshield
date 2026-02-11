@@ -1,4 +1,4 @@
-# 🎬 SolGuard Demo Video Script
+# 🎬 SolShield Demo Video Script
 
 **Target length:** 2-3 minutes
 **What you need:** Screen recording software (Loom, OBS, or iPhone)
@@ -11,7 +11,7 @@
 
 **Say:**
 > "Manual smart contract audits cost $10-100K and take weeks. 
-> SolGuard does it in seconds — and it was built entirely by an AI agent."
+> SolShield does it in seconds — and it was built entirely by an AI agent."
 
 ---
 
@@ -38,7 +38,7 @@
 5. Scroll through findings
 
 **Say:**
-> "This vault has intentional vulnerabilities. Watch SolGuard detect them:
+> "This vault has intentional vulnerabilities. Watch SolShield detect them:
 > - Missing signer check — anyone can pretend to be the authority
 > - Integer overflow — balance can underflow to max u64
 > - Authority bypass — no verification on withdraw
@@ -64,9 +64,9 @@
 
 **Do:**
 1. Open terminal in Codespaces
-2. Run: `solguard audit ../examples/vulnerable/token-vault`
+2. Run: `solshield audit ../examples/vulnerable/token-vault`
 3. Show the colored output
-4. Run: `solguard github coral-xyz/anchor` (or any public repo)
+4. Run: `solshield github coral-xyz/anchor` (or any public repo)
 
 **Say:**
 > "The CLI can audit local files, fetch from GitHub, 
@@ -81,7 +81,7 @@
 **Show:** README or HACKATHON.md
 
 **Say:**
-> "SolGuard: 2400+ patterns, CLI, Web UI, and on-chain verification —
+> "SolShield: 2400+ patterns, CLI, Web UI, and on-chain verification —
 > all written by Midir, an AI agent on Clawdbot.
 > 
 > Security audits for everyone. Free in beta. Try it now."
@@ -94,7 +94,7 @@
 - **Pace:** Not too fast. Judges are evaluating, not speedrunning.
 - **Mistakes:** Minor flubs are fine. Authenticity > polish.
 - **Music:** Optional background music at low volume adds polish
-- **Thumbnail:** Screenshot of the audit results with "SolGuard" text
+- **Thumbnail:** Screenshot of the audit results with "SolShield" text
 
 ---
 
@@ -102,17 +102,17 @@
 
 ```bash
 # Audit local code
-solguard audit ./path/to/program
+solshield audit ./path/to/program
 
 # Audit from GitHub
-solguard github owner/repo
-solguard github owner/repo --pr 123
+solshield github owner/repo
+solshield github owner/repo --pr 123
 
 # List all 2400+ patterns
-solguard list
+solshield list
 
 # Show stats
-solguard stats
+solshield stats
 ```
 
 ---

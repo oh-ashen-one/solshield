@@ -218,7 +218,7 @@ const TERMINAL_LINES = [
   { text: '', color: '', delay: 3400 },
   { text: '  ────────────────────────────────────────────────────', color: 'text-zinc-700', delay: 3500 },
   { text: '  Found 5 issues (1 critical, 2 high, 1 medium, 1 low)', color: 'text-white', delay: 3700 },
-  { text: '  Scanned in 0.47s • 7,142 patterns checked', color: 'text-zinc-500', delay: 4000 },
+  { text: '  Scanned in 0.47s • 5,916 patterns checked', color: 'text-zinc-500', delay: 4000 },
   { text: '', color: '', delay: 4200 },
   { text: '  → Run `solshield audit --fix` for suggestions', color: 'text-cyan-400', delay: 4500 },
 ];
@@ -550,7 +550,7 @@ pub enum VaultError {
             <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-4">
               AI writes your code in seconds. SolShield catches what it missed.
               <br className="hidden sm:block" />
-              5,916 vulnerability patterns. Instant analysis. Always free.
+              5,916+ vulnerability patterns. Instant analysis. Always free.
             </p>
 
             <p className="text-zinc-600 text-lg mb-10 font-medium">Vibe code it. SolShield it. Ship it.</p>
@@ -581,7 +581,7 @@ pub enum VaultError {
           <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}
             className="grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
             {[
-              { val: 5916, suffix: '', label: 'Patterns' },
+              { val: 5916, suffix: '+', label: 'Patterns' },
               { val: 600, prefix: '$', suffix: 'M+', label: 'Exploits Covered' },
               { val: 1, prefix: '<', suffix: 's', label: 'Analysis Time' },
               { val: 100, suffix: '%', label: 'Free' },
@@ -613,7 +613,7 @@ pub enum VaultError {
             {[
               { icon: '🤖', title: 'AI Writes Code', desc: 'Cursor, Copilot, ChatGPT — generating Anchor programs in seconds' },
               { icon: '🕳️', title: 'Nobody Checks Security', desc: 'Missing signer checks, integer overflows, unchecked CPIs ship to mainnet' },
-              { icon: '🛡️', title: 'SolShield Fills the Gap', desc: '5,916 patterns from real exploits catch what AI missed — instantly' },
+              { icon: '🛡️', title: 'SolShield Fills the Gap', desc: '5,916+ patterns from real exploits catch what AI missed — instantly' },
             ].map((item, i) => (
               <motion.div key={i} variants={fadeUp}
                 className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-xl hover:border-cyan-500/20 transition-all glow-card">
@@ -636,7 +636,7 @@ pub enum VaultError {
             className="grid md:grid-cols-3 gap-8">
             {[
               { step: '01', icon: '📋', title: 'Paste Code', desc: 'Drop your Anchor program, GitHub URL, or upload .rs files', color: 'from-cyan-500 to-blue-500' },
-              { step: '02', icon: '⚡', title: 'Instant Scan', desc: '5,916 patterns from Wormhole, Mango, Cashio & more run in <1s', color: 'from-purple-500 to-pink-500' },
+              { step: '02', icon: '⚡', title: 'Instant Scan', desc: '5,916+ patterns from Wormhole, Mango, Cashio & more run in <1s', color: 'from-purple-500 to-pink-500' },
               { step: '03', icon: '🚀', title: 'Ship Secure', desc: 'Get findings with severity, location, and fix suggestions', color: 'from-green-500 to-emerald-500' },
             ].map((s, i) => (
               <motion.div key={i} variants={fadeUp}
@@ -691,7 +691,7 @@ pub enum VaultError {
 
           <div className="text-center mt-10">
             <Link href="/patterns" className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
-              View all 5,916 patterns
+              View all 5,916+ patterns
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
             </Link>
           </div>
@@ -1050,7 +1050,7 @@ pub enum VaultError {
             <summary className="cursor-pointer font-bold text-lg mb-4 text-zinc-300">Learn more about SolShield</summary>
             <div className="text-sm leading-relaxed text-zinc-400 space-y-4">
               <p>
-                SolShield is a free AI-powered security audit tool for Solana smart contracts that scans code against 5,916 vulnerability patterns derived from real-world exploits. It supports Anchor framework programs and native Solana Rust programs, detecting critical issues like missing signer checks, integer overflow, PDA validation errors, reentrancy vulnerabilities, and unsafe deserialization. According to DeFiLlama, over $3 billion has been lost to DeFi exploits since 2020, with Solana-based protocols accounting for significant losses including the Wormhole ($320M) and Mango Markets ($114M) exploits.
+                SolShield is a free AI-powered security audit tool for Solana smart contracts that scans code against 5,916+ vulnerability patterns derived from real-world exploits. It supports Anchor framework programs and native Solana Rust programs, detecting critical issues like missing signer checks, integer overflow, PDA validation errors, reentrancy vulnerabilities, and unsafe deserialization. According to DeFiLlama, over $3 billion has been lost to DeFi exploits since 2020, with Solana-based protocols accounting for significant losses including the Wormhole ($320M) and Mango Markets ($114M) exploits.
               </p>
               <p>
                 SolShield was built specifically for the vibe coding era, where developers increasingly use AI tools like Cursor, Copilot, and Claude to generate smart contract code. While AI-generated code ships fast, it often contains subtle security flaws that human review might miss. SolShield provides an automated first line of defense, analyzing code in seconds and providing severity-rated findings with specific remediation guidance.

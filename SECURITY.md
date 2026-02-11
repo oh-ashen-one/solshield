@@ -8,9 +8,9 @@
 
 ## Reporting a Vulnerability
 
-SolGuard is a security auditing tool, so we take security seriously. If you discover a vulnerability:
+SolShield is a security auditing tool, so we take security seriously. If you discover a vulnerability:
 
-### In the SolGuard Tool Itself
+### In the SolShield Tool Itself
 
 1. **DO NOT** open a public issue
 2. Open a [private GitHub Security Advisory](https://github.com/oh-ashen-one/solshield/security/advisories/new)
@@ -24,7 +24,7 @@ We will acknowledge within 48 hours and provide a timeline for resolution.
 
 ### In the Detection Patterns
 
-If you find that SolGuard:
+If you find that SolShield:
 - **Misses** a vulnerability (false negative)
 - **Incorrectly flags** safe code (false positive)
 - Has a **pattern that can be bypassed**
@@ -34,7 +34,7 @@ Please open a GitHub issue! These help us improve detection accuracy.
 ## Scope
 
 ### In Scope
-- CLI application (`@solguard/cli`)
+- CLI application (`@solshield/cli`)
 - Web UI (`packages/web`)
 - On-chain program (`packages/program`)
 - Detection patterns (`packages/cli/src/patterns/`)

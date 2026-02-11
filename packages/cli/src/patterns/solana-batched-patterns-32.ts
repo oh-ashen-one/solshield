@@ -1,5 +1,5 @@
 /**
- * SolGuard Batched Patterns 32 - Helius Exploit History Deep Dive
+ * SolShield Batched Patterns 32 - Helius Exploit History Deep Dive
  * Based on comprehensive Helius research analyzing 38 verified security incidents
  * Feb 5, 2026 - 6:30 AM CST
  */

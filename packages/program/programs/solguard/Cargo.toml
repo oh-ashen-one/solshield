@@ -1,12 +1,12 @@
 [package]
-name = "solguard"
+name = "solshield"
 version = "0.1.0"
 description = "On-chain audit registry for Solana smart contracts"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "solguard"
+name = "solshield"
 
 [features]
 default = []

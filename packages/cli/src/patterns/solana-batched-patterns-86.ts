@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 86 Patterns
+ * SolShield Batch 86 Patterns
  * Added: Feb 6, 2026 3:45 AM
  * Source: Helius Supply Chain + Network Attacks + Core Protocol Vulnerabilities + 2026 Infrastructure Threats
  * Patterns: SOL4601-SOL4700

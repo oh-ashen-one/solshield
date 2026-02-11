@@ -1,5 +1,5 @@
 /**
- * SolGuard Pattern Batch 62: Protocol-Specific & Economic Security
+ * SolShield Pattern Batch 62: Protocol-Specific & Economic Security
  * 
  * Based on:
  * - BlockHacks $600M+ Solana Exploit Analysis

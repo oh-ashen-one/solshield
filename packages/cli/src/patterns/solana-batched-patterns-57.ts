@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 57: Solsec Audit Findings + Advanced PoC Patterns
+ * SolShield Batch 57: Solsec Audit Findings + Advanced PoC Patterns
  * 
  * 70 patterns (SOL2281-SOL2350) based on:
  * - sannykim/solsec curated audit findings

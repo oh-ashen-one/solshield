@@ -1,6 +1,6 @@
 # 📖 Security Glossary
 
-Common terms used in SolGuard and Solana security.
+Common terms used in SolShield and Solana security.
 
 ---
 
@@ -125,4 +125,4 @@ Checking a program's audit status via cross-program invocation before interactin
 
 ---
 
-*For more details on any pattern, run `solguard list` or see [PATTERNS.md](PATTERNS.md).*
+*For more details on any pattern, run `solshield list` or see [PATTERNS.md](PATTERNS.md).*

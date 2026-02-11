@@ -1,5 +1,5 @@
 /**
- * SolGuard Batch 87 Patterns - Feb 6, 2026 4:00 AM
+ * SolShield Batch 87 Patterns - Feb 6, 2026 4:00 AM
  * 
  * 100 NEW patterns: SOL4701-SOL4800
  * 

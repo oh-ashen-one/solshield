@@ -1,5 +1,5 @@
 /**
- * SolGuard Batched Patterns 51 - SOL1861-SOL1930
+ * SolShield Batched Patterns 51 - SOL1861-SOL1930
  * Cantina Security Guide + Advanced Protocol Patterns
  * Added: Feb 5, 2026 1:30 PM CST
  * 

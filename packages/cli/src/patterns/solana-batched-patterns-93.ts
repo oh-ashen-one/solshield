@@ -1,5 +1,5 @@
 /**
- * SolGuard Security Patterns - Batch 93
+ * SolShield Security Patterns - Batch 93
  * 
  * Feb 6, 2026 6:30 AM - Step Finance $40M Hack + arXiv Research + Sec3 2025 Final
  * Sources:
