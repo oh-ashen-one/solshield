@@ -12,7 +12,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/oh-ashen-one/solshield/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-ashen-one/solshield/actions/workflows/ci.yml)
-[![Patterns](https://img.shields.io/badge/patterns-6969%2B-blue.svg)](#vulnerability-patterns)
+[![Patterns](https://img.shields.io/badge/patterns-7000%2B-blue.svg)](#vulnerability-patterns)
 [![Commands](https://img.shields.io/badge/CLI%20commands-17-purple.svg)](#cli)
 [![Built by AI](https://img.shields.io/badge/Built%20by-AI%20Agent%20🤖-ff69b4.svg)](HACKATHON.md)
 
@@ -23,27 +23,27 @@
 
 > **For Hackathon Judges:** Click either badge above → Web UI opens automatically at port 3000 → Paste code and audit!
 
-**AI-Powered Smart Contract Auditor for Solana**
+### The Problem
 
-> Built 100% by AI agents for the [Solana x OpenClaw Agent Hackathon 2026](https://colosseum.com/agent-hackathon)
+AI is writing Solana programs now. Cursor, Copilot, Claude — developers are vibe coding smart contracts that handle real money, and **none of these AI tools check for security vulnerabilities.** Code ships fast, but it ships blind.
 
-## What is SolShield?
+The result? Unaudited programs on chain. Exploits that pattern-matching would have caught in seconds. Over **$600M+ in preventable losses** from bugs that a security scan would have flagged before deployment.
 
-SolShield is an autonomous smart contract auditing system that:
+### The Solution
 
-1. **Parses** Anchor IDL + Rust source code
-2. **Detects** vulnerabilities using **6,969+ specialized patterns**
-3. **Generates** AI-powered explanations + fix suggestions  
-4. **Stores** audit results on-chain for verification
-5. **Mints** NFT certificates for passed audits
+**SolShield is the first security check for vibe-coded crypto.**
 
-**The pitch:** Manual audits cost $10K-$100K and take weeks. We do it in seconds for free (beta).
+We scan your Solana/Anchor code against **7,000+ vulnerability patterns** in under a second — missing owner checks, authority bypasses, CPI attacks, integer overflows, oracle manipulation, and thousands more. You get instant, actionable findings with fix suggestions.
+
+> **Vibe code it. SolShield it. Ship it.**
+
+We're not replacing professional audits — we're the **seatbelt**. The first layer of defense between your AI-generated code and mainnet. Run SolShield before you deploy, catch the obvious (and not-so-obvious) bugs, then get a full audit when you're ready.
 
 > 💰 **[Real-world impact](REAL-WORLD.md):** SolShield's patterns would have caught exploits totaling **$600M+** in losses (Wormhole, Mango, Cashio, and more).
 
-## 🔍 Vulnerability Patterns (6,969+)
+## 🔍 Vulnerability Patterns (7,000+)
 
-> **6,969+ patterns** covering Core Security, CPI, DeFi, NFT, Token, PDA, Anchor, historical exploit signatures, and more.
+> **7,000+ patterns** covering Core Security, CPI, DeFi, NFT, Token, PDA, Anchor, historical exploit signatures, and more.
 > See [patterns page](packages/web/src/app/patterns/page.tsx) for the complete list.
 
 ### Sample Critical Patterns
@@ -203,7 +203,7 @@ solshield/
 ├── packages/
 │   ├── cli/              # Command-line auditor
 │   │   └── src/
-│   │       ├── patterns/ # 6,969+ vulnerability detectors
+│   │       ├── patterns/ # 7,000+ vulnerability detectors
 │   │       ├── parsers/  # IDL + Rust parsing
 │   │       └── commands/ # 7 CLI commands
 │   │
@@ -244,7 +244,7 @@ solshield/
 ┌─────────────────────────────────────────────────────────────────┐
 │                     DETECTION ENGINE                             │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │             6,969+ vulnerability patterns                 │   │
+│  │             7,000+ vulnerability patterns                 │   │
 │  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐  │   │
 │  │  │ Core   │ │ CPI    │ │ Token  │ │ PDA    │ │ DeFi   │  │   │
 │  │  │Security│ │Security│ │Security│ │Security│ │Patterns│  │   │
@@ -345,14 +345,14 @@ require!(audit_passed, ErrorCode::NotAudited);
   [SOL018] Oracle Manipulation — Price feed has no staleness check
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Scanned with 6,969+ patterns in 0.34s
+  Scanned with 7,000+ patterns in 0.34s
   Run `solshield audit --verbose` for full details
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## 🏆 What We Built
 
-- [x] **6,969+ vulnerability patterns** (SOL001-SOL7525) covering all major Solana security risks + historical exploit signatures
+- [x] **7,000+ vulnerability patterns** (SOL001-SOL7525) covering all major Solana security risks + historical exploit signatures
 - [x] **7 CLI commands** (audit, fetch, github, watch, ci, stats, list)
 - [x] **GitHub integration** — audit repos and PRs directly
 - [x] **CI mode** — GitHub Actions with SARIF code scanning

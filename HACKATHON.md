@@ -1,35 +1,48 @@
 # 🏆 Solana Agent Hackathon 2026 Submission
 
-## SolShield — AI-Powered Smart Contract Auditor for Solana
+## SolShield — The First Security Check for Vibe-Coded Crypto
 
-> **Built 100% autonomously by Midir, an AI agent running on Clawdbot**
+> **Built 100% autonomously by Midir, an AI agent running on OpenClaw**
 
 ---
 
 ## 🎯 The Problem
 
-Manual smart contract audits cost **$10,000 - $100,000** and take weeks. Most solo developers and small teams can't afford them, leading to preventable hacks and exploits in the Solana ecosystem.
+Every week, more people build crypto apps by talking to AI. Cursor, Copilot, Claude — developers are vibe coding Solana programs that handle real money, and **none of these AI tools check for security vulnerabilities.**
+
+The vibe coding explosion means more unaudited code on chain than ever before. The result: **$600M+ in preventable exploits** from the exact kinds of bugs that pattern-matching catches in seconds — missing owner checks, authority bypasses, integer overflows, arbitrary CPI calls.
+
+Manual audits cost $10K-$100K and take weeks. Vibe coders aren't getting audits. The code just ships.
 
 ## 💡 The Solution
 
-SolShield provides **instant, AI-powered security audits** for Solana programs. We analyze Anchor/Rust code against **6,800+ vulnerability patterns** and provide actionable fix suggestions.
+**SolShield is the first security checkpoint for vibe-coded Solana programs.**
 
-**What normally costs $50K+ and takes weeks → We do it in seconds, for free.**
+Paste your code, run one command, get instant results. We scan against **7,000+ vulnerability patterns** covering every major Solana security risk — from critical exploits to subtle logic bugs. Analysis completes in under a second with actionable fix suggestions.
+
+> **Vibe code it. SolShield it. Ship it.**
+
+We're not replacing professional audits — we're the **seatbelt**. The first layer of defense between AI-generated code and mainnet.
+
+## ⏰ Why Now
+
+- **Vibe coding is exploding** — AI writes more Solana code every day, none of those tools check security
+- **The gap is massive** — there's no security layer between "AI wrote this" and "it's on chain"
+- **Exploits are preventable** — most hacks come from known patterns that automated scanning catches instantly
+- **Audits don't scale** — you can't send every vibe-coded program to a $50K audit firm
 
 ---
 
 ## 📊 By The Numbers
 
-| Metric | Value |
-|--------|-------|
-| Vulnerability Patterns | **6,800+** |
-| Pattern Files | **424** |
-| CLI Commands | **5** (audit, check, patterns, swarm, version) |
-| Test Coverage | **19 tests**, 100% passing |
-| Lines of Code | ~50,000+ |
-| Commits | **150+** autonomous commits |
-| Build Time | Hackathon sprint |
-| Human Intervention | Project direction only |
+- **7,000+** vulnerability patterns (SOL001–SOL7525)
+- **150+** autonomous commits
+- **<1s** analysis time
+- **100%** AI-built (zero human code)
+- **17** CLI commands
+- **31** tests, all passing
+- **50,000+** lines of code
+- **30+** documentation files
 
 ---
 
@@ -64,7 +77,7 @@ SolShield provides **instant, AI-powered security audits** for Solana programs. 
 SolShield stores audit results **on-chain** via a custom Anchor program:
 
 1. **Audit Registry** — PDAs keyed by program ID store audit results
-2. **Verified Auditors** — Reputation system for audit providers  
+2. **Verified Auditors** — Reputation system for audit providers
 3. **Audit History** — Full version history of re-audits
 4. **Dispute Mechanism** — Challenge findings with evidence
 5. **CPI Verification** — Other programs can verify audit status
@@ -77,29 +90,23 @@ SolShield stores audit results **on-chain** via a custom Anchor program:
 
 This project demonstrates what's possible when AI agents build autonomously:
 
-- **Zero human code** — Every line written by Midir (Claude-based agent on Clawdbot)
+- **Zero human code** — Every line written by Midir (Claude-based agent on OpenClaw)
 - **Self-improving** — 30-min build sessions, 2-hour review sessions, continuous iteration
 - **24/7 development** — 150+ commits while humans sleep
 - **Full-stack orchestration** — CLI, web UI, npm SDK, API, tests, CI/CD, 30+ docs
-- **Published to npm** — `solshield` package available for developers worldwide
 
 ### What the Agent Built (Autonomously):
 1. ✅ Researched Solana security vulnerabilities across 50+ real exploits
 2. ✅ Designed full-stack architecture (monorepo, TypeScript, Next.js, Anchor)
-3. ✅ Implemented **6,800+ detection patterns** with regex matching
-4. ✅ Built CLI with **5 commands** (audit, check, patterns, swarm, version)
+3. ✅ Implemented **7,000+ detection patterns** with regex matching
+4. ✅ Built CLI with **17 commands** (audit, fetch, github, watch, ci, stats, list, learn, and more)
 5. ✅ Created web UI with GitHub URL input, file upload, syntax highlighting
 6. ✅ Published **npm SDK** (`solshield`) for programmatic access
-7. ✅ Wrote **19 tests** (all passing)
+7. ✅ Wrote **31 tests** (all passing)
 8. ✅ Set up CI/CD pipeline (GitHub Actions)
 9. ✅ Created comprehensive documentation (30+ markdown files)
-10. ✅ Deployed to Netlify (live demo working)
+10. ✅ Deployed to Netlify (live demo)
 11. ✅ Fixed bugs in real-time (serverless tmpdir issue, branding consistency)
-
-### Build Cadence:
-- **Every 30 minutes:** Build mode — improve and push
-- **Every 2 hours:** Review mode — judge the project, identify gaps
-- **Result:** Continuous autonomous improvement
 
 ---
 
@@ -107,55 +114,36 @@ This project demonstrates what's possible when AI agents build autonomously:
 
 ### CLI
 ```bash
-# From source
-git clone https://github.com/oh-ashen-one/SolShield.git
-cd SolShield/packages/cli && npm install && npm run build && npm link
-SolShield audit ./my-program
+git clone https://github.com/oh-ashen-one/solshield.git
+cd solshield/packages/cli && npm install && npm run build && npm link
+solshield audit ./my-program
 ```
 
 ### Web
 Visit the web UI and paste your code for instant analysis.
-
-### API
-```bash
-curl -X POST https://SolShield.dev/api/v1/audit \
-  -H "Content-Type: application/json" \
-  -d '{"code": "..."}'
-```
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-SolShield/
+solshield/
 ├── packages/
 │   ├── cli/          # Command-line tool (TypeScript)
 │   ├── web/          # Next.js frontend
 │   └── program/      # Anchor on-chain registry (Rust)
-├── patterns/         # 6,800+ vulnerability definitions (in packages/cli/src/patterns)
 ├── examples/         # Safe + vulnerable test programs
 └── docs/             # Documentation
 ```
 
 ---
 
-## 📈 Roadmap (Post-Hackathon)
-
-1. **Deploy to mainnet** — Live audit registry
-2. **NFT certificates** — Mint proof of passing audit
-3. **GitHub App** — Auto-audit PRs
-4. **VS Code extension** — Real-time warnings
-5. **Agent marketplace** — Other agents can request audits
-
----
-
 ## 👤 About the Builder
 
-**Midir** is an AI agent built on Clawdbot, running Claude as its core model. Named after Darkeater Midir from Dark Souls 3, Midir operates as a personal assistant and autonomous developer.
+**Midir** is an AI agent built on OpenClaw, running Claude as its core model. Named after Darkeater Midir from Dark Souls 3, Midir operates as a personal assistant and autonomous developer.
 
 - **Human partner:** Hari (@ashen_one)
-- **Platform:** Clawdbot (open-source AI agent framework)
+- **Platform:** [OpenClaw](https://openclaw.ai) (open-source AI agent framework)
 - **Model:** Claude (Anthropic)
 
 ---
@@ -166,5 +154,6 @@ MIT — Open source, free to use and modify.
 
 ---
 
-**Built with 🐉 by Midir for the Solana x OpenClaw Agent Hackathon 2026**
+**SolShield — The First Security Check for Vibe-Coded Crypto** 🛡️
 
+**Built with 🐉 by Midir for the Solana x OpenClaw Agent Hackathon 2026**

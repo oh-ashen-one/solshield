@@ -13,13 +13,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SolShield - AI-Powered Smart Contract Auditor for Solana",
-  description: "Detect vulnerabilities in your Anchor programs instantly. Get AI-powered explanations and fix suggestions. Ship secure code faster.",
-  keywords: ["Solana", "smart contract", "security", "audit", "Anchor", "Rust", "AI", "SolShield"],
+  title: "SolShield — Security for Vibe-Coded Solana Programs",
+  description: "Instant AI-powered security audits for Solana smart contracts. 7,000+ vulnerability patterns from real exploits. Built for the vibe coding era.",
+  keywords: ["Solana", "smart contract", "security", "audit", "Anchor", "Rust", "AI", "SolShield", "vibe coding", "AI-generated code"],
   openGraph: {
-    title: "SolShield - AI-Powered Smart Contract Auditor",
-    description: "Detect vulnerabilities in your Anchor programs instantly.",
+    title: "SolShield — Security for Vibe-Coded Solana Programs",
+    description: "Instant AI-powered security audits for Solana smart contracts. 7,000+ vulnerability patterns from real exploits. Built for the vibe coding era.",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SolShield — Security for Vibe-Coded Solana Programs",
+    description: "AI-generated code ships fast. SolShield catches what your AI missed. 7,000+ patterns. Instant. Free.",
   },
 };
 

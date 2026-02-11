@@ -1,7 +1,7 @@
 {
   "name": "@solguard/cli",
   "version": "0.1.0",
-  "description": "SolGuard CLI - AI-Powered Smart Contract Security Auditor for Solana",
+  "description": "SolShield CLI - The first security check for vibe-coded Solana programs. 7,000+ vulnerability patterns.",
   "author": "SolGuard Team",
   "license": "MIT",
   "homepage": "https://github.com/oh-ashen-one/solguard",

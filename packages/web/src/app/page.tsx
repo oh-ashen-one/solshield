@@ -341,7 +341,7 @@ pub enum VaultError {
             href="#audit"
             className="hidden md:flex px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            Start Audit
+            Audit Now
           </a>
         </div>
       </header>
@@ -355,21 +355,25 @@ pub enum VaultError {
         <div className="relative max-w-6xl mx-auto px-6 pt-24 pb-16">
           <div className="flex items-center justify-center gap-2 mb-8">
             <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium">
-              Solana Agent Hackathon 2026
+              The first security check for vibe-coded crypto
             </span>
           </div>
           
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-center tracking-tight mb-6">
-            Security Audits for
+            Security for
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400">
-              Solana Programs
+              Vibe-Coded Solana Programs
             </span>
           </h1>
           
-          <p className="text-xl text-zinc-400 text-center max-w-2xl mx-auto mb-12">
-            AI-powered vulnerability detection for Anchor programs. 
-            7,000+ vulnerability patterns. Instant analysis. Ship secure code.
+          <p className="text-xl text-zinc-400 text-center max-w-2xl mx-auto mb-4">
+            AI-generated code ships fast. SolShield catches what your AI missed.
+            7,000+ vulnerability patterns from real exploits. Instant. Free.
+          </p>
+
+          <p className="text-base text-zinc-500 text-center max-w-xl mx-auto mb-12">
+            Vibe code it. SolShield it. Ship it.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -377,7 +381,7 @@ pub enum VaultError {
               href="#audit"
               className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:shadow-blue-500/25"
             >
-              Audit Your Code
+              Paste Your Code
             </a>
             <a 
               href="https://github.com/oh-ashen-one/solshield" 
@@ -424,10 +428,10 @@ pub enum VaultError {
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { value: '7,000+', label: 'Vulnerability Patterns', sublabel: 'Based on real exploits' },
-              { value: '$600M+', label: 'Exploits Covered', sublabel: 'Wormhole, Mango, Cashio, more' },
-              { value: '5', label: 'CLI Commands', sublabel: 'Full audit toolkit' },
-              { value: '<1s', label: 'Analysis Time', sublabel: 'Instant results' },
+              { value: '7,000+', label: 'Vulnerability Patterns', sublabel: 'From real Solana exploits' },
+              { value: '$600M+', label: 'In Exploits Covered', sublabel: 'Wormhole, Mango, Cashio, more' },
+              { value: '<1s', label: 'Analysis Time', sublabel: 'Faster than your AI writes it' },
+              { value: 'Free', label: 'Always', sublabel: 'The seatbelt before you drive' },
             ].map((stat, i) => (
               <div key={i} className="text-center">
                 <div className="text-3xl md:text-4xl font-bold text-white mb-1">{stat.value}</div>
@@ -442,8 +446,8 @@ pub enum VaultError {
       {/* Audit Section */}
       <section id="audit" className="max-w-4xl mx-auto px-6 py-20">
         <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold mb-3">Run Security Audit</h2>
-          <p className="text-zinc-400">Analyze your Solana program for vulnerabilities</p>
+          <h2 className="text-3xl font-bold mb-3">Audit Your Vibe Code</h2>
+          <p className="text-zinc-400">Paste what your AI wrote. See what it missed.</p>
         </div>
 
         {/* Input Mode Tabs */}
@@ -746,9 +750,10 @@ pub enum VaultError {
       <section id="features" className="border-t border-zinc-800/50 bg-zinc-900/20">
         <div className="max-w-6xl mx-auto px-6 py-20">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">What We Detect</h2>
+            <h2 className="text-3xl font-bold mb-4">What Your AI Missed</h2>
             <p className="text-zinc-400 max-w-2xl mx-auto">
-              Comprehensive coverage of Solana-specific vulnerabilities based on real exploits
+              AI assistants generate functional code — but routinely skip critical security patterns.
+              SolShield checks for every vulnerability class that&apos;s cost real money on Solana.
             </p>
           </div>
           
@@ -798,10 +803,10 @@ pub enum VaultError {
       <section className="max-w-6xl mx-auto px-6 py-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-3xl font-bold mb-4">Powerful CLI</h2>
+            <h2 className="text-3xl font-bold mb-4">Built for the AI-Coding Era</h2>
             <p className="text-zinc-400 mb-6">
-              Full-featured command-line tool for integrating security audits into your workflow. 
-              Supports CI/CD, GitHub integration, and watch mode for development.
+              Drop SolShield into your workflow — CLI, CI/CD, or right here in the browser.
+              Not replacing professional audits. We&apos;re the seatbelt before you drive.
             </p>
             <div className="space-y-3">
               {[
