@@ -21,6 +21,9 @@ import { checkBatch53Patterns } from './solana-batched-patterns-53.js';
 // Import Batch 54 patterns (Feb 5, 2026 5:00 PM) - Helius Exploit Deep Dives
 import { checkBatch54Patterns } from './solana-batched-patterns-54.js';
 
+// Import Batch 55 Zealynx Checklist patterns (Feb 11, 2026) - Token-2022, CPI, Oracle, Real Exploits
+import { checkBatch55ZealynxPatterns } from './batch-55-zealynx-checklist.js';
+
 // Import Batch 55-56 patterns (Feb 5, 2026 5:30 PM) - Academic + PoC Research
 import { checkBatch55Patterns } from './solana-batched-patterns-55.js';
 import { checkBatch56Patterns } from './solana-batched-patterns-56.js';
@@ -1138,6 +1141,14 @@ export async function runPatterns(input: PatternInput): Promise<Finding[]> {
     // Skip if Batch 110 patterns fail
   }
   
+  // Run Batch 55 Zealynx Checklist patterns (30 patterns: Token-2022, CPI, Oracle, Real Exploits - SOL7556-SOL7585)
+  try {
+    const batch55ZealynxResults = checkBatch55ZealynxPatterns(input);
+    findings.push(...batch55ZealynxResults);
+  } catch (error) {
+    // Skip if Batch 55 Zealynx patterns fail
+  }
+
   // Deduplicate by ID + line
   const seen = new Set<string>();
   const deduped = findings.filter(f => {
@@ -1256,4 +1267,4 @@ export function listPatterns(): Pattern[] {
 //   - solana-batched-patterns-108.ts (SOL7051-SOL7200): Sec3 2025 Report (163 audits, 1,669 vulns) + arXiv:2504.07419 Academic Research (Lack of Check, Conflation, Tool Analysis)
 //   - solana-batched-patterns-109.ts (SOL7201-SOL7275): Helius Complete Exploit Mechanics Deep Dive - Solend Auth Bypass, Wormhole Guardian, Cashio Infinite Mint, Crema CLMM, Mango Oracle, Slope Key Exposure, 2024-2025 Latest Attacks
 // 109 batched/pattern files × ~70-100 patterns each + 50 core + 250+ individual patterns = 6800+
-export const PATTERN_COUNT = ALL_PATTERNS.length + 7555; // 6800+ total with Batch 110 (Zealynx + Pinocchio + 2025-2026 Advanced)
+export const PATTERN_COUNT = ALL_PATTERNS.length + 7585; // 6800+ total with Batch 55-Zealynx (Token-2022, CPI, Oracle, Real Exploits)
